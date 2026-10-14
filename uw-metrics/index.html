@@ -87,9 +87,10 @@ button.chip[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:
 .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;max-width:100%}
 .tbl.scroll{max-height:320px;overflow-y:auto}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line-2);white-space:nowrap}
+th,td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--line-2);white-space:nowrap}
 th{background:var(--paper);color:var(--ink-2);font-weight:600;font-size:12px;position:sticky;top:0;z-index:1}
-td.n,th.n{text-align:right}
+td.n{text-align:left}
+th.n{text-align:center}
 td.txt{white-space:normal;min-width:240px}
 td.cell-crit{background:var(--crit-bg);color:var(--crit);font-weight:600}
 td.cell-warn{background:var(--warn-bg);color:var(--warn);font-weight:600}
@@ -213,12 +214,12 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
 .rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
 .rp-tbl th,.rp-tbl td{border:.5pt solid var(--line);padding:.45mm 1.5mm;white-space:nowrap}
-.rp-tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
+.rp-tbl td.n{text-align:left;font-variant-numeric:tabular-nums}
 .rp-tbl td.bad{color:var(--crit);font-weight:700}
 .rp-tbl td.okc{color:var(--good);font-weight:600}
 .rp-tbl tr.tot td{font-weight:700;background:var(--paper)}
 .rp-tbl.rv th,.rp-tbl.rv td{padding:.55mm 1mm;font-size:7.5pt}
-.rp-tbl.rv td:first-child{background:var(--paper);font-weight:600;text-align:center}
+.rp-tbl.rv td:first-child{background:var(--paper);font-weight:600}
 .rp-text{white-space:pre-wrap;background:var(--paper);border:1px dashed var(--line);border-radius:2px;padding:.7mm 2mm;outline:none;min-height:1.4em;line-height:1.42}
 .rp-text:focus{border-style:solid;border-color:var(--accent);background:var(--sheet)}
 .rp-text.busy{opacity:.55}
@@ -961,9 +962,9 @@ function renderMetrics(){
   $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th>${WIN.map(mm=>`<th class="n${mm===SEL?" sel":""}">${mm.slice(2,4)}.${mm.slice(4)}</th>`).join("")}<th class="n sep">합계</th><th class="n">월평균</th><th class="n">전월 대비</th><th class="n">터치율</th></tr></thead><tbody>`+
     rvs.map(k=>{const isP=people.includes(k);const vals=WIN.map(mm=>M[mm].byRv[k]||0);const tot=vals.reduce((a,b)=>a+b,0);
       const mx=isP?pMax:Math.max(1,...vals);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;const st=rvStats(k,SEL);
-      return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n${WIN[i]===SEL?" sel":""}" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
+      return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n${WIN[i]===SEL?" sel":""}" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${nf(+(tot/WIN.length).toFixed(1))}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
     (()=>{const sP=mm=>people.reduce((n,k)=>n+(M[mm].byRv[k]||0),0);const tot=WIN.reduce((n,mm)=>n+sP(mm),0);const PA=rvAgg(people,SEL);
-      return`<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(sP(mm))}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n">${p?dTxt(sP(SEL),sP(pk)):"-"}</td><td class="n">${pct(PA.touch)}</td></tr></tbody>`;})();
+      return`<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(sP(mm))}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${nf(+(tot/WIN.length).toFixed(1))}</td><td class="n">${p?dTxt(sP(SEL),sP(pk)):"-"}</td><td class="n">${pct(PA.touch)}</td></tr></tbody>`;})();
   // 당월·전월 요약: 선택한 지표 카드와 관련된 열만
   const MC={touch:[["n","총 심사건수","c"],["tIn","3일이내","c"],["tOut","3일초과","c"],["blankDates","날짜 공란","c"],["avgLag","평균 경과일","d"],["touch","3일이내 터치율","r",cT]],
     auto:[["auto","자동심사","c"],["manual","인심사","c"],["autoBlank","결과 공란(제외)","c"],["autoRate","자동심사율","r",cA]],
@@ -1337,7 +1338,8 @@ function sheet(rows,widths,{border=true,from=0}={}){
     const cell=typeof o.v==="number"&&isFinite(o.v)?{t:"n",v:o.v}:{t:"s",v:String(o.v)};
     if(o.z)cell.z=o.z;
     let s=Object.assign({},o.s||{});if(border&&r>=from&&!o.nob&&!(rows[r].length===1&&o.s&&(o.s===X.sec||o.s===X.title||o.s===X.sub)))s.border=BORDER;
-    if(typeof o.v==="number")s.alignment=Object.assign({horizontal:"right"},s.alignment||{});
+    if(typeof o.v==="number"){if(!o.z&&Number.isInteger(o.v))cell.z="#,##0";s.alignment=Object.assign({horizontal:"left"},s.alignment||{});}
+    else if(r>=from&&!(rows[r].length===1))s.alignment=Object.assign({horizontal:"center",vertical:"center"},s.alignment||{});
     cell.s=s;ws[XLSX.utils.encode_cell({r,c:ci})]=cell;});});
   ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length-1,0),c:Math.max(maxC-1,0)}});
   ws["!cols"]=widths.map(w=>({wch:w}));return ws;}
@@ -1451,16 +1453,16 @@ function buildDocx(){
   const d=window.docx;const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
   const FONT="Malgun Gothic";const B={style:d.BorderStyle.SINGLE,size:4,color:"999999"};const BR={top:B,bottom:B,left:B,right:B};
   const P=(text,o={})=>new d.Paragraph({pageBreakBefore:!!o.pb,spacing:{after:o.after??40,before:o.before??0,line:o.line??260},children:[new d.TextRun({text,font:FONT,size:o.size||18,bold:o.bold,color:o.color})]});
-  const cell=(c,{h=false,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&!o.lbl&&tdN(t)==="n";
+  const cell=(c,{h=false,hdr=h,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&!o.lbl&&tdN(t)==="n",numL=!hdr&&!first&&!o.lbl&&o.c!=="grp"&&tdN(t)==="n";
     const NB={style:d.BorderStyle.NONE,size:0,color:"FFFFFF"};const SB={style:d.BorderStyle.SINGLE,size:14,color:"1D5B73"};
     let brd=o.c==="grp"?{...BR,bottom:NB}:o.c==="gap"?{...BR,top:NB}:BR;
     if(o.c&&o.c.includes("selc"))brd={...brd,left:SB,right:SB,...(h?{top:SB}:{}),...(o.c.includes("selb")?{bottom:SB}:{})};
     if(o.c==="grp"||o.c==="gap"){h=false;first=false;}
     return new d.TableCell({borders:brd,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
-      children:[new d.Paragraph({alignment:h||o.c==="grp"?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp"||!!(o.c&&o.c.includes("selc")),color:o.c==="bad"?"A42020":undefined})]})]});};
+      children:[new d.Paragraph({alignment:numL?d.AlignmentType.LEFT:d.AlignmentType.CENTER,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp"||!!(o.c&&o.c.includes("selc")),color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
     ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[320,1780,1621,1621,1621,1621,1622]}:{}),
-    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
+    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",hdr:ri===0,first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
   const stTxt=RPS.final?`최종 확인 ${RPS.final.at}${RPS.final.by?` · ${RPS.final.by}`:""}`:"초안";
   const kids=[new d.Paragraph({alignment:d.AlignmentType.RIGHT,spacing:{after:0},children:[new d.TextRun({text:stTxt,font:FONT,size:16,bold:true,color:RPS.final?"1E6B3A":"A42020"})]}),P(D.title,{size:30,bold:true,after:80}),
     new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
