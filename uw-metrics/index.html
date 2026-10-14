@@ -166,40 +166,44 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .calc-actions{justify-content:flex-end}
 .rp-bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
 .rp-bar-l{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
-.report{background:var(--sheet);border:1px solid var(--line);border-radius:4px;box-shadow:0 2px 14px rgba(0,0,0,.06);max-width:860px;width:100%;margin:0 auto;padding:44px 52px;display:flex;flex-direction:column;gap:22px;font-size:14px;line-height:1.7}
-.rp-kind{font-size:12px;letter-spacing:.12em;color:var(--ink-3);font-weight:600}
-.rp-title{font-size:24px;font-weight:700;letter-spacing:-.01em;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-top:2px;outline:none}
-.rp-meta{width:auto;font-size:13px;border-collapse:collapse}
-.rp-meta th{position:static;background:var(--paper);width:110px;text-align:left;font-weight:600;color:var(--ink-2)}
-.rp-meta th,.rp-meta td{border:1px solid var(--line);padding:5px 10px;white-space:normal}
-.report h2{font-size:16px;font-weight:700;margin:0 0 8px;padding-left:10px;border-left:4px solid var(--accent)}
-.report h4{font-size:13px;margin:10px 0 4px;color:var(--ink-2)}
-.rp-sec{display:flex;flex-direction:column;gap:8px;break-inside:avoid}
-.rp-tbl{border-collapse:collapse;width:100%;font-size:12.5px}
-.rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:12px;text-align:center}
-.rp-tbl th,.rp-tbl td{border:1px solid var(--line);padding:5px 8px;white-space:nowrap}
+.report{overflow-x:auto;padding-block:4px 12px}
+.rp-page{background:var(--sheet);color:var(--ink);width:210mm;box-sizing:border-box;padding:15mm;margin:0 auto;border:1px solid var(--line);box-shadow:0 2px 14px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:2.6mm;font-size:9pt;line-height:1.45}
+.rp-head{display:flex;flex-direction:column;gap:2mm}
+.rp-title{font-size:15pt;font-weight:700;letter-spacing:-.01em;border-bottom:1.5pt solid var(--ink);padding-bottom:1.5mm;outline:none;text-align:center}
+.rp-meta{width:100%;font-size:8.5pt;border-collapse:collapse}
+.rp-meta th{position:static;background:var(--paper);width:18mm;text-align:center;font-weight:600;color:var(--ink-2);font-size:8.5pt}
+.rp-meta th,.rp-meta td{border:.5pt solid var(--line);padding:.7mm 2mm;white-space:normal}
+.rp-page h2{font-size:10.5pt;font-weight:700;margin:0 0 .8mm;padding-left:2mm;border-left:3pt solid var(--accent)}
+.rp-page h4{font-size:8.5pt;margin:0 0 1mm;color:var(--ink-2);font-weight:600}
+.rp-sec{display:flex;flex-direction:column;gap:1.4mm}
+.rp-two{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+.rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.3}
+.rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
+.rp-tbl th,.rp-tbl td{border:.5pt solid var(--line);padding:.55mm 1.6mm;white-space:nowrap}
 .rp-tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
 .rp-tbl td.bad{color:var(--crit);font-weight:700}
 .rp-tbl td.okc{color:var(--good);font-weight:600}
 .rp-tbl tr.tot td{font-weight:700;background:var(--paper)}
-.rp-wrap{overflow-x:auto}
-.rp-text{white-space:pre-wrap;background:var(--paper);border:1px dashed var(--line);border-radius:4px;padding:8px 12px;outline:none;min-height:2.4em}
+.rp-tbl.rv th,.rp-tbl.rv td{padding:.55mm 1mm;font-size:7.5pt}
+.rp-tbl.rv td:first-child{background:var(--paper);font-weight:600;text-align:center}
+.rp-text{white-space:pre-wrap;background:var(--paper);border:1px dashed var(--line);border-radius:2px;padding:.9mm 2mm;outline:none;min-height:1.5em}
 .rp-text:focus{border-style:solid;border-color:var(--accent);background:var(--sheet)}
 .rp-text.busy{opacity:.55}
-.rp-edit{border-bottom:1px dashed var(--line);outline:none;padding:0 2px;display:inline-block;min-width:4em}
+.rp-edit{border-bottom:1px dashed var(--line);outline:none;padding:0 2px;display:inline-block;min-width:3em}
+.rp-edit:empty::before{content:attr(data-ph);color:var(--ink-3)}
 .rp-edit:focus{border-bottom-color:var(--accent)}
-.rp-foot{font-size:12px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:10px}
-.rp-foot ul{margin:4px 0 0;padding-left:18px}
-@media (max-width:700px){.report{padding:22px 16px}.rp-title{font-size:20px}}
+.rp-foot{font-size:6.8pt;color:var(--ink-2);border-top:.5pt solid var(--line);padding-top:1.2mm;line-height:1.4}
 @media print{
-  :root,:root:not([data-theme="light"]),:root[data-theme="dark"]{--paper:#f3f4f5;--sheet:#fff;--ink:#000;--ink-2:#333;--ink-3:#555;--line:#999;--line-2:#ccc;--accent:#1d5b73;--good:#1e6b3a;--crit:#a42020;color-scheme:light}
-  body{background:#fff}
+  :root,:root:not([data-theme="light"]),:root[data-theme="dark"]{--paper:#f1f3f4;--sheet:#fff;--ink:#000;--ink-2:#333;--ink-3:#555;--line:#888;--line-2:#bbb;--accent:#1d5b73;--good:#1e6b3a;--crit:#a42020;color-scheme:light}
+  html,body{background:#fff;padding:0!important}
   .top,.tabs,.banner,#viewCalc,.rp-bar,.uploads,#loadErr,.chat-fab,.chat,.toast{display:none!important}
-  .wrap{padding:0;max-width:none}
-  .report{border:none;box-shadow:none;padding:0;max-width:none}
+  .wrap{padding:0!important;max-width:none;gap:0}
+  .report{overflow:visible;padding:0}
+  .rp-page{width:auto;padding:0;border:none;box-shadow:none;margin:0}
   .rp-text{background:none;border:none;padding:0}
-  .rp-edit{border:none}
-  @page{size:A4;margin:16mm 15mm}
+  .rp-edit{border:none}.rp-edit:empty::before{content:""}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:15mm}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -339,7 +343,7 @@ td.zero{color:var(--ink-3)}
 
   <div class="view" id="viewReport" hidden>
     <div class="rp-bar">
-      <div class="rp-bar-l"><b id="rpBarTitle">월마감 보고서</b><span class="note">회색 칸의 문장은 눌러서 바로 고칠 수 있습니다. 표의 숫자는 산출 결과에서 자동으로 채웁니다.</span></div>
+      <div class="rp-bar-l"><b id="rpBarTitle">월마감 보고서</b><span class="chip" id="fitInfo"></span><span class="note">회색 칸의 문장은 눌러서 바로 고칠 수 있습니다. 표의 숫자는 산출 결과에서 자동으로 채웁니다.</span></div>
       <div class="actions">
         <button id="btnRedraft" type="button">기준 문안 다시 만들기</button>
         <button id="btnAI" type="button" hidden>AI로 문안 다듬기</button>
@@ -778,51 +782,83 @@ function draftTopics(){
   return T;}
 const RP_META={dept:"계약심사부",author:"",title:""};
 const tdN=v=>/^[+\-−±]?[\d,.]+(%|%p|건)?$/.test(String(v).trim())||/^[+\-−±][\d,.]+/.test(String(v))?"n":"";
-function rpTable(rows,{tot=false,judge=-1}={}){const [h,...b]=rows;
-  return`<div class="rp-wrap"><table class="rp-tbl"><thead><tr>${h.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${b.map((r,ri)=>`<tr${tot&&ri===b.length-1?' class="tot"':""}>${r.map((c,ci)=>`<td class="${ci>0?tdN(c):""}${ci===judge?(c==="미달"||c==="초과"?" bad":c==="충족"||c==="이내"?" okc":""):""}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;}
+function rpTable(rows,{tot=false,judge=-1,cls=""}={}){const [h,...b]=rows;
+  return`<table class="rp-tbl ${cls}"><thead><tr>${h.map(x=>`<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${b.map((r,ri)=>`<tr${tot&&ri===b.length-1?' class="tot"':""}>${r.map((c,ci)=>`<td class="${ci>0?tdN(c):""}${ci===judge?(c==="미달"||c==="초과"?" bad":c==="충족"||c==="이내"?" okc":""):""}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;}
+/* 한 장 보고서용 문안: 산출 화면의 주제별 초안을 5개 항목으로 짧게 묶는다 */
+function composeReport(T){
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null,ms=metricList(),by=k=>ms.find(x=>x.key===k);const get=k=>T.find(t=>t.key===k);
+  const tt=by("touch"),aa=by("auto"),rr=by("ret");
+  const lowCh=chList().map(c=>({c,s:chStats(c,SEL)})).filter(x=>x.s.n>=20&&x.s.touch!=null&&x.s.touch<S.touchTarget/100);
+  const allOk=[tt,aa,rr].every(x=>x.ok);
+  const bad=[tt,aa,rr].filter(x=>!x.ok),big=ms.filter(x=>x.big);
+  const metrics=(allOk?"지표 3종 모두 기준 충족":`기준 미충족: ${bad.map(x=>`${x.name} ${pct(x.val)}`).join(", ")}`)+(p?(big.length?`, 전월 대비 변동 큼: ${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}.`:", 전월 대비 변동은 기준 이내임."):".")+
+    (lowCh.length?` 터치율 목표 미달 채널: ${lowCh.map(x=>`${x.c}(${pct(x.s.touch)})`).join(", ")}.`:"");
+  const chs=chList().filter(c=>m.byCh[c]).sort((a,b)=>m.byCh[b]-m.byCh[a]);
+  const process=`처리 ${nf(m.proc)}건${p?`(전월 대비 ${chgTxt(m.proc,p.proc)})`:""} 중 ${chs[0]?`${chs[0]} ${pct(rate(m.byCh[chs[0]],m.proc))}로 비중이 가장 큼. `:""}정상인수 ${nf(m.normal)}건(표준 ${nf(m.std)}·조건부 ${nf(m.cond)}), 반송 ${nf(m.ret)}건, 청철 ${nf(m.wd)}건이며 미결 ${nf(m.pend)}건은 별도임.`;
+  const people=rvList().filter(k=>k!=="(공란)"&&!isAutoName(k)&&m.byRv[k]);
+  const lowRv=people.map(k=>({k,s:rvStats(k,SEL)})).filter(x=>x.s.n>=10&&x.s.touch<S.touchTarget/100).sort((a,b)=>a.s.touch-b.s.touch);
+  const reviewer=(lowRv.length?`터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}로 지연 건 점검 필요.`:"심사자별 터치율은 모두 목표 충족.")+
+    ` 재분배(최초≠실제심사자) ${nf(m.comp.diff)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`;
+  const keep=k=>{const t=get(k);return t?{...t}:null;};
+  const sum=[`- 신계약 처리 ${nf(m.proc)}건${p?`(전월 대비 ${chgTxt(m.proc,p.proc)})`:""}, 미결 ${nf(m.pend)}건.`,
+    `- 3일이내 터치율 ${pct(m.touch)}, 자동심사율 ${pct(m.autoRate)}, 반송률 ${pct(m.retRate)}로 ${allOk?"목표·기준 모두 충족":"일부 지표 기준 미충족"}.`,
+    lowRv.length?`- 터치율 목표 미달 심사자 ${lowRv.length}명(${lowRv.map(x=>x.k).join(", ")}) 점검 필요.`:"- 심사자별 터치율 모두 목표 충족."].join("\n");
+  const per={};ROWS.forEach(rw=>rw.codes.forEach(c=>per[c]=(per[c]||0)+1));const exc=ROWS.filter(rw=>!rw.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
+  const eTxt=RULES.filter(([id,sev])=>sev==="오류"&&per[id]).map(([id])=>`${id} ${per[id]}`).join(", ");
+  const note=`- 데이터 점검: 오류 ${nf(exc)}행${eTxt?`(${eTxt})`:""} 산출 제외, 경고 ${nf(wN)}건 원천 데이터 확인 필요.\n- 향후 조치: (작성)`;
+  return[{key:"summary",title:"총괄 요약",cls:"",chip:"",text:sum},
+    {key:"metrics",title:"주요 지표",cls:allOk?"good":"crit",chip:allOk?"충족":"확인",text:metrics},
+    {key:"process",title:"처리 현황·심사결과",cls:"",chip:"",text:process},
+    {key:"reviewer",title:"심사자별 처리 현황",cls:lowRv.length?"warn":"good",chip:lowRv.length?`확인 ${lowRv.length}명`:"",text:reviewer},
+    {key:"note",title:"특이사항 및 향후 조치",cls:"",chip:"",text:note}];}
 function reportData(){
   const m=M[SEL],pk=PREV(),p=pk?M[pk]:null,ms=metricList();const P=v=>p?v:"-";
-  const metrics=[["지표",mLabel(SEL),pk?mLabel(pk):"전월","증감","기준","판정"]].concat(ms.map(x=>[x.name,x.kind==="rate"?pct(x.val):nf(x.val)+"건",x.prev==null?"-":x.kind==="rate"?pct(x.prev):nf(x.prev)+"건",x.dTxt||"-",x.targetTxt,x.ok==null?"-":x.ok?"충족":x.cmp==="<="?"초과":"미달"]));
+  const metrics=[["지표",mLabel(SEL),"전월","증감","기준","판정"]].concat(ms.map(x=>[x.name,x.kind==="rate"?pct(x.val):nf(x.val)+"건",x.prev==null?"-":x.kind==="rate"?pct(x.prev):nf(x.prev)+"건",x.dTxt||"-",x.targetTxt,x.ok==null?"-":x.ok?"충족":x.cmp==="<="?"초과":"미달"]));
   const chs=chList().filter(c=>m.byCh[c]||(p&&p.byCh[c]));
-  const channel=[["채널",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","증감","터치율","자동심사율"]].concat(chs.map(c=>{const v=m.byCh[c]||0,pv=p?(p.byCh[c]||0):null,st=chStats(c,SEL);return[c,nf(v),pct(rate(v,m.proc)),P(nf(pv)),p?chgTxt(v,pv):"-",pct(st.touch),pct(st.autoRate)];}),
-    [["합계",nf(m.proc),"100.0%",P(nf(p?.proc)),p?chgTxt(m.proc,p.proc):"-",pct(m.touch),pct(m.autoRate)]]);
-  const rr=(l,k)=>[l,nf(m[k]),pct(rate(m[k],m.resTotal)),P(nf(p?.[k])),p?ppTxt(rate(m[k],m.resTotal),rate(p[k],p.resTotal)):"-"];
-  const result=[["구분",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","구성비 증감"],rr("정상인수","normal"),rr("ㄴ 표준인수","std"),rr("ㄴ 조건부인수","cond"),rr("반송","ret"),rr("청철","wd"),
-    ["합계(미결 제외)",nf(m.resTotal),"100.0%",P(nf(p?.resTotal)),p?chgTxt(m.resTotal,p.resTotal):"-"],["(참고) 미결",nf(m.pend),"",P(nf(p?.pend)),p?dTxt(m.pend,p.pend):"-"]];
-  const tops=[["지표","1위","값","건수"]].concat(topLists().map(l=>l.winners[0]&&!l.winners[0].txt?[l.title,l.winners.map(x=>x.who).join(", "),l.winners[0].cnt,"-"]:[l.title,l.winners.map(x=>x.who).join(", ")||"-",l.winners[0]?.txt||"-",(new Set(l.winners.map(x=>x.cnt)).size===1&&l.winners.length>1?"각 "+l.winners[0].cnt:l.winners.map(x=>x.cnt).join(", "))||"-"]));
+  const channel=[["채널","처리","구성비","전월 대비"]].concat(chs.map(c=>{const v=m.byCh[c]||0,pv=p?(p.byCh[c]||0):null;return[c,nf(v),pct(rate(v,m.proc)),p?chgTxt(v,pv):"-"];}),
+    [["합계",nf(m.proc),"100.0%",p?chgTxt(m.proc,p.proc):"-"]]);
+  const rr=(l,k)=>[l,nf(m[k]),pct(rate(m[k],m.resTotal)),p?ppTxt(rate(m[k],m.resTotal),rate(p[k],p.resTotal)):"-"];
+  const result=[["구분","건수","구성비","전월 대비"],rr("정상인수","normal"),rr("ㄴ 표준","std"),rr("ㄴ 조건부","cond"),rr("반송","ret"),rr("청철","wd"),
+    ["합계(미결 제외)",nf(m.resTotal),"100.0%",p?chgTxt(m.resTotal,p.resTotal):"-"]];
   const rvs=rvList();
-  const reviewer=[["실제심사자",mLabel(SEL),pk?mLabel(pk):"전월","증감","터치율","3일 초과"]].concat(rvs.map(k=>{const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null,st=rvStats(k,SEL);return[k,nf(v),P(nf(pv)),p?dTxt(v,pv):"-",pct(st.touch),nf(st.tOut)];}),
-    [["합계",nf(m.proc),P(nf(p?.proc)),p?dTxt(m.proc,p.proc):"-",pct(m.touch),nf(m.tOut)]]);
+  const reviewer=[["구분"].concat(rvs,["합계"]),
+    ["처리"].concat(rvs.map(k=>nf(m.byRv[k]||0)),[nf(m.proc)]),
+    ["전월 대비"].concat(rvs.map(k=>p?dTxt(m.byRv[k]||0,p.byRv[k]||0):"-"),[p?dTxt(m.proc,p.proc):"-"]),
+    ["터치율"].concat(rvs.map(k=>pct(rvStats(k,SEL).touch)),[pct(m.touch)])];
   const y=+SEL.slice(0,4),mo=+SEL.slice(4),last=new Date(Date.UTC(y,mo,0)).getUTCDate(),now=new Date(),mm2=String(mo).padStart(2,"0");
-  const meta=[["보고 기간",`${y}.${mm2}.01 ~ ${y}.${mm2}.${last} (계약일자 기준 마감월)`],["비교 기준",pk?`${mLabel(pk)} (전월)`:"없음"],
-    ["산출 대상",`${nf(m.n)}건 (점검 오류 ${nf(ROWS.filter(r=>!r.include&&r.month===SEL).length)}건 제외)`],["작성일",`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,"0")}.${String(now.getDate()).padStart(2,"0")}`]];
-  const basis=[`경과일수 = 심사시작일 − 최초심사일 (${S.dayMode} 기준, ${S.touchDays}일 이내를 3일이내로 봄. 날짜 공란은 3일이내 처리)`,
-    "자동심사율 = 자동심사 ÷ (자동심사 + 인심사), 자동심사결과 공란 제외",`처리 건수는 미결 ${S.inclPending?"포함":"제외"}, 심사자별은 실제심사자 기준`,
-    "반송률 = 반송 ÷ (정상 + 반송 + 청철), 조건부인수 = 정상 중 특별조건부1 값이 있는 건","데이터 점검 오류(E1~E5) 행은 산출에서 제외"];
-  return{metrics,channel,result,tops,reviewer,meta,basis,title:RP_META.title||`${y}년 ${mo}월 신계약 심사 결과 보고`};}
-const RP_SECTIONS=[["1. 총괄 요약",[],["summary"]],["2. 주요 지표",["metrics"],["touch","auto"]],["3. 처리 현황",["channel"],["proc"]],["4. 심사결과",["result"],["result"]],
-  ["5. 심사자별 현황",["tops","reviewer"],["reviewer"]],["6. 전월 대비 주요 변동",[],["mom"]],["7. 특이사항 및 향후 조치",[],["note"]]];
-const TBL_OPT={metrics:{judge:5},channel:{tot:true},result:{},tops:{},reviewer:{tot:true}};
-const TBL_CAP={tops:"지표별 1위 심사자",reviewer:"실제심사자별 처리 건수"};
+  const period=`${y}.${mm2}.01 ~ ${y}.${mm2}.${last} (계약일자 기준)`;
+  const target=`${nf(m.n)}건 (점검 오류 ${nf(ROWS.filter(r=>!r.include&&r.month===SEL).length)}건 제외)`;
+  const date=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,"0")}.${String(now.getDate()).padStart(2,"0")}`;
+  const basis=`산출 기준: 경과일수 = 심사시작일 − 최초심사일(${S.dayMode}, ${S.touchDays}일 이내·날짜 공란은 3일이내) · 자동심사율 = 자동 ÷ (자동+인심사), 결과 공란 제외 · 처리 건수 미결 ${S.inclPending?"포함":"제외"}, 심사자는 실제심사자 기준 · 반송률 = 반송 ÷ (정상+반송+청철) · 조건부인수 = 정상 중 특별조건부1 값 있음 · 점검 오류 행 제외`;
+  return{metrics,channel,result,reviewer,period,target,date,basis,title:RP_META.title||`${y}년 ${mo}월 신계약 심사 결과 보고`};}
+const RP_SECTIONS=[["1. 총괄 요약",[],["summary"]],["2. 주요 지표",["metrics"],["metrics"]],["3. 처리 현황 및 심사결과",["channel|result"],["process"]],
+  ["4. 심사자별 처리 현황",["reviewer"],["reviewer"]],["5. 특이사항 및 향후 조치",[],["note"]]];
+const TBL_OPT={metrics:{judge:5},channel:{tot:true},result:{tot:true},reviewer:{cls:"rv"}};
+const TBL_CAP={channel:"채널별 처리 건수",result:"심사결과 (미결 제외)"};
 function renderComments(){
   if(!SEL){$("report").innerHTML="";return;}
   const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
   $("rpBarTitle").textContent=D.title;
-  $("report").innerHTML=`<header><div class="rp-kind">월마감 보고</div><div class="rp-title" id="rpTitle" contenteditable="true" spellcheck="false">${esc(D.title)}</div></header>
-    <table class="rp-meta"><tbody>${D.meta.map(([k,v])=>`<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join("")}
-      <tr><th>작성 부서</th><td><span class="rp-edit" id="rpDept" contenteditable="true">${esc(RP_META.dept)}</span></td></tr>
-      <tr><th>작성자</th><td><span class="rp-edit" id="rpAuthor" contenteditable="true">${esc(RP_META.author)}</span></td></tr></tbody></table>`+
-    RP_SECTIONS.map(([h,tbls,keys])=>`<section class="rp-sec"><h2>${h}</h2>`+tbls.map(t=>(TBL_CAP[t]?`<h4>${TBL_CAP[t]}</h4>`:"")+rpTable(D[t],TBL_OPT[t])).join("")+
-      keys.map(k=>byK[k]?`${keys.length>1?`<h4>${esc(byK[k].title)}</h4>`:""}<div class="rp-text" id="cm-${k}" contenteditable="true" spellcheck="false" aria-label="${esc(byK[k].title)} 문안"></div>`:"").join("")+`</section>`).join("")+
-    `<footer class="rp-foot"><b>붙임. 산출 기준</b><ul>${D.basis.map(b=>`<li>${esc(b)}</li>`).join("")}</ul></footer>`;
-  COMMENTS.forEach((c,i)=>{const el=$("cm-"+c.key);if(!el)return;el.textContent=c.text;el.oninput=()=>{COMMENTS[i].text=el.innerText.replace(/\n$/,"");};});
+  const tb=t=>rpTable(D[t],TBL_OPT[t]);
+  $("report").innerHTML=`<div class="rp-page" id="rpPage"><header class="rp-head"><div class="rp-title" id="rpTitle" contenteditable="true" spellcheck="false">${esc(D.title)}</div>
+    <table class="rp-meta"><tbody><tr><th>보고 기간</th><td>${esc(D.period)}</td><th>작성일</th><td>${esc(D.date)}</td></tr>
+      <tr><th>산출 대상</th><td>${esc(D.target)}</td><th>작성</th><td><span class="rp-edit" id="rpDept" contenteditable="true">${esc(RP_META.dept)}</span> <span class="rp-edit" id="rpAuthor" contenteditable="true" data-ph="작성자">${esc(RP_META.author)}</span></td></tr></tbody></table></header>`+
+    RP_SECTIONS.map(([h,tbls,keys])=>`<section class="rp-sec"><h2>${h}</h2>`+tbls.map(t=>t.includes("|")?`<div class="rp-two">${t.split("|").map(x=>`<div><h4>${TBL_CAP[x]}</h4>${tb(x)}</div>`).join("")}</div>`:`<div class="rp-wrap">${tb(t)}</div>`).join("")+
+      keys.map(k=>byK[k]?`<div class="rp-text" id="cm-${k}" contenteditable="true" spellcheck="false" aria-label="${esc(byK[k].title)} 문안"></div>`:"").join("")+`</section>`).join("")+
+    `<footer class="rp-foot">${esc(D.basis)}</footer></div>`;
+  COMMENTS.forEach((c,i)=>{const el=$("cm-"+c.key);if(!el)return;el.textContent=c.text;el.oninput=()=>{COMMENTS[i].text=el.innerText.replace(/\n$/,"");fitCheck();};});
   $("rpTitle").oninput=()=>{RP_META.title=$("rpTitle").innerText.trim();$("rpBarTitle").textContent=RP_META.title;};
-  $("rpDept").oninput=()=>{RP_META.dept=$("rpDept").innerText.trim();};$("rpAuthor").oninput=()=>{RP_META.author=$("rpAuthor").innerText.trim();};}
-function setComment(key,text){const i=COMMENTS.findIndex(c=>c.key===key);if(i<0)return;COMMENTS[i].text=text;const el=$("cm-"+key);if(el)el.textContent=text;}
+  $("rpDept").oninput=()=>{RP_META.dept=$("rpDept").innerText.trim();};$("rpAuthor").oninput=()=>{RP_META.author=$("rpAuthor").innerText.trim();};
+  fitCheck();}
+/* A4 한 장(인쇄 영역 180×265mm)에 들어가는지 화면에서 미리 잰다 */
+function fitCheck(){const pg=$("rpPage"),el=$("fitInfo");if(!pg||!el||$("viewReport").hidden)return;
+  const probe=document.createElement("div");probe.style.cssText="position:absolute;visibility:hidden;height:265mm";document.body.appendChild(probe);const lim=probe.offsetHeight;probe.remove();
+  const pad=parseFloat(getComputedStyle(pg).paddingTop)+parseFloat(getComputedStyle(pg).paddingBottom);const r=(pg.scrollHeight-pad)/lim;el.textContent=r<=1?`A4 1쪽 · ${Math.round(r*100)}% 사용`:`A4 1쪽을 ${Math.round((r-1)*100)}% 넘습니다 · 문장을 줄여 주세요`;el.className="chip "+(r<=1?"good":"crit");}
+function setComment(key,text){const i=COMMENTS.findIndex(c=>c.key===key);if(i<0)return;COMMENTS[i].text=text;const el=$("cm-"+key);if(el)el.textContent=text;fitCheck();}
 function commentPlain(){const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
-  return D.title+"\n"+D.meta.map(([k,v])=>`${k}: ${v}`).join("\n")+`\n작성 부서: ${RP_META.dept}${RP_META.author?` / 작성자: ${RP_META.author}`:""}\n\n`+
-    RP_SECTIONS.map(([h,,keys])=>h+"\n"+keys.map(k=>byK[k]?(keys.length>1?`[${byK[k].title}] `:"")+byK[k].text:"").join("\n")).join("\n\n");}
-function redraft(){if(!SEL){COMMENTS=[];$("report").innerHTML="";return;}COMMENTS=draftTopics();renderComments();}
+  return D.title+`\n보고 기간: ${D.period} / 산출 대상: ${D.target} / 작성일: ${D.date} / 작성: ${RP_META.dept}${RP_META.author?" "+RP_META.author:""}\n\n`+
+    RP_SECTIONS.map(([h,,keys])=>h+"\n"+keys.map(k=>byK[k]?byK[k].text:"").join("\n")).join("\n\n");}
+function redraft(){if(!SEL){COMMENTS=[];$("report").innerHTML="";return;}COMMENTS=composeReport(draftTopics());renderComments();}
 
 /* ---------- AI polish (sample capability) ---------- */
 let sampleFn=null,ctl=null;
@@ -854,7 +890,7 @@ $("btnAI").onclick=async()=>{
 규칙:
 - JSON 객체 하나만 출력. 키는 정확히 ${JSON.stringify(keys)} 이고 값은 해당 주제의 코멘트 문자열.
 - 주제: ${COMMENTS.map(c=>`${c.key}=${c.title}`).join(", ")}.
-- 각 값은 1~3문장(summary는 "- "로 시작하는 3~4줄, note는 특이사항과 "- 향후 조치:" 줄 포함), 보고서체(~임, ~함), 짧게. 주제 이름을 값 앞에 반복하지 말 것.
+- A4 한 장 보고서이므로 각 값은 1~2문장으로 짧게(summary는 "- "로 시작하는 3~4줄, note는 특이사항과 "- 향후 조치:" 줄 포함), 보고서체(~임, ~함), 짧게. 주제 이름을 값 앞에 반복하지 말 것.
 - 숫자는 아래 데이터와 기준 문안에 있는 값만 그대로 쓰고 새로 계산하거나 지어내지 말 것.
 - 기준 미달·초과, 전월 대비 큰 변동, 원인 확인이 필요한 채널·심사자를 우선 짚을 것.
 
@@ -998,27 +1034,34 @@ async function saveBlob(name,blob,mime){
 $("btnXlsx2").onclick=()=>$("btnXlsx").click();
 function buildDocx(){
   const d=window.docx;const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
-  const FONT="Malgun Gothic";const B={style:d.BorderStyle.SINGLE,size:4,color:"999999"};const BR={top:B,bottom:B,left:B,right:B};
-  const P=(text,o={})=>new d.Paragraph({spacing:{after:o.after??80,line:300},children:[new d.TextRun({text,font:FONT,size:o.size||20,bold:o.bold,color:o.color})]});
-  const cell=(t,{h=false,n=false,bad=false,good=false,w}={})=>new d.TableCell({borders:BR,width:w?{size:w,type:d.WidthType.DXA}:undefined,
-    shading:h?{type:d.ShadingType.CLEAR,color:"auto",fill:"EEF1F3"}:undefined,margins:{top:40,bottom:40,left:90,right:90},
-    children:[new d.Paragraph({alignment:h?d.AlignmentType.CENTER:n?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:String(t),font:FONT,size:18,bold:h||bad,color:bad?"A42020":good?"1E6B3A":undefined})]})]});
-  const table=(rows,{judge=-1,tot=false}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
-    rows:rows.map((r,ri)=>new d.TableRow({tableHeader:ri===0,children:r.map((c,ci)=>cell(c,{h:ri===0,n:ri>0&&ci>0&&tdN(c)==="n",bad:ci===judge&&(c==="미달"||c==="초과"),good:ci===judge&&(c==="충족"||c==="이내")}))}))});
-  const kids=[P("월마감 보고",{size:18,color:"666666"}),P(D.title,{size:32,bold:true,after:160}),
-    new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:D.meta.concat([["작성 부서",RP_META.dept||"-"],["작성자",RP_META.author||"-"]]).map(([k,v])=>new d.TableRow({children:[cell(k,{h:true,w:1900}),cell(v)]}))}),P("",{after:120})];
-  RP_SECTIONS.forEach(([h,tbls,keys])=>{kids.push(P(h,{size:24,bold:true,after:100}));
-    tbls.forEach(t=>{if(TBL_CAP[t])kids.push(P(TBL_CAP[t],{size:19,bold:true,color:"444444"}));kids.push(table(D[t],TBL_OPT[t]));kids.push(P("",{after:60}));});
-    keys.forEach(k=>{const c=byK[k];if(!c)return;if(keys.length>1)kids.push(P(c.title,{size:19,bold:true,color:"444444"}));String(c.text||"").split("\n").forEach(line=>kids.push(P(line)));});
-    kids.push(P("",{after:120}));});
-  kids.push(P("붙임. 산출 기준",{size:19,bold:true}));D.basis.forEach(b=>kids.push(P("· "+b,{size:18,color:"444444"})));
-  return new d.Document({creator:RP_META.dept||"계약심사부",title:D.title,sections:[{properties:{page:{margin:{top:1000,bottom:1000,left:1000,right:1000}}},children:kids}]});}
+  const FONT="Malgun Gothic";const B={style:d.BorderStyle.SINGLE,size:4,color:"999999"},NB={style:d.BorderStyle.NONE,size:0,color:"FFFFFF"};
+  const BR={top:B,bottom:B,left:B,right:B},NBR={top:NB,bottom:NB,left:NB,right:NB};
+  const P=(text,o={})=>new d.Paragraph({spacing:{after:o.after??40,before:o.before??0,line:o.line??260},children:[new d.TextRun({text,font:FONT,size:o.size||18,bold:o.bold,color:o.color})]});
+  const cell=(t,{h=false,n=false,bad=false,good=false,w,sz=16}={})=>new d.TableCell({borders:BR,width:w?{size:w,type:d.WidthType.DXA}:undefined,
+    shading:h?{type:d.ShadingType.CLEAR,color:"auto",fill:"EEF1F3"}:undefined,margins:{top:20,bottom:20,left:60,right:60},
+    children:[new d.Paragraph({alignment:h?d.AlignmentType.CENTER:n?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:String(t),font:FONT,size:sz,bold:h||bad,color:bad?"A42020":good?"1E6B3A":undefined})]})]});
+  const table=(rows,{judge=-1,tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
+    rows:rows.map((r,ri)=>new d.TableRow({children:r.map((c,ci)=>cell(c,{sz,h:ri===0||(ci===0&&rows===D.reviewer),n:ri>0&&ci>0&&tdN(c)==="n",bad:ci===judge&&(c==="미달"||c==="초과"),good:ci===judge&&(c==="충족"||c==="이내")}))}))});
+  const kids=[P(D.title,{size:30,bold:true,after:80}),
+    new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
+      new d.TableRow({children:[cell("보고 기간",{h:true,w:1300}),cell(D.period),cell("작성일",{h:true,w:1100}),cell(D.date)]}),
+      new d.TableRow({children:[cell("산출 대상",{h:true,w:1300}),cell(D.target),cell("작성",{h:true,w:1100}),cell(`${RP_META.dept||""} ${RP_META.author||""}`.trim()||"-")]})]})];
+  RP_SECTIONS.forEach(([h,tbls,keys])=>{kids.push(P(h,{size:21,bold:true,before:140,after:50}));
+    tbls.forEach(t=>{
+      if(t.includes("|")){const [a,b]=t.split("|");
+        kids.push(new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[new d.TableRow({children:[a,b].map((x,i)=>new d.TableCell({borders:NBR,width:{size:50,type:d.WidthType.PERCENTAGE},
+          margins:{left:i?80:0,right:i?0:80},children:[P(TBL_CAP[x],{size:16,bold:true,color:"444444",after:20}),table(D[x],TBL_OPT[x]),P("",{after:0})]}))})]}));}
+      else kids.push(table(D[t],{...TBL_OPT[t],sz:t==="reviewer"?14:16}));
+      kids.push(P("",{after:30}));});
+    keys.forEach(k=>{const c=byK[k];if(!c)return;String(c.text||"").split("\n").forEach(line=>kids.push(P(line)));});});
+  kids.push(P(D.basis,{size:14,color:"555555",before:160}));
+  return new d.Document({creator:RP_META.dept||"계약심사부",title:D.title,sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:850,bottom:850,left:850,right:850}}},children:kids}]});}
 $("btnDocx").onclick=async()=>{if(!SEL)return;if(!window.docx){toast("Word 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.");return;}
   try{const blob=await window.docx.Packer.toBlob(buildDocx());await saveBlob(`${SEL}_신계약심사_월마감보고서.docx`,blob,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");}
   catch(e){toast("Word 파일을 만들지 못했습니다: "+(e.message||e));}};
 $("btnPrint").onclick=()=>window.print();
 function showTab(t){const rp=t==="report";$("viewCalc").hidden=rp;$("viewReport").hidden=!rp;$("tabCalc").setAttribute("aria-selected",String(!rp));$("tabReport").setAttribute("aria-selected",String(rp));
-  try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);}
+  try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);if(rp)requestAnimationFrame(fitCheck);}
 $("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("btnGoReport").onclick=()=>showTab("report");
 $("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
 $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
