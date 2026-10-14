@@ -151,6 +151,24 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 @media (max-width:560px){.wrap{padding-inline:16px}.cards,.uploads{grid-template-columns:1fr}.chk-sum{grid-template-columns:repeat(2,minmax(0,1fr))}section.blk{padding:16px}.top h1{font-size:22px}dl.defs{grid-template-columns:1fr;gap:2px 0}dl.defs dd{margin-bottom:8px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+<style>
+select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
+.monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.monthpick select{font-weight:600}
+table.rules tbody tr{cursor:pointer}
+table.rules tbody tr:hover td{background:var(--accent-soft)}
+table.rules tbody tr[aria-selected="true"] td{background:var(--accent-soft);font-weight:600}
+td.zero{color:var(--ink-3)}
+.recon{font-size:13px;border-radius:6px;padding:9px 12px;background:var(--paper);border:1px solid var(--line-2)}
+.recon b{font-variant-numeric:tabular-nums}
+.recon.good{background:var(--good-bg);color:var(--good);border-color:transparent}
+.recon.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
+.grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.uploads.single{grid-template-columns:minmax(0,1fr) auto}
+@media (max-width:900px){.uploads.single{grid-template-columns:1fr}}
+.form select{font:inherit;padding:6px 8px}
+.form input[type=text]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
+</style>
 
 <div class="wrap">
   <header class="top">
@@ -158,23 +176,20 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
       <div class="eyebrow">계약심사부 · 월 마감</div>
       <h1>신계약 심사지표 산출기</h1>
     </div>
-    <div class="meta" id="meta"></div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <label class="monthpick" for="selMonth">마감월 <select id="selMonth"></select></label>
+      <div class="meta" id="meta"></div>
+    </div>
   </header>
 
   <div class="banner" id="banner" hidden></div>
 
-  <div class="uploads">
-    <label class="drop" id="dropCur" for="fileCur">
-      <span class="lbl">당월 마감 데이터</span>
-      <span class="sub">.xlsx · .xls · .csv — 증번, 계약일자, 채널, 최초·실제심사자, 계약상태, 자동심사결과, 심사시작일, 최초심사일, 특별조건부1</span>
-      <span class="fn" id="fnCur"></span>
-      <input type="file" id="fileCur" accept=".xlsx,.xls,.csv">
-    </label>
-    <label class="drop" id="dropPrev" for="filePrev">
-      <span class="lbl">전월 마감 데이터 <span style="font-weight:400;color:var(--ink-3)">(선택)</span></span>
-      <span class="sub">같은 양식. 넣으면 전월 대비 증감을 함께 계산합니다.</span>
-      <span class="fn" id="fnPrev"></span>
-      <input type="file" id="filePrev" accept=".xlsx,.xls,.csv">
+  <div class="uploads single">
+    <label class="drop" id="drop" for="fileIn">
+      <span class="lbl">신계약 마감 데이터 올리기</span>
+      <span class="sub">.xlsx · .xls · .csv · 여러 파일 가능. 증번, 계약일자, 채널, 최초심사자, 실제심사자, 계약상태, 자동심사결과, 심사시작일, 최초심사일, 특별조건부1 열이 있는 시트를 찾아 읽습니다. 마감월은 계약일자의 연월로 나누고, 고른 달의 바로 전 달과 비교합니다. 같은 파일에 '공휴일'·'기준표' 시트가 있으면 함께 반영합니다.</span>
+      <span class="fn" id="fnIn"></span>
+      <input type="file" id="fileIn" accept=".xlsx,.xls,.csv" multiple>
     </label>
     <div class="side-actions">
       <button id="btnSample" type="button">예시 데이터 불러오기</button>
@@ -189,20 +204,23 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
       <span class="hint" id="metricHint"></span>
     </div>
     <div class="cards" id="cards"></div>
-    <div class="grid2">
-      <div><h3>채널별</h3><div class="tbl"><table id="tblCh"></table></div></div>
-      <div><h3>심사결과 통계</h3><div class="tbl"><table id="tblSt"></table></div></div>
+    <div class="grid2 even">
+      <div><h3>채널별 처리 건수</h3><div class="tbl"><table id="tblCh"></table></div></div>
+      <div><h3>심사결과 통계 <span style="font-weight:400;color:var(--ink-3)">(미결 제외)</span></h3><div class="tbl"><table id="tblSt"></table></div></div>
     </div>
-    <div><h3 style="margin-bottom:8px">심사자별</h3><div class="tbl"><table id="tblRv"></table></div></div>
+    <div><h3 style="margin-bottom:8px">실제심사자별 처리 건수</h3><div class="tbl"><table id="tblRv"></table></div></div>
+    <div><h3 style="margin-bottom:8px">월별 요약</h3><div class="tbl"><table id="tblMonths"></table></div></div>
   </section>
 
   <section class="blk" id="secCheck">
     <div class="blk-h">
       <h2><span class="step">②</span>데이터 점검</h2>
-      <span class="hint">공란, 날짜 순서, 상태 불일치를 행 단위로 확인합니다. 오류 행은 위 지표 산출에서 빠집니다.</span>
+      <span class="hint">전체 행 기준. 오류가 하나라도 있는 행은 위 지표에서 빠지고, 경고는 지표에 포함한 채 목록으로 보여줍니다.</span>
     </div>
     <div class="chk-sum" id="chkSum"></div>
-    <div class="chips" id="chkTypes"></div>
+    <div class="recon" id="recon" hidden></div>
+    <div class="tbl"><table class="rules" id="tblRules"></table></div>
+    <div class="blk-h"><h3 id="detailTitle">점검 상세</h3><span class="hint">규칙 행을 누르면 해당 건만 봅니다.</span></div>
     <div class="tbl scroll"><table id="tblIssues"></table></div>
   </section>
 
@@ -227,23 +245,28 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
     <summary>산출 기준 설정</summary>
     <div class="in">
       <div class="form">
-        <label>3일이내 터치율 목표 (% 이상)<input type="number" id="sTouch" step="0.5" min="0" max="100"></label>
-        <label>터치 기준 영업일 (일 이내)<input type="number" id="sDays" step="1" min="0" max="30"></label>
+        <label>3일 기준 (경과일수 N일 이내)<input type="number" id="sDays" step="1" min="0" max="30"></label>
+        <label>일수 기준<select id="sMode"><option value="영업일">영업일 (주말·공휴일 제외)</option><option value="달력일">달력일</option></select></label>
+        <label class="ck"><input type="checkbox" id="sPend"> 처리 건수에 미결 포함</label>
+        <label>허용 채널 (쉼표로 구분)<input type="text" id="sCh"></label>
+        <label>허용 계약상태 (쉼표로 구분)<input type="text" id="sSt"></label>
+      </div>
+      <div class="form">
+        <label>터치율 목표 (% 이상)<input type="number" id="sTouch" step="0.5" min="0" max="100"></label>
         <label>자동심사율 목표 (% 이상)<input type="number" id="sAuto" step="0.5" min="0" max="100"></label>
-        <label>거절률 상한 (% 이하)<input type="number" id="sRej" step="0.5" min="0" max="100"></label>
+        <label>반송률 상한 (% 이하)<input type="number" id="sRet" step="0.5" min="0" max="100"></label>
         <label>전월 대비 변동 표시 (비율, %p)<input type="number" id="sMomP" step="0.5" min="0"></label>
         <label>전월 대비 변동 표시 (건수, %)<input type="number" id="sMomC" step="1" min="0"></label>
-        <label class="ck"><input type="checkbox" id="sExcl"> 오류 행은 지표 산출에서 제외</label>
       </div>
       <label class="form" style="display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink-2)">공휴일 (영업일 계산에서 제외, 한 줄에 하나 · YYYY-MM-DD 이름)
         <textarea id="holi"></textarea>
       </label>
-      <div class="actions"><button id="btnApply" class="primary" type="button">기준 적용</button><span class="note">주말과 위 공휴일을 뺀 날을 영업일로 셉니다.</span></div>
+      <div class="actions"><button id="btnApply" class="primary" type="button">기준 적용</button><button id="btnReset" type="button">기본값으로</button><span class="note">목표값·변동 기준은 임시 기본값입니다. 부서 기준으로 바꿔 쓰세요.</span></div>
     </div>
   </details>
 
   <details>
-    <summary>지표 정의</summary>
+    <summary>지표 정의 · 점검 규칙</summary>
     <div class="in">
       <dl class="defs" id="defs"></dl>
     </div>
@@ -285,16 +308,23 @@ const DEFAULT_HOLIDAYS=`2025-01-01 신정
 2026-05-25 부처님오신날 대체
 2026-06-03 지방선거
 2026-06-06 현충일
-2026-08-17 광복절 대체
-2026-09-24 추석
+2026-08-15 광복절
+2026-08-17 광복절 대체공휴일
+2026-09-24 추석 연휴
 2026-09-25 추석
-2026-10-05 개천절 대체
+2026-09-26 추석 연휴
+2026-10-03 개천절
+2026-10-05 개천절 대체공휴일
 2026-10-09 한글날
 2026-12-25 성탄절`;
-const S={touchTarget:90,touchDays:3,autoTarget:45,rejectMax:5,momP:3,momC:10,excl:true,holidays:DEFAULT_HOLIDAYS};
-try{const saved=JSON.parse(localStorage.getItem("uwm-settings")||"null");if(saved)Object.assign(S,saved);}catch(e){}
+const DEFAULTS={touchDays:3,dayMode:"영업일",inclPending:false,channels:"GA, 전속, 방카, TM",statuses:"정상, 반송, 청철, 미결",
+  touchTarget:90,autoTarget:50,returnMax:15,momP:3,momC:10,holidays:DEFAULT_HOLIDAYS};
+const S=Object.assign({},DEFAULTS);
+const LS="uwm-settings-v2";
+try{const saved=JSON.parse(localStorage.getItem(LS)||"null");if(saved)Object.assign(S,saved);}catch(e){}
 let HSET=new Set();
 function buildHolidays(){HSET=new Set();S.holidays.split(/\n/).forEach(l=>{const p=parseDate(l.trim().slice(0,10));if(p.ok)HSET.add(p.dn);});}
+const listOf=s=>String(s||"").split(/[,\n]/).map(x=>x.trim()).filter(Boolean);
 
 /* ---------- dates & business days ---------- */
 function ymd(y,m,d){const t=Date.UTC(y,m-1,d);const dt=new Date(t);
@@ -311,278 +341,328 @@ function parseDate(v){
   const m=s.match(/^(\d{4})\s*[-./년]?\s*(\d{1,2})\s*[-./월]?\s*(\d{1,2})/);
   if(!m)return{bad:true};return ymd(+m[1],+m[2],+m[3]);}
 const fmt=dn=>{if(dn==null)return"";const d=new Date(dn*864e5);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");};
+const monthOf=dn=>{const d=new Date(dn*864e5);return String(d.getUTCFullYear()*100+d.getUTCMonth()+1);};
 const isBiz=d=>{const w=((d%7)+7+4)%7;return w!==0&&w!==6&&!HSET.has(d);};
-function bizDiff(a,b){if(b<a)return null;let c=0;for(let d=a+1;d<=b;d++)if(isBiz(d))c++;return c;}
-function addBiz(d,n){while(n>0){d++;if(isBiz(d))n--;}return d;}
+// 영업일 차이: a 다음날부터 b까지 중 영업일 수 (b<a면 음수로 셈)
+function bizDiff(a,b){if(b<a)return-bizDiff(b,a);let c=0;for(let d=a+1;d<=b;d++)if(isBiz(d))c++;return c;}
+const mLabel=m=>m?m.slice(0,4)+"."+m.slice(4):"-";
+const prevMonth=m=>{let y=+m.slice(0,4),mo=+m.slice(4)-1;if(mo===0){y--;mo=12;}return String(y*100+mo);};
 
-/* ---------- field mapping & normalising ---------- */
-const FIELDS=[["no","증번",["증번","증권번호","계약번호"]],["cdate","계약일자",["계약일자","계약일","청약일자","청약일"]],["ch","채널",["채널","판매채널"]],["r1","최초심사자",["최초심사자"]],["r2","실제심사자",["실제심사자","심사자"]],["st","계약상태",["계약상태","상태"]],["auto","자동심사결과",["자동심사결과","자동심사"]],["sdate","심사시작일",["심사시작일","심사시작일자"]],["fdate","최초심사일",["최초심사일","최초심사일자"]],["cond","특별조건부1",["특별조건부1","특별조건부","특별조건"]]];
-const STATUSES=["성립","조건부성립","거절","연기","청약철회","심사중"];
-const DONE=new Set(["성립","조건부성립","거절","연기","청약철회"]);
-function normStatus(v){const s=String(v||"").replace(/\s/g,"");if(!s)return"";
-  if(/조건/.test(s))return"조건부성립";if(/거절|사절/.test(s))return"거절";if(/연기/.test(s))return"연기";
-  if(/철회|취소/.test(s))return"청약철회";if(/심사중|미결|진행|보류/.test(s))return"심사중";if(/성립|정상|표준/.test(s))return"성립";return"?"+s;}
-function normAuto(v){const s=String(v||"").replace(/\s/g,"").toUpperCase();if(!s)return null;
-  if(/통과|승인|^Y$|PASS|적합$/.test(s)&&!/부적합/.test(s))return true;
-  if(/이관|부적합|수동|^N$|FAIL|미통과|거절/.test(s))return false;return undefined;}
-const isAutoName=v=>/^(AUTO|자동|SYSTEM|시스템)$/i.test(String(v||"").trim());
+/* ---------- columns ---------- */
+const FIELDS=[["no","증번",["증번","증권번호","계약번호"]],["cdate","계약일자",["계약일자","계약일","청약일자","청약일"]],["ch","채널",["채널","판매채널"]],["r1","최초심사자",["최초심사자"]],["r2","실제심사자",["실제심사자"]],["st","계약상태",["계약상태","상태"]],["auto","자동심사결과",["자동심사결과","자동심사"]],["sdate","심사시작일",["심사시작일","심사시작일자"]],["fdate","최초심사일",["최초심사일","최초심사일자"]],["cond","특별조건부1",["특별조건부1","특별조건부","특별조건"]]];
+const CHECK_COLS={inc:["지표포함(1=포함)","지표포함"],ecode:["점검_오류코드","오류코드"],wcode:["점검_경고코드","경고코드"],biz:["차이일수(영업일)"],cal:["차이일수(달력일)"]};
+const AUTO_VALUES=["가입가능","가입불가","조건부인수"];
+function autoKind(v){const s=String(v||"").replace(/\s/g,"");if(!s)return null;if(s==="인심사")return"manual";if(AUTO_VALUES.includes(s))return"auto";return"bad";}
+const isAutoName=v=>/^(자동심사|AUTO|자동|SYSTEM|시스템)$/i.test(String(v||"").trim());
 
-/* ---------- parse workbook into rows ---------- */
-function aoaFromFile(file){
-  return file.arrayBuffer().then(buf=>{
-    let wb;
-    if(/\.csv$/i.test(file.name)){
-      let text=new TextDecoder("utf-8").decode(buf);
-      if(text.includes("\uFFFD")){try{text=new TextDecoder("euc-kr").decode(buf);}catch(e){}}
-      wb=XLSX.read(text,{type:"string",raw:true});
-    }else wb=XLSX.read(buf,{type:"array"});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});
-  });}
+/* ---------- reading files ---------- */
+const keyOf=s=>String(s??"").replace(/\s/g,"");
+function headerRow(aoa){for(let i=0;i<Math.min(aoa.length,15);i++){if((aoa[i]||[]).some(c=>["증번","증권번호","계약번호"].includes(keyOf(c))))return i;}return-1;}
+async function readFile(file){
+  const buf=await file.arrayBuffer();let wb;
+  if(/\.csv$/i.test(file.name)){let text=new TextDecoder("utf-8").decode(buf);
+    if(text.includes("\uFFFD")){try{text=new TextDecoder("euc-kr").decode(buf);}catch(e){}}
+    wb=XLSX.read(text,{type:"string",raw:true});}
+  else wb=XLSX.read(buf,{type:"array"});
+  const toAoa=n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:""});
+  const names=wb.SheetNames.slice().sort((a,b)=>(/신계약/.test(b)?1:0)-(/신계약/.test(a)?1:0));
+  let data=null,sheet="";for(const n of names){const a=toAoa(n);if(headerRow(a)>=0){data=a;sheet=n;break;}}
+  if(!data)throw new Error("'증번' 열 제목이 있는 시트를 찾지 못했습니다. 첫 15행 안에 열 제목 행이 있어야 합니다.");
+  const out={aoa:data,sheet,holidays:[],criteria:null};
+  const hn=wb.SheetNames.find(n=>/공휴일/.test(n));
+  if(hn)toAoa(hn).forEach(r=>{const p=parseDate(r[0]);if(p.ok)out.holidays.push([p.dn,String(r[1]||"공휴일").trim()]);});
+  const cn=wb.SheetNames.find(n=>/기준표/.test(n));if(cn)out.criteria=parseCriteria(toAoa(cn));
+  return out;}
+function parseCriteria(a){const c={};const head=(a[0]||[]).map(keyOf);
+  a.forEach(r=>{const lab=String(r[0]||"");const v=r[2];
+    if(/미결\s*포함/.test(lab)&&v!=="")c.inclPending=/^Y/i.test(String(v).trim());
+    else if(/3일\s*기준/.test(lab)&&v!==""&&isFinite(+v))c.touchDays=+v;
+    else if(/일수\s*기준/.test(lab)&&v!=="")c.dayMode=/달력/.test(String(v))?"달력일":"영업일";});
+  const col=lab=>{const i=head.findIndex(h=>h.includes(lab));if(i<0)return null;const out=[];
+    for(let r=1;r<a.length;r++){const v=String(a[r][i]??"").trim();if(!v||v.startsWith("※"))break;out.push(v);}return out.length?out:null;};
+  const ch=col("허용채널"),st=col("허용계약상태");if(ch)c.channels=ch.join(", ");if(st)c.statuses=st.join(", ");
+  return Object.keys(c).length?c:null;}
 
-function buildDataset(aoa,name){
-  const key=s=>String(s||"").replace(/\s/g,"");
-  let h=-1;for(let i=0;i<Math.min(aoa.length,15);i++){if(aoa[i].some(c=>["증번","증권번호","계약번호"].includes(key(c)))){h=i;break;}}
-  if(h<0)throw new Error("첫 행 근처에서 '증번' 열 제목을 찾지 못했습니다. 첫 시트의 열 제목을 확인해 주세요.");
-  const head=aoa[h].map(key);const col={};const missing=[];
+function parseRows(aoa,fileName,startIdx){
+  const h=headerRow(aoa);const head=aoa[h].map(keyOf);const col={};const missing=[];
   FIELDS.forEach(([k,label,al])=>{const i=head.findIndex(x=>al.includes(x));if(i<0)missing.push(label);else col[k]=i;});
   if(missing.length)throw new Error("필수 열이 없습니다: "+missing.join(", ")+". 열 제목을 양식과 같게 맞춘 뒤 다시 올려 주세요.");
+  const cc={};Object.entries(CHECK_COLS).forEach(([k,al])=>{const i=head.findIndex(x=>al.map(keyOf).includes(x));if(i>=0)cc[k]=i;});
   const rows=[];
   for(let i=h+1;i<aoa.length;i++){const a=aoa[i];if(!a||a.every(c=>String(c).trim()===""))continue;
-    const r={line:i+1,raw:{}};FIELDS.forEach(([k])=>{const v=a[col[k]];r.raw[k]=v;});rows.push(r);}
-  if(!rows.length)throw new Error("열 제목 아래에 데이터 행이 없습니다.");
+    const r={line:i+1,file:fileName,raw:{}};FIELDS.forEach(([k])=>{r.raw[k]=a[col[k]];});
+    if(Object.keys(cc).length){r.ref={};Object.entries(cc).forEach(([k,ci])=>{r.ref[k]=a[ci];});}
+    rows.push(r);}
+  return rows;}
+function prepRows(rows){
   rows.forEach(r=>{const g=k=>String(r.raw[k]??"").trim();
-    r.no=g("no");r.ch=g("ch");r.r1=g("r1");r.r2=g("r2");r.stRaw=g("st");r.st=normStatus(r.stRaw);
-    r.autoRaw=g("auto");r.auto=normAuto(r.autoRaw);r.cond=g("cond");
+    r.no=g("no");r.ch=g("ch");r.r1=g("r1");r.r2=g("r2");r.st=g("st");r.autoRaw=g("auto").replace(/\s/g,"");r.ak=autoKind(r.autoRaw);r.cond=g("cond");
     r.pc=parseDate(r.raw.cdate);r.ps=parseDate(r.raw.sdate);r.pf=parseDate(r.raw.fdate);
-    r.cd=r.pc.ok?r.pc.dn:null;r.sd=r.ps.ok?r.ps.dn:null;r.fd=r.pf.ok?r.pf.dn:null;});
-  // closing month = most common contract month
-  const cnt={};rows.forEach(r=>{if(r.cd!=null){const d=new Date(r.cd*864e5);const k=d.getUTCFullYear()*100+d.getUTCMonth()+1;cnt[k]=(cnt[k]||0)+1;}});
-  const best=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
-  if(!best)throw new Error("계약일자를 날짜로 읽을 수 있는 행이 없습니다.");
-  const y=Math.floor(best/100),mo=best%100;
-  return{name,rows,y,mo,start:Date.UTC(y,mo-1,1)/864e5,end:Date.UTC(y,mo,0)/864e5};}
+    r.cd=r.pc.ok?r.pc.dn:null;r.sd=r.ps.ok?r.ps.dn:null;r.fd=r.pf.ok?r.pf.dn:null;r.month=r.cd!=null?monthOf(r.cd):null;});
+  return rows;}
 
 /* ---------- data checks ---------- */
-function check(ds){
-  const issues=[];const add=(r,sev,type,field,msg)=>{issues.push({line:r.line,no:r.no,sev,type,field,msg});if(sev==="오류")r.err=true;else r.warn=true;};
-  const seen=new Map();
-  ds.rows.forEach(r=>{r.err=false;r.warn=false;
-    if(!r.no)add(r,"오류","공란","증번","증번이 비어 있음");
-    else if(seen.has(r.no))add(r,"오류","중복","증번",`${seen.get(r.no)}행과 증번 중복`);
+const RULES=[
+  ["E1","오류","계약일자 > 최초심사일 (분배가 계약보다 앞섬)"],
+  ["E2","오류","최초심사일 > 심사시작일 (의견 등록이 분배보다 앞섬 → 경과일수 음수)"],
+  ["E3","오류","증번 중복 (두 번째 이후 행을 오류로 봄)"],
+  ["E4","오류","채널 또는 계약상태가 허용값이 아님 (오타 등)"],
+  ["E5","오류","증번·계약일자 공란 또는 날짜로 읽을 수 없는 값"],
+  ["W1","경고","최초심사일 공란 (3일이내로 처리)"],
+  ["W2","경고","자동심사결과가 인심사 또는 공란인데 심사시작일 공란"],
+  ["W3","경고","자동심사결과 공란 (자동심사율에서 제외)"],
+  ["W4","경고","처리 완료(미결 아님)인데 실제심사자 공란"],
+  ["W5","경고","반송·청철인데 특별조건부1 값 있음 (조건부인수에 미집계)"],
+  ["W6","경고","자동심사결과 가입불가인데 계약상태 정상"],
+  ["W7","경고","자동심사 건(가입가능·가입불가·조건부인수)인데 실제심사자가 사람"],
+  ["W8","경고","자동심사결과 인심사인데 실제심사자 '자동심사'"],
+  ["W9","경고","자동 조건부인수·계약상태 정상인데 특별조건부1 공란"],
+  ["W10","경고","자동심사결과가 정해진 값이 아님 (자동심사율에서 제외)"],
+];
+const RULE=Object.fromEntries(RULES.map(r=>[r[0],{sev:r[1],desc:r[2]}]));
+function check(rows){
+  const chSet=new Set(listOf(S.channels)),stSet=new Set(listOf(S.statuses));
+  const seen=new Map();const issues=[];
+  rows.forEach(r=>{r.codes=[];const add=(id,msg)=>{if(!r.codes.includes(id))r.codes.push(id);issues.push({row:r,id,msg});};
+    if(!r.no)add("E5","증번 공란");
+    else if(seen.has(r.no))add("E3",`${seen.get(r.no)}행과 증번 중복`);
     else seen.set(r.no,r.line);
-    [["pc","계약일자"],["ps","심사시작일"],["pf","최초심사일"]].forEach(([k,lab])=>{if(r[k].bad)add(r,"오류","날짜형식",lab,`날짜로 읽을 수 없음: "${r.raw[k==="pc"?"cdate":k==="ps"?"sdate":"fdate"]}"`);});
-    if(r.pc.empty)add(r,"오류","공란","계약일자","계약일자가 비어 있음");
-    if(!r.stRaw)add(r,"오류","공란","계약상태","계약상태가 비어 있음");
-    else if(r.st.startsWith("?"))add(r,"경고","상태불일치","계약상태",`정의되지 않은 상태값 "${r.stRaw}"`);
-    if(r.auto===null)add(r,"오류","공란","자동심사결과","자동심사결과가 비어 있음");
-    else if(r.auto===undefined)add(r,"경고","상태불일치","자동심사결과",`해석할 수 없는 값 "${r.autoRaw}"`);
-    if(!r.ch)add(r,"경고","공란","채널","채널이 비어 있음 (채널별 집계에서 '미입력'으로 분류)");
-    if(r.cd!=null&&(r.cd<ds.start||r.cd>ds.end))add(r,"경고","날짜순서","계약일자",`마감월(${ds.y}.${String(ds.mo).padStart(2,"0")}) 밖의 계약일자 ${fmt(r.cd)}`);
-    if(r.cd!=null&&r.sd!=null&&r.sd<r.cd)add(r,"오류","날짜순서","심사시작일",`심사시작일(${fmt(r.sd)})이 계약일자(${fmt(r.cd)})보다 빠름`);
-    if(r.sd!=null&&r.fd!=null&&r.fd<r.sd)add(r,"오류","날짜순서","최초심사일",`최초심사일(${fmt(r.fd)})이 심사시작일(${fmt(r.sd)})보다 빠름`);
-    if(r.fd!=null&&r.fd>ds.end)add(r,"경고","날짜순서","최초심사일",`최초심사일(${fmt(r.fd)})이 마감일 이후`);
-    if(r.auto===false){
-      if(r.ps.empty)add(r,"오류","공란","심사시작일","수동심사 건인데 심사시작일이 비어 있음");
-      if(!r.r1)add(r,"경고","공란","최초심사자","수동심사 건인데 최초심사자가 비어 있음");
-      if(DONE.has(r.st)&&r.pf.empty)add(r,"오류","상태불일치","최초심사일",`계약상태 '${r.st}'인데 최초심사일이 비어 있음`);
-      if(DONE.has(r.st)&&r.st!=="청약철회"&&!r.r2)add(r,"경고","공란","실제심사자",`계약상태 '${r.st}'인데 실제심사자가 비어 있음`);
-    }
-    if(r.auto===true&&["거절","연기","조건부성립"].includes(r.st))add(r,"경고","상태불일치","자동심사결과",`자동심사 통과 건인데 계약상태가 '${r.st}'`);
-    if(r.cond&&r.st&&r.st!=="조건부성립"&&r.st!=="심사중")add(r,"경고","상태불일치","특별조건부1",`특별조건부1('${r.cond}')이 있는데 계약상태가 '${r.st}'`);
-    if(r.st==="조건부성립"&&!r.cond)add(r,"경고","공란","특별조건부1","조건부성립인데 특별조건부1이 비어 있음");
+    if(r.pc.empty)add("E5","계약일자 공란");
+    [["pc","계약일자","cdate"],["ps","심사시작일","sdate"],["pf","최초심사일","fdate"]].forEach(([k,lab,rk])=>{if(r[k].bad)add("E5",`${lab}를 날짜로 읽을 수 없음: "${r.raw[rk]}"`);});
+    if(r.cd!=null&&r.fd!=null&&r.cd>r.fd)add("E1",`계약일자 ${fmt(r.cd)} > 최초심사일 ${fmt(r.fd)}`);
+    if(r.fd!=null&&r.sd!=null&&r.fd>r.sd)add("E2",`최초심사일 ${fmt(r.fd)} > 심사시작일 ${fmt(r.sd)}`);
+    if(!chSet.has(r.ch))add("E4",`채널 '${r.ch||"(공란)"}'은 허용값이 아님`);
+    if(!stSet.has(r.st))add("E4",`계약상태 '${r.st||"(공란)"}'은 허용값이 아님`);
+    if(r.pf.empty)add("W1","최초심사일 공란");
+    if((r.ak==="manual"||r.ak===null)&&r.ps.empty)add("W2",`자동심사결과 '${r.autoRaw||"(공란)"}'인데 심사시작일 공란`);
+    if(r.ak===null)add("W3","자동심사결과 공란");
+    if(r.ak==="bad")add("W10",`자동심사결과 '${r.autoRaw}'`);
+    if(r.st&&r.st!=="미결"&&!r.r2)add("W4",`계약상태 '${r.st}'인데 실제심사자 공란`);
+    if((r.st==="반송"||r.st==="청철")&&r.cond)add("W5",`${r.st}인데 특별조건부1 '${r.cond}'`);
+    if(r.autoRaw==="가입불가"&&r.st==="정상")add("W6","가입불가인데 정상");
+    if(r.ak==="auto"&&r.r2&&!isAutoName(r.r2))add("W7",`자동심사(${r.autoRaw}) 건인데 실제심사자 '${r.r2}'`);
+    if(r.ak==="manual"&&isAutoName(r.r2))add("W8","인심사 건인데 실제심사자 '자동심사'");
+    if(r.autoRaw==="조건부인수"&&r.st==="정상"&&!r.cond)add("W9","조건부인수·정상인데 특별조건부1 공란");
+    r.codes.sort((a,b)=>a[0]===b[0]?(+a.slice(1))-(+b.slice(1)):a<b?-1:1);
+    r.ecodes=r.codes.filter(c=>c[0]==="E");r.wcodes=r.codes.filter(c=>c[0]==="W");r.include=r.ecodes.length===0;
   });
-  ds.issues=issues;return ds;}
+  return issues;}
 
 /* ---------- metrics ---------- */
 const rate=(a,b)=>b?a/b:null;
-function compute(ds){
-  const rows=ds.rows.filter(r=>!(S.excl&&r.err));
-  const D=S.touchDays;
-  rows.forEach(r=>{r.lag=null;r.touch=null;
-    if(r.auto!==false||r.sd==null)return;
-    if(r.fd!=null&&r.fd>=r.sd){r.lag=bizDiff(r.sd,r.fd);r.touch=r.lag<=D?"Y":"N";}
-    else if(r.fd==null){const el=bizDiff(r.sd,ds.end);r.touch=(el!=null&&el<=D)?"보류":"N";}
-  });
-  const agg=list=>{
-    const o={total:list.length};
-    o.autoBase=list.filter(r=>r.auto===true||r.auto===false).length;
-    o.autoPass=list.filter(r=>r.auto===true).length;o.auto=rate(o.autoPass,o.autoBase);
-    o.tBase=list.filter(r=>r.touch==="Y"||r.touch==="N").length;o.tIn=list.filter(r=>r.touch==="Y").length;o.touch=rate(o.tIn,o.tBase);
-    o.tPend=list.filter(r=>r.touch==="보류").length;
-    const lags=list.filter(r=>r.lag!=null).map(r=>r.lag);o.avgLag=lags.length?lags.reduce((a,b)=>a+b,0)/lags.length:null;
-    o.done=list.filter(r=>DONE.has(r.st)).length;o.manualDone=list.filter(r=>DONE.has(r.st)&&r.auto===false).length;
-    o.pending=list.filter(r=>r.st==="심사중").length;
-    o.st={};STATUSES.concat(["기타"]).forEach(s=>o.st[s]=0);list.forEach(r=>{o.st[STATUSES.includes(r.st)?r.st:"기타"]++;});
-    const decided=o.st["성립"]+o.st["조건부성립"]+o.st["거절"]+o.st["연기"];o.decided=decided;
-    o.reject=rate(o.st["거절"],decided);o.condRate=rate(o.st["조건부성립"],decided);
-    return o;};
-  const m=agg(rows);m.used=rows.length;
-  const chOrder=["설계사","GA","TM","방카","CM"];const chs=[...new Set(rows.map(r=>r.ch||"미입력"))].sort((a,b)=>{const ia=chOrder.indexOf(a),ib=chOrder.indexOf(b);return(ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
-  m.byCh=chs.map(c=>({name:c,...agg(rows.filter(r=>(r.ch||"미입력")===c))}));
-  const names=[...new Set(rows.filter(r=>r.auto===false).flatMap(r=>[r.r1,r.r2]).filter(n=>n&&!isAutoName(n)))].sort((a,b)=>a.localeCompare(b,"ko"));
-  m.byRv=names.map(n=>{const first=rows.filter(r=>r.r1===n&&r.auto===false);const fin=rows.filter(r=>r.r2===n&&r.auto===false);const a=agg(first);
-    return{name:n,assigned:first.length,tBase:a.tBase,tIn:a.tIn,touch:a.touch,avgLag:a.avgLag,done:fin.filter(r=>DONE.has(r.st)).length,
-      reassigned:first.filter(r=>r.r2&&r.r2!==n).length,reject:rate(fin.filter(r=>r.st==="거절").length,fin.filter(r=>["성립","조건부성립","거절","연기"].includes(r.st)).length)};});
-  m.bizDays=0;for(let d=ds.start;d<=ds.end;d++)if(isBiz(d))m.bizDays++;
-  ds.m=m;return ds;}
+function setLags(rows){rows.forEach(r=>{
+  r.lagCal=r.fd!=null&&r.sd!=null?r.sd-r.fd:null;r.lagBiz=r.fd!=null&&r.sd!=null?bizDiff(r.fd,r.sd):null;
+  r.lag=S.dayMode==="달력일"?r.lagCal:r.lagBiz;r.within=r.lag==null||r.lag<=S.touchDays;});}
+function agg(list){
+  const o={n:list.length};
+  o.tIn=list.filter(r=>r.within).length;o.tOut=o.n-o.tIn;o.touch=rate(o.tIn,o.n);o.blankDates=list.filter(r=>r.lag==null).length;
+  const lags=list.filter(r=>r.lag!=null).map(r=>r.lag);o.avgLag=lags.length?lags.reduce((a,b)=>a+b,0)/lags.length:null;
+  o.auto=list.filter(r=>r.ak==="auto").length;o.manual=list.filter(r=>r.ak==="manual").length;o.autoBlank=o.n-o.auto-o.manual;o.autoRate=rate(o.auto,o.auto+o.manual);
+  const proc=list.filter(r=>S.inclPending||r.st!=="미결");o.proc=proc.length;
+  const cnt=f=>list.filter(f).length;
+  o.normal=cnt(r=>r.st==="정상");o.cond=cnt(r=>r.st==="정상"&&r.cond);o.std=o.normal-o.cond;o.ret=cnt(r=>r.st==="반송");o.wd=cnt(r=>r.st==="청철");o.pend=cnt(r=>r.st==="미결");
+  o.resTotal=o.normal+o.ret+o.wd;o.retRate=rate(o.ret,o.resTotal);o.condRate=rate(o.cond,o.normal);
+  o.byCh={};proc.forEach(r=>{o.byCh[r.ch]=(o.byCh[r.ch]||0)+1;});
+  o.byRv={};proc.forEach(r=>{const k=r.r2||"(공란)";o.byRv[k]=(o.byRv[k]||0)+1;});
+  o.comp={same:cnt(r=>r.r1&&r.r2&&r.r1===r.r2),diff:cnt(r=>r.r1&&r.r2&&r.r1!==r.r2),first:cnt(r=>r.r1&&!r.r2),actual:cnt(r=>!r.r1&&r.r2),none:cnt(r=>!r.r1&&!r.r2)};
+  return o;}
+
+/* ---------- state ---------- */
+let ROWS=[],ISSUES=[],MONTHS=[],SEL=null,SOURCE="",isSample=false,EXTRA_HOL=[],M={};
+const inMonth=m=>ROWS.filter(r=>r.include&&r.month===m);
+function recompute(fresh){
+  buildHolidays();EXTRA_HOL.forEach(([dn])=>HSET.add(dn));
+  ISSUES=check(ROWS);setLags(ROWS);
+  MONTHS=[...new Set(ROWS.filter(r=>r.include&&r.month).map(r=>r.month))].sort();
+  M={};MONTHS.forEach(m=>{M[m]=agg(inMonth(m));});
+  if(!SEL||!MONTHS.includes(SEL))SEL=MONTHS[MONTHS.length-1]||null;
+  $("selMonth").innerHTML=MONTHS.map(m=>`<option value="${m}"${m===SEL?" selected":""}>${mLabel(m)}</option>`).join("");
+  renderDefs();render();if(fresh)redraft();
+}
+$("selMonth").onchange=()=>{SEL=$("selMonth").value;render();redraft();$("sumNote").textContent=`${mLabel(SEL)} 기준으로 다시 산출했습니다.`;};
+const PREV=()=>{if(!SEL)return null;const p=prevMonth(SEL);return M[p]?p:null;};
 
 /* ---------- formatting ---------- */
 const nf=n=>n==null?"-":Number(n).toLocaleString("ko-KR");
 const pct=x=>x==null?"-":(x*100).toFixed(1)+"%";
-const ppTxt=(a,b)=>{if(a==null||b==null)return"-";const v=(a-b)*100;return(v>0?"+":v<0?"−":"±")+Math.abs(v).toFixed(1)+"%p";};
-const chgTxt=(a,b)=>{if(a==null||!b)return"-";const v=(a-b)/b*100;return(v>0?"+":v<0?"−":"±")+Math.abs(v).toFixed(1)+"%";};
-const ymTxt=ds=>`${ds.y}년 ${ds.mo}월`;
-
-/* ---------- state ---------- */
-let CUR=null,PREV=null,isSample=false;
+const sgn=v=>(v>0?"+":v<0?"−":"±");
+const ppTxt=(a,b)=>{if(a==null||b==null)return"-";const v=(a-b)*100;return sgn(+v.toFixed(1))+Math.abs(v).toFixed(1)+"%p";};
+const chgTxt=(a,b)=>{if(a==null||!b)return"-";const v=(a-b)/b*100;return sgn(+v.toFixed(1))+Math.abs(v).toFixed(1)+"%";};
+const dTxt=(a,b)=>{if(a==null||b==null)return"-";const v=a-b;return sgn(v)+nf(Math.abs(v));};
 
 function metricList(){
-  const m=CUR.m,p=PREV?.m;
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;
   return[
     {key:"touch",name:"3일이내 터치율",val:m.touch,prev:p?.touch,kind:"rate",good:"up",target:S.touchTarget/100,cmp:">=",
-      fx:`${nf(m.tIn)} / ${nf(m.tBase)}건`,targetTxt:`${S.touchTarget}% 이상`},
-    {key:"auto",name:"자동심사율",val:m.auto,prev:p?.auto,kind:"rate",good:"up",target:S.autoTarget/100,cmp:">=",
-      fx:`${nf(m.autoPass)} / ${nf(m.autoBase)}건`,targetTxt:`${S.autoTarget}% 이상`},
-    {key:"done",name:"신계약 처리건수",val:m.done,prev:p?.done,kind:"count",good:"none",
-      fx:`접수 ${nf(m.total)} · 수동처리 ${nf(m.manualDone)} · 심사중 ${nf(m.pending)}`,targetTxt:"—"},
-    {key:"reject",name:"거절률",val:m.reject,prev:p?.reject,kind:"rate",good:"down",target:S.rejectMax/100,cmp:"<=",
-      fx:`거절 ${nf(m.st["거절"])} / 심사결정 ${nf(m.decided)}건`,targetTxt:`${S.rejectMax}% 이하`},
+      fx:`${nf(m.tIn)} / ${nf(m.n)}건 · ${S.dayMode} ${S.touchDays}일`,targetTxt:`${S.touchTarget}% 이상`},
+    {key:"auto",name:"자동심사율",val:m.autoRate,prev:p?.autoRate,kind:"rate",good:"up",target:S.autoTarget/100,cmp:">=",
+      fx:`${nf(m.auto)} / ${nf(m.auto+m.manual)}건 · 공란 ${nf(m.autoBlank)} 제외`,targetTxt:`${S.autoTarget}% 이상`},
+    {key:"proc",name:"신계약 처리 건수",val:m.proc,prev:p?.proc,kind:"count",good:"none",
+      fx:`미결 ${S.inclPending?"포함":"제외"} · 미결 ${nf(m.pend)}건`,targetTxt:"—"},
+    {key:"ret",name:"반송률",val:m.retRate,prev:p?.retRate,kind:"rate",good:"down",target:S.returnMax/100,cmp:"<=",
+      fx:`반송 ${nf(m.ret)} / 심사결과 ${nf(m.resTotal)}건`,targetTxt:`${S.returnMax}% 이하`},
   ].map(x=>{
     x.ok=x.target==null||x.val==null?null:(x.cmp===">="?x.val>=x.target:x.val<=x.target);
     if(x.prev!=null&&x.val!=null){
       if(x.kind==="rate"){x.d=(x.val-x.prev)*100;x.dTxt=ppTxt(x.val,x.prev);x.big=Math.abs(x.d)>=S.momP;}
-      else{x.d=x.prev?(x.val-x.prev)/x.prev*100:null;x.dTxt=chgTxt(x.val,x.prev);x.big=x.d!=null&&Math.abs(x.d)>=S.momC;}
-    }
+      else{x.d=x.prev?(x.val-x.prev)/x.prev*100:null;x.dTxt=chgTxt(x.val,x.prev);x.big=x.d!=null&&Math.abs(x.d)>=S.momC;}}
     return x;});}
+const chList=()=>{const base=listOf(S.channels);const extra=new Set();MONTHS.forEach(mm=>Object.keys(M[mm].byCh).forEach(c=>{if(!base.includes(c))extra.add(c);}));return base.concat([...extra]);};
+const rvList=()=>{const s=new Set();MONTHS.forEach(mm=>Object.keys(M[mm].byRv).forEach(k=>s.add(k)));const a=[...s];
+  const people=a.filter(k=>k!=="(공란)"&&!isAutoName(k)).sort((x,y)=>x.localeCompare(y,"ko"));return people.concat(a.filter(k=>isAutoName(k)),a.filter(k=>k==="(공란)"));};
+function rvStats(name,mm){const list=inMonth(mm).filter(r=>(r.r2||"(공란)")===name);const a=agg(list);return a;}
+function chStats(ch,mm){return agg(inMonth(mm).filter(r=>r.ch===ch));}
 
 /* ---------- rendering ---------- */
 function render(){
-  if(!CUR)return;
-  const m=CUR.m;
-  $("meta").innerHTML=`<span>마감월 <b>${CUR.y}.${String(CUR.mo).padStart(2,"0")}</b></span><span>영업일 <b>${m.bizDays}일</b></span><span>당월 <b>${esc(CUR.name)}</b></span><span>전월 <b>${PREV?esc(PREV.name)+` (${PREV.y}.${String(PREV.mo).padStart(2,"0")})`:"없음"}</b></span>`;
+  if(!SEL){["cards","tblCh","tblSt","tblRv","tblMonths","meta"].forEach(id=>$(id).innerHTML="");}
+  const pk=PREV();
+  $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].n)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
   $("banner").hidden=!isSample;
-  $("banner").textContent="예시 데이터(가상)를 보여주고 있습니다. 2026년 9월·8월 신계약 마감 데이터를 지어낸 것으로, 점검 기능을 보여주려고 공란·날짜 역전·상태 불일치 같은 이상 데이터를 일부러 섞어 두었습니다. 실제 파일을 올리면 바로 바뀝니다.";
-  renderCheck();renderMetrics();
-}
-let issueFilter="all";
+  $("banner").textContent="예시 데이터를 보여주고 있습니다. 제공해 주신 가상 더미 워크북(신계약마감 시트 1,200건, 2026년 8·9월)과 그 기준표·공휴일을 그대로 넣었습니다. 실제 파일을 올리면 바로 바뀝니다.";
+  renderCheck();if(SEL)renderMetrics();}
+let ruleFilter=null;
 function renderCheck(){
-  const iss=CUR.issues;const errRows=CUR.rows.filter(r=>r.err).length;const warnN=iss.filter(i=>i.sev==="경고").length;const errN=iss.length-warnN;
-  $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(CUR.rows.length)}</span></div>
-  <div><span class="k">오류 ${nf(errN)}건 · 행</span><span class="v ${errRows?"crit":"good"}">${nf(errRows)}</span></div>
-  <div><span class="k">경고</span><span class="v ${warnN?"warn":"good"}">${nf(warnN)}</span></div>
-  <div><span class="k">지표 산출 반영 행</span><span class="v">${nf(CUR.m.used)}</span></div>`;
-  const types={};iss.forEach(i=>{const k=i.sev+"|"+i.type+"|"+i.field;types[k]=(types[k]||0)+1;});
-  const chips=[`<button type="button" class="chip" data-f="all" aria-pressed="${issueFilter==="all"}">전체 <b>${nf(iss.length)}</b></button>`,
-    `<button type="button" class="chip crit" data-f="오류" aria-pressed="${issueFilter==="오류"}">오류 <b>${nf(errN)}</b></button>`,
-    `<button type="button" class="chip warn" data-f="경고" aria-pressed="${issueFilter==="경고"}">경고 <b>${nf(warnN)}</b></button>`];
-  Object.entries(types).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const[s,t,f]=k.split("|");chips.push(`<span class="chip ${s==="오류"?"crit":"warn"}">${esc(t)} · ${esc(f)} <b>${v}</b></span>`);});
-  $("chkTypes").innerHTML=chips.join("");
-  $("chkTypes").querySelectorAll("button[data-f]").forEach(b=>b.onclick=()=>{issueFilter=b.dataset.f;renderCheck();});
-  const list=iss.filter(i=>issueFilter==="all"||i.sev===issueFilter).sort((a,b)=>a.line-b.line);
-  $("tblIssues").innerHTML=list.length?`<thead><tr><th class="n">행</th><th>증번</th><th>등급</th><th>유형</th><th>항목</th><th>내용</th></tr></thead><tbody>`+
-    list.map(i=>`<tr><td class="n">${i.line}</td><td class="mono">${esc(i.no||"(공란)")}</td><td><span class="sev ${i.sev==="오류"?"e":"w"}">${i.sev}</span></td><td>${esc(i.type)}</td><td>${esc(i.field)}</td><td class="txt">${esc(i.msg)}</td></tr>`).join("")+"</tbody>"
-    :`<tbody><tr><td style="padding:16px;color:var(--good)">발견된 이상이 없습니다. 모든 행을 지표 산출에 반영합니다.</td></tr></tbody>`;
-}
+  const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
+  $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(n)}</span></div>
+  <div><span class="k">오류로 제외된 행</span><span class="v ${exc?"crit":"good"}">${nf(exc)}</span></div>
+  <div><span class="k">경고 건수</span><span class="v ${wN?"warn":"good"}">${nf(wN)}</span></div>
+  <div><span class="k">지표 반영 행</span><span class="v">${nf(n-exc)}</span></div>`;
+  const per={};RULES.forEach(([id])=>per[id]=0);ROWS.forEach(r=>r.codes.forEach(c=>per[c]++));
+  $("tblRules").innerHTML=`<thead><tr><th>규칙</th><th>구분</th><th>처리</th><th>점검 규칙</th><th class="n">건수</th></tr></thead><tbody>`+
+    RULES.map(([id,sev,desc])=>`<tr data-id="${id}" tabindex="0" aria-selected="${ruleFilter===id}"><td class="mono">${id}</td><td><span class="sev ${sev==="오류"?"e":"w"}">${sev}</span></td><td>${sev==="오류"?"지표 제외":"지표 포함"}</td><td class="txt">${esc(desc)}</td><td class="n ${per[id]?(sev==="오류"?"cell-crit":"cell-warn"):"zero"}">${nf(per[id])}</td></tr>`).join("")+
+    `<tr class="total"><td colspan="4">제외 행 수 (오류 코드 1개 이상)</td><td class="n">${nf(exc)}</td></tr></tbody>`;
+  $("tblRules").querySelectorAll("tr[data-id]").forEach(tr=>{const go=()=>{ruleFilter=ruleFilter===tr.dataset.id?null:tr.dataset.id;renderCheck();};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
+  const list=ISSUES.filter(i=>!ruleFilter||i.id===ruleFilter);
+  $("detailTitle").textContent=ruleFilter?`점검 상세 · ${ruleFilter} (${nf(list.length)}건)`:`점검 상세 · 전체 (${nf(list.length)}건)`;
+  $("tblIssues").innerHTML=list.length?`<thead><tr><th class="n">행</th><th>증번</th><th>마감월</th><th>규칙</th><th>내용</th></tr></thead><tbody>`+
+    list.slice(0,800).map(i=>`<tr><td class="n">${i.row.line}</td><td class="mono">${esc(i.row.no||"(공란)")}</td><td>${mLabel(i.row.month)}</td><td><span class="sev ${i.id[0]==="E"?"e":"w"}">${i.id}</span></td><td class="txt">${esc(i.msg)}</td></tr>`).join("")+
+    (list.length>800?`<tr><td colspan="5" style="color:var(--ink-3)">앞의 800건만 보여줍니다. 전체 목록은 엑셀의 데이터점검 시트에 있습니다.</td></tr>`:"")+"</tbody>"
+    :`<tbody><tr><td style="padding:16px;color:var(--good)">해당하는 건이 없습니다.</td></tr></tbody>`;
+  renderRecon();}
+let RECON=null;
+function renderRecon(){
+  const withRef=ROWS.filter(r=>r.ref);RECON=null;
+  if(!withRef.length){$("recon").hidden=true;return;}
+  const norm=v=>String(v??"").trim().split(/\s+/).filter(Boolean).sort().join(" ");
+  const res={n:withRef.length,inc:[0,0],e:[0,0],w:[0,0],biz:[0,0],cal:[0,0],bad:[]};
+  withRef.forEach(r=>{const f=r.ref;let ok=true;
+    if(f.inc!==undefined&&f.inc!==""){res.inc[1]++;if((+f.inc===1)===r.include)res.inc[0]++;else ok=false;}
+    if(f.ecode!==undefined){res.e[1]++;if(norm(f.ecode)===norm(r.ecodes.join(" ")))res.e[0]++;else ok=false;}
+    if(f.wcode!==undefined){res.w[1]++;if(norm(f.wcode)===norm(r.wcodes.filter(c=>c!=="W10").join(" ")))res.w[0]++;else ok=false;}
+    if(f.biz!==undefined&&f.biz!==""&&r.lagBiz!=null){res.biz[1]++;if(+f.biz===r.lagBiz)res.biz[0]++;else ok=false;}
+    if(f.cal!==undefined&&f.cal!==""&&r.lagCal!=null){res.cal[1]++;if(+f.cal===r.lagCal)res.cal[0]++;else ok=false;}
+    if(!ok&&res.bad.length<5)res.bad.push(r.no||("행 "+r.line));});
+  RECON=res;
+  const parts=[["지표포함",res.inc],["오류코드",res.e],["경고코드",res.w],["영업일 차이",res.biz],["달력일 차이",res.cal]].filter(([,v])=>v[1]);
+  const allOk=parts.every(([,v])=>v[0]===v[1]);
+  $("recon").hidden=false;$("recon").className="recon "+(allOk?"good":"crit");
+  $("recon").innerHTML=`<b>파일의 검증용 계산열과 대조</b> · `+parts.map(([k,v])=>`${k} <b>${nf(v[0])}/${nf(v[1])}</b>`).join(" · ")+(allOk?" 모두 일치합니다.":` 불일치 예: ${esc(res.bad.join(", "))}. 기준표·공휴일 설정이 파일과 같은지 확인하세요.`);}
+
 function deltaHtml(x){
-  if(x.dTxt==null)return`<span class="delta flat">전월 자료 없음</span>`;
+  if(x.dTxt==null)return`<span class="delta flat">비교할 전월 없음</span>`;
   let cls="flat";if(x.d>0.0001)cls=x.good==="up"?"up":x.good==="down"?"down":"neutral";else if(x.d<-0.0001)cls=x.good==="up"?"down":x.good==="down"?"up":"neutral";
   const arrow=x.d>0.0001?"▲":x.d<-0.0001?"▼":"–";
   return`<span class="delta ${cls}">${arrow} ${x.dTxt}</span><span style="color:var(--ink-3)">전월 ${x.kind==="rate"?pct(x.prev):nf(x.prev)}</span>${x.big?`<span class="chip warn">변동 큼</span>`:""}`;}
-const ST_COLORS={"성립":"--st-ok","조건부성립":"--st-cond","거절":"--st-rej","연기":"--st-delay","청약철회":"--st-wd","심사중":"--st-pend","기타":"--ink-3"};
+const ST_COLORS=[["표준인수","--st-ok","std"],["조건부인수","--st-cond","cond"],["반송","--st-rej","ret"],["청철","--st-wd","wd"]];
 function renderMetrics(){
-  const m=CUR.m,p=PREV?.m;const ms=metricList();CUR.ms=ms;
-  $("metricHint").textContent=`${S.excl?"오류 행 제외":"오류 행 포함"} · 터치는 심사시작일 다음 영업일부터 최초심사일까지 ${S.touchDays}영업일 이내`;
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;const ms=metricList();
+  $("metricHint").textContent=`${mLabel(SEL)} · 오류 행 제외 · 경과일수 = 심사시작일 − 최초심사일 (${S.dayMode}, ${S.touchDays}일 이내, 날짜 공란은 3일이내)`;
   $("cards").innerHTML=ms.map(x=>{
     const cls=x.ok===null?"":x.ok?"good":"crit";
     const chip=x.ok===null?"":`<span class="chip ${x.ok?"good":"crit"}">${x.ok?"기준 충족":x.cmp==="<="?"기준 초과":"기준 미달"} · ${x.targetTxt}</span>`;
     let extra="";
-    if(x.key==="reject"){const tot=STATUSES.reduce((a,s)=>a+m.st[s],0)+m.st["기타"]||1;
-      extra=`<div class="bar" role="img" aria-label="심사결과 구성">${STATUSES.concat(["기타"]).filter(s=>m.st[s]).map(s=>`<span style="width:${m.st[s]/tot*100}%;background:var(${ST_COLORS[s]})" title="${s} ${m.st[s]}건"></span>`).join("")}</div>
-      <div class="legend">${STATUSES.filter(s=>m.st[s]).map(s=>`<span><i style="background:var(${ST_COLORS[s]})"></i>${s} ${pct(m.st[s]/tot)}</span>`).join("")}</div>`;}
+    if(x.key==="ret"){const tot=m.resTotal||1;
+      extra=`<div class="bar" role="img" aria-label="심사결과 구성">${ST_COLORS.filter(([, ,k])=>m[k]).map(([l,c,k])=>`<span style="width:${m[k]/tot*100}%;background:var(${c})" title="${l} ${m[k]}건"></span>`).join("")}</div>
+      <div class="legend">${ST_COLORS.map(([l,c,k])=>`<span><i style="background:var(${c})"></i>${l} ${nf(m[k])}</span>`).join("")}</div>`;}
     return`<div class="card ${cls}"><span class="nm">${x.name}</span>
       <span class="big">${x.kind==="rate"?(x.val==null?"-":(x.val*100).toFixed(1)+"<small>%</small>"):nf(x.val)+"<small>건</small>"}</span>
       <span class="fx">${x.fx}</span><div class="row">${deltaHtml(x)}</div>${chip?`<div class="row">${chip}</div>`:""}${extra}</div>`;}).join("");
-  // channel table
-  const pCh=p?Object.fromEntries(p.byCh.map(c=>[c.name,c])):{};
-  const tt=S.touchTarget/100,at=S.autoTarget/100,rj=S.rejectMax/100;
-  const cTouch=v=>v==null?"":v<tt?"cell-crit":"";const cAuto=v=>v==null?"":v<at?"cell-crit":"";const cRej=v=>v==null?"":v>rj?"cell-crit":"";
-  $("tblCh").innerHTML=`<thead><tr><th>채널</th><th class="n">접수</th><th class="n">처리</th><th class="n">자동심사율</th><th class="n">터치율</th><th class="n">전월比</th><th class="n">거절률</th></tr></thead><tbody>`+
-    m.byCh.map(c=>{const pc=pCh[c.name];return`<tr><td>${esc(c.name)}</td><td class="n">${nf(c.total)}</td><td class="n">${nf(c.done)}</td><td class="n ${cAuto(c.auto)}">${pct(c.auto)}</td><td class="n ${cTouch(c.touch)}">${pct(c.touch)}</td><td class="n">${pc?ppTxt(c.touch,pc.touch):"-"}</td><td class="n ${cRej(c.reject)}">${pct(c.reject)}</td></tr>`;}).join("")+
-    `<tr class="total"><td>합계</td><td class="n">${nf(m.total)}</td><td class="n">${nf(m.done)}</td><td class="n ${cAuto(m.auto)}">${pct(m.auto)}</td><td class="n ${cTouch(m.touch)}">${pct(m.touch)}</td><td class="n">${p?ppTxt(m.touch,p.touch):"-"}</td><td class="n ${cRej(m.reject)}">${pct(m.reject)}</td></tr></tbody>`;
-  // status table
-  const decided=m.decided;
-  $("tblSt").innerHTML=`<thead><tr><th>계약상태</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
-    STATUSES.concat(m.st["기타"]?["기타"]:[]).map(s=>{const v=m.st[s],pv=p?.st[s];const share=rate(v,m.total);const pshare=p?rate(pv,p.total):null;
-      const big=pshare!=null&&Math.abs((share-pshare)*100)>=S.momP;
-      return`<tr><td><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(${ST_COLORS[s]});margin-right:6px"></i>${s}</td><td class="n">${nf(v)}</td><td class="n">${pct(share)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${big?"cell-warn":""}">${p?ppTxt(share,pshare):"-"}</td></tr>`;}).join("")+
-    `<tr class="total"><td>합계</td><td class="n">${nf(m.total)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.total):"-"}</td><td class="n">${p?chgTxt(m.total,p.total):"-"}</td></tr></tbody>`;
-  // reviewer table
-  $("tblRv").innerHTML=m.byRv.length?`<thead><tr><th>심사자</th><th class="n">최초배정</th><th class="n">터치대상</th><th class="n">3일내</th><th class="n">터치율</th><th class="n">평균 경과(영업일)</th><th class="n">재배정</th><th class="n">처리(실제)</th><th class="n">거절률</th></tr></thead><tbody>`+
-    m.byRv.map(r=>`<tr><td>${esc(r.name)}</td><td class="n">${nf(r.assigned)}</td><td class="n">${nf(r.tBase)}</td><td class="n">${nf(r.tIn)}</td><td class="n ${cTouch(r.touch)}">${pct(r.touch)}</td><td class="n">${r.avgLag==null?"-":r.avgLag.toFixed(2)}</td><td class="n">${nf(r.reassigned)}</td><td class="n">${nf(r.done)}</td><td class="n ${cRej(r.reject)}">${pct(r.reject)}</td></tr>`).join("")+"</tbody>"
-    :`<tbody><tr><td style="padding:14px;color:var(--ink-3)">수동심사 건의 심사자 정보가 없습니다.</td></tr></tbody>`;
+  const tt=S.touchTarget/100,at=S.autoTarget/100;
+  const cT=v=>v!=null&&v<tt?"cell-crit":"",cA=v=>v!=null&&v<at?"cell-crit":"";
+  const bigC=(a,b)=>b&&Math.abs((a-b)/b*100)>=S.momC?"cell-warn":"";
+  // channels
+  const chs=chList();
+  $("tblCh").innerHTML=`<thead><tr><th>채널</th><th class="n">${mLabel(SEL)}</th><th class="n">전월</th><th class="n">증감</th><th class="n">터치율</th><th class="n">자동심사율</th></tr></thead><tbody>`+
+    chs.map(c=>{const v=m.byCh[c]||0,pv=p?(p.byCh[c]||0):null;const s=chStats(c,SEL);
+      return`<tr><td>${esc(c)}</td><td class="n">${nf(v)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${p?bigC(v,pv):""}">${p?chgTxt(v,pv):"-"}</td><td class="n ${cT(s.touch)}">${pct(s.touch)}</td><td class="n ${cA(s.autoRate)}">${pct(s.autoRate)}</td></tr>`;}).join("")+
+    `<tr class="total"><td>합계</td><td class="n">${nf(m.proc)}</td><td class="n">${p?nf(p.proc):"-"}</td><td class="n">${p?chgTxt(m.proc,p.proc):"-"}</td><td class="n ${cT(m.touch)}">${pct(m.touch)}</td><td class="n ${cA(m.autoRate)}">${pct(m.autoRate)}</td></tr></tbody>`;
+  // results
+  const rrow=(label,k,share)=>{const v=m[k],pv=p?p[k]:null;const sh=share?rate(v,m.resTotal):null,psh=share&&p?rate(pv,p.resTotal):null;
+    const big=psh!=null&&Math.abs((sh-psh)*100)>=S.momP;
+    return`<tr><td>${label}</td><td class="n">${nf(v)}</td><td class="n">${share?pct(sh):""}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${big?"cell-warn":""}">${p?(share?ppTxt(sh,psh):dTxt(v,pv)):"-"}</td></tr>`;};
+  $("tblSt").innerHTML=`<thead><tr><th>구분</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
+    rrow("정상인수","normal",true)+rrow("ㄴ 표준인수","std",true)+rrow("ㄴ 조건부인수","cond",true)+rrow("반송","ret",true)+rrow("청철","wd",true)+
+    `<tr class="total"><td>합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr>`+
+    rrow("(참고) 미결","pend",false)+"</tbody>";
+  // reviewers
+  const rvs=rvList();
+  $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th><th class="n">${mLabel(SEL)}</th><th class="n">전월</th><th class="n">증감</th><th class="n">터치율</th><th class="n">3일 초과</th><th class="n">평균 경과일</th></tr></thead><tbody>`+
+    rvs.map(k=>{const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;const s=rvStats(k,SEL);
+      return`<tr><td>${esc(k)}</td><td class="n">${nf(v)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${p?bigC(v,pv):""}">${p?chgTxt(v,pv):"-"}</td><td class="n ${s.n>=10?cT(s.touch):""}">${pct(s.touch)}</td><td class="n">${nf(s.tOut)}</td><td class="n">${s.avgLag==null?"-":s.avgLag.toFixed(2)}</td></tr>`;}).join("")+
+    `<tr class="total"><td>합계</td><td class="n">${nf(m.proc)}</td><td class="n">${p?nf(p.proc):"-"}</td><td class="n">${p?chgTxt(m.proc,p.proc):"-"}</td><td class="n">${pct(m.touch)}</td><td class="n">${nf(m.tOut)}</td><td class="n">${m.avgLag==null?"-":m.avgLag.toFixed(2)}</td></tr></tbody>`;
+  // months
+  $("tblMonths").innerHTML=`<thead><tr><th>마감월</th><th class="n">총 심사건수</th><th class="n">3일이내</th><th class="n">3일초과</th><th class="n">터치율</th><th class="n">자동심사</th><th class="n">인심사</th><th class="n">공란(제외)</th><th class="n">자동심사율</th><th class="n">처리 건수</th><th class="n">정상인수</th><th class="n">표준</th><th class="n">조건부</th><th class="n">반송</th><th class="n">청철</th><th class="n">미결</th><th class="n">재분배</th></tr></thead><tbody>`+
+    MONTHS.map(mm=>{const a=M[mm];return`<tr${mm===SEL?' style="font-weight:600"':""}><td>${mLabel(mm)}</td><td class="n">${nf(a.n)}</td><td class="n">${nf(a.tIn)}</td><td class="n">${nf(a.tOut)}</td><td class="n ${cT(a.touch)}">${pct(a.touch)}</td><td class="n">${nf(a.auto)}</td><td class="n">${nf(a.manual)}</td><td class="n">${nf(a.autoBlank)}</td><td class="n ${cA(a.autoRate)}">${pct(a.autoRate)}</td><td class="n">${nf(a.proc)}</td><td class="n">${nf(a.normal)}</td><td class="n">${nf(a.std)}</td><td class="n">${nf(a.cond)}</td><td class="n">${nf(a.ret)}</td><td class="n">${nf(a.wd)}</td><td class="n">${nf(a.pend)}</td><td class="n">${nf(a.comp.diff)}</td></tr>`;}).join("")+"</tbody>";
 }
 
 /* ---------- summary comment, one block per topic ---------- */
 let COMMENTS=[];
 function draftTopics(){
-  const m=CUR.m,p=PREV?.m,ms=CUR.ms;const by=k=>ms.find(x=>x.key===k);const T=[];
-  const tag=ok=>ok===null||ok===undefined?{cls:"",chip:""}:ok?{cls:"good",chip:"충족"}:{cls:"crit",chip:"미달"};
-  T.push({key:"overview",title:"접수·처리 현황",cls:"",chip:"",wide:false,
-    text:`접수 ${nf(m.total)}건${p?`(전월 대비 ${chgTxt(m.total,p.total)})`:""} 중 처리완료 ${nf(m.done)}건(수동심사 ${nf(m.manualDone)}건), 심사중 ${nf(m.pending)}건임.`});
-  const t=by("touch");let s=`3일이내 터치율 ${pct(m.touch)}로 목표(${t.targetTxt}) ${t.ok?"충족":"미달"}`+(p?`, 전월 대비 ${t.dTxt}`:"")+".";
-  const lowCh=m.byCh.filter(c=>c.tBase>=10&&c.touch!=null&&c.touch<S.touchTarget/100).sort((a,b)=>a.touch-b.touch);
-  if(lowCh.length)s+=` 목표 미달 채널은 ${lowCh.map(c=>`${c.name}(${pct(c.touch)})`).join(", ")}임.`;
-  if(m.tPend)s+=` 마감일 기준 ${S.touchDays}영업일이 지나지 않은 미터치 ${nf(m.tPend)}건은 판단 보류로 분모에서 제외함.`;
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null,ms=metricList();const by=k=>ms.find(x=>x.key===k);const T=[];
+  const tag=ok=>ok==null?{cls:"",chip:""}:ok?{cls:"good",chip:"충족"}:{cls:"crit",chip:"미달"};
+  const vs=p?`전월(${mLabel(pk)}) 대비`:"";
+  const chs=chList().filter(c=>m.byCh[c]);
+  T.push({key:"proc",title:"처리 현황",cls:"",chip:"",
+    text:`처리 ${nf(m.proc)}건${p?`(${vs} ${chgTxt(m.proc,p.proc)})`:""}, 미결 ${nf(m.pend)}건은 ${S.inclPending?"포함":"별도"}임. 채널별로 ${chs.map(c=>`${c} ${nf(m.byCh[c])}건`).join(", ")}.`});
+  const t=by("touch");let s=`3일이내 터치율 ${pct(m.touch)}(3일이내 ${nf(m.tIn)}건 / 총 ${nf(m.n)}건, ${S.dayMode} 기준)로 목표(${t.targetTxt}) ${t.ok?"충족":"미달"}`+(p?`, ${vs} ${t.dTxt}`:"")+`. 3일 초과 ${nf(m.tOut)}건.`;
+  const lowCh=chList().map(c=>({c,s:chStats(c,SEL)})).filter(x=>x.s.n>=20&&x.s.touch!=null&&x.s.touch<S.touchTarget/100).sort((a,b)=>a.s.touch-b.s.touch);
+  if(lowCh.length)s+=` 목표 미달 채널은 ${lowCh.map(x=>`${x.c}(${pct(x.s.touch)})`).join(", ")}임.`;
   T.push({key:"touch",title:"3일이내 터치율",...tag(t.ok),text:s});
-  const a=by("auto");s=`자동심사율 ${pct(m.auto)}로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, 전월 대비 ${a.dTxt}`:"")+".";
-  const lowA=m.byCh.filter(c=>c.autoBase>=10&&c.auto!=null&&c.auto<S.autoTarget/100).sort((x,y)=>x.auto-y.auto);
-  if(lowA.length)s+=` 목표 미달 채널은 ${lowA.map(c=>`${c.name}(${pct(c.auto)})`).join(", ")}임.`;
-  T.push({key:"auto",title:"자동심사율",...tag(a.ok),text:s});
-  const r=by("reject");const rt=tag(r.ok);if(r.ok===false)rt.chip="초과";
-  s=`심사결과는 성립 ${pct(rate(m.st["성립"],m.total))}, 조건부성립 ${pct(rate(m.st["조건부성립"],m.total))}, 거절 ${pct(rate(m.st["거절"],m.total))}, 연기 ${pct(rate(m.st["연기"],m.total))}임. 거절률(심사결정 대비) ${pct(m.reject)}로 기준(${r.targetTxt}) ${r.ok?"이내":"초과"}`+(p?`, 전월 대비 ${r.dTxt}`:"")+".";
-  const hiR=m.byCh.filter(c=>c.decided>=10&&c.reject!=null&&c.reject>S.rejectMax/100).sort((x,y)=>y.reject-x.reject);
-  if(hiR.length)s+=` 기준 초과 채널은 ${hiR.map(c=>`${c.name}(${pct(c.reject)})`).join(", ")}임.`;
-  T.push({key:"result",title:"심사결과·거절률",...rt,text:s});
-  const lowRv=m.byRv.filter(x=>x.tBase>=10&&x.touch!=null&&x.touch<S.touchTarget/100).sort((a,b)=>a.touch-b.touch);
-  const reas=m.byRv.reduce((n,x)=>n+x.reassigned,0);
-  T.push({key:"reviewer",title:"심사자별",cls:lowRv.length?"warn":m.byRv.length?"good":"",chip:lowRv.length?`확인 ${lowRv.length}명`:"",
-    text:!m.byRv.length?"수동심사 건의 심사자 정보 없음.":(lowRv.length?`터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.name}(${pct(x.touch)})`).join(", ")}임.`:`전 심사자 터치율 목표 충족.`)+(reas?` 최초·실제심사자가 다른 재배정 ${nf(reas)}건.`:"")});
+  const a=by("auto");T.push({key:"auto",title:"자동심사율",...tag(a.ok),
+    text:`자동심사율 ${pct(m.autoRate)}(자동심사 ${nf(m.auto)}건 / 자동+인심사 ${nf(m.auto+m.manual)}건)로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, ${vs} ${a.dTxt}`:"")+`. 자동심사결과 공란 ${nf(m.autoBlank)}건은 분모에서 제외함.`});
+  const r=by("ret");const rt=tag(r.ok);if(r.ok===false)rt.chip="초과";
+  T.push({key:"result",title:"심사결과",...rt,
+    text:`미결 제외 ${nf(m.resTotal)}건 중 정상인수 ${nf(m.normal)}건(표준 ${nf(m.std)}·조건부 ${nf(m.cond)}), 반송 ${nf(m.ret)}건, 청철 ${nf(m.wd)}건. 반송률 ${pct(m.retRate)}로 기준(${r.targetTxt}) ${r.ok?"이내":"초과"}`+(p?`, ${vs} ${r.dTxt}`:"")+`. 조건부인수 비중은 정상인수의 ${pct(m.condRate)}.`});
+  const people=rvList().filter(k=>k!=="(공란)"&&!isAutoName(k)&&m.byRv[k]);
+  const top=people.slice().sort((x,y)=>m.byRv[y]-m.byRv[x]).slice(0,3);
+  const lowRv=people.map(k=>({k,s:rvStats(k,SEL)})).filter(x=>x.s.n>=10&&x.s.touch<S.touchTarget/100).sort((a,b)=>a.s.touch-b.s.touch);
+  const autoN=Object.entries(m.byRv).filter(([k])=>isAutoName(k)).reduce((n,[,v])=>n+v,0);
+  T.push({key:"reviewer",title:"심사자별",cls:lowRv.length||m.byRv["(공란)"]?"warn":"good",chip:lowRv.length?`확인 ${lowRv.length}명`:m.byRv["(공란)"]?`공란 ${m.byRv["(공란)"]}건`:"",
+    text:`실제심사자 기준 처리는 ${top.map(k=>`${k} ${nf(m.byRv[k])}건`).join(", ")} 순이고, 자동심사 ${nf(autoN)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`+
+      (lowRv.length?` 터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}임.`:" 심사자별 터치율은 모두 목표 충족.")+` 최초심사자와 실제심사자가 다른 재분배 ${nf(m.comp.diff)}건.`});
   const big=ms.filter(x=>x.big);
   T.push({key:"mom",title:"전월 대비 변동",cls:!p?"":big.length?"warn":"good",chip:big.length?`변동 큼 ${big.length}`:"",
-    text:!p?"전월 마감 데이터가 없어 증감을 계산하지 않음.":big.length?`${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}로 변동 폭이 커 원인 확인 필요.`:`주요 지표 모두 기준 이내의 변동(비율 ${S.momP}%p, 건수 ${S.momC}% 미만).`});
-  const iss=CUR.issues;const eN=iss.filter(i=>i.sev==="오류").length,wN=iss.length-eN;
-  if(iss.length){const types={};iss.forEach(i=>{const k=`${i.field} ${i.type}`;types[k]=(types[k]||0)+1;});
-    const top=Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k} ${v}건`).join(", ");
-    s=`오류 ${nf(eN)}건(${nf(CUR.rows.filter(x=>x.err).length)}개 행${S.excl?", 산출 제외":""}), 경고 ${nf(wN)}건. 주요 유형은 ${top}이며 원천 데이터 보정 필요.`;}
-  else s="이상 없음. 전체 행을 산출에 반영함.";
-  T.push({key:"data",title:"데이터 점검",cls:eN?"crit":wN?"warn":"good",chip:eN?`오류 ${eN}`:wN?`경고 ${wN}`:"이상 없음",wide:true,text:s});
+    text:!p?`데이터에 ${mLabel(prevMonth(SEL))} 자료가 없어 증감을 계산하지 않음.`:big.length?`${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}로 변동 폭이 커 원인 확인 필요.`:`주요 지표 모두 변동 기준 이내(비율 ${S.momP}%p, 건수 ${S.momC}% 미만).`});
+  const per={};ROWS.forEach(rw=>rw.codes.forEach(c=>per[c]=(per[c]||0)+1));
+  const eTxt=RULES.filter(([id,sev])=>sev==="오류"&&per[id]).map(([id])=>`${id} ${per[id]}`).join(", ");
+  const wTop=RULES.filter(([id,sev])=>sev==="경고"&&per[id]).sort((x,y)=>per[y[0]]-per[x[0]]).slice(0,3).map(([id,,d])=>`${id} ${d.replace(/\s*\(.*\)$/,"")} ${per[id]}건`).join(", ");
+  const exc=ROWS.filter(rw=>!rw.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
+  T.push({key:"data",title:"데이터 점검",cls:exc?"crit":wN?"warn":"good",chip:exc?`제외 ${exc}행`:wN?`경고 ${wN}`:"이상 없음",wide:true,
+    text:`전체 ${nf(ROWS.length)}행 점검 결과 오류 ${nf(exc)}행${eTxt?`(${eTxt})`:""}은 지표에서 제외함. 경고 ${nf(wN)}건은 지표에 포함하되 확인 필요하며, 많은 순으로 ${wTop||"없음"}.`+
+      (RECON?` 파일의 검증용 계산열과 대조 결과 ${[RECON.inc,RECON.e,RECON.w].every(v=>v[0]===v[1])?"모두 일치":"불일치 있음"}.`:"")});
   return T;}
 function renderComments(){
-  $("comments").innerHTML=COMMENTS.map((c,i)=>`<div class="cmt ${c.cls}${c.wide?" wide":""}" id="cmt-${c.key}">
+  $("comments").innerHTML=COMMENTS.map((c,i)=>`<div class="cmt ${c.cls}${c.wide?" wide":""}">
     <div class="cmt-h"><label for="cm-${c.key}">${esc(c.title)}</label>${c.chip?`<span class="chip ${c.cls}">${esc(c.chip)}</span>`:""}</div>
-    <textarea id="cm-${c.key}" data-i="${i}" rows="3"></textarea></div>`).join("");
+    <textarea id="cm-${c.key}" rows="3"></textarea></div>`).join("");
   COMMENTS.forEach((c,i)=>{const ta=$("cm-"+c.key);ta.value=c.text;fit(ta);ta.oninput=()=>{COMMENTS[i].text=ta.value;fit(ta);};});}
 function fit(ta){ta.style.height="auto";ta.style.height=Math.max(64,ta.scrollHeight+2)+"px";}
 function setComment(key,text){const i=COMMENTS.findIndex(c=>c.key===key);if(i<0)return;COMMENTS[i].text=text;const ta=$("cm-"+key);if(ta){ta.value=text;fit(ta);}}
-function commentPlain(){return`■ ${ymTxt(CUR)} 신계약 심사지표 요약\n`+COMMENTS.map(c=>`- [${c.title}] ${c.text}`).join("\n");}
-function redraft(){COMMENTS=draftTopics();renderComments();}
+const ymTitle=()=>`■ ${SEL.slice(0,4)}년 ${+SEL.slice(4)}월 신계약 심사지표 요약`;
+function commentPlain(){return ymTitle()+"\n"+COMMENTS.map(c=>`- [${c.title}] ${c.text}`).join("\n");}
+function redraft(){if(!SEL){COMMENTS=[];$("comments").innerHTML="";return;}COMMENTS=draftTopics();renderComments();}
 
 /* ---------- AI polish (sample capability) ---------- */
 let sampleFn=null,ctl=null;
-async function initCaps(){
-  try{sampleFn=await window.claude?.use?.("sample");}catch(e){sampleFn=null;}
-  if(sampleFn)$("btnAI").hidden=false;
-}
+async function initCaps(){try{sampleFn=await window.claude?.use?.("sample");}catch(e){sampleFn=null;}if(sampleFn)$("btnAI").hidden=false;}
 $("btnAI").onclick=async()=>{
-  if(!sampleFn||!CUR)return;
-  const m=CUR.m,p=PREV?.m;
-  const facts={마감월:ymTxt(CUR),기준:{터치율목표:S.touchTarget+"%",터치영업일:S.touchDays,자동심사율목표:S.autoTarget+"%",거절률상한:S.rejectMax+"%"},
-    지표:CUR.ms.map(x=>({지표:x.name,당월:x.kind==="rate"?pct(x.val):x.val,전월:x.prev==null?null:(x.kind==="rate"?pct(x.prev):x.prev),증감:x.dTxt||null,기준충족:x.ok})),
-    접수:m.total,처리완료:m.done,심사중:m.pending,상태별건수:m.st,
-    채널별:m.byCh.map(c=>({채널:c.name,접수:c.total,터치율:pct(c.touch),자동심사율:pct(c.auto),거절률:pct(c.reject)})),
-    심사자별:m.byRv.map(r=>({심사자:r.name,터치율:pct(r.touch),처리:r.done})),
-    데이터점검:{오류:CUR.issues.filter(i=>i.sev==="오류").length,경고:CUR.issues.filter(i=>i.sev==="경고").length}};
+  if(!sampleFn||!SEL)return;
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;
+  const facts={마감월:mLabel(SEL),비교월:pk?mLabel(pk):null,기준:{일수기준:S.dayMode,기준일수:S.touchDays,터치율목표:S.touchTarget+"%",자동심사율목표:S.autoTarget+"%",반송률상한:S.returnMax+"%",처리건수미결:S.inclPending?"포함":"제외"},
+    지표:metricList().map(x=>({지표:x.name,당월:x.kind==="rate"?pct(x.val):x.val,전월:x.prev==null?null:(x.kind==="rate"?pct(x.prev):x.prev),증감:x.dTxt||null,기준충족:x.ok})),
+    채널별처리:m.byCh,실제심사자별처리:m.byRv,심사결과:{정상인수:m.normal,표준:m.std,조건부:m.cond,반송:m.ret,청철:m.wd,미결:m.pend},
+    전월:p?{처리:p.proc,채널별처리:p.byCh,심사결과:{정상인수:p.normal,반송:p.ret,청철:p.wd}}:null};
   const keys=COMMENTS.map(c=>c.key);
   const prompt=`당신은 보험사 계약심사부 지표 담당자입니다. 아래 월간 신계약 심사지표 산출 결과로 부서장 보고용 요약 코멘트를 주제별로 작성하세요.
 규칙:
@@ -611,7 +691,7 @@ ${JSON.stringify(facts)}`;
 };
 $("btnStop").onclick=()=>ctl?.abort();
 $("btnRedraft").onclick=()=>{redraft();$("sumNote").textContent="현재 지표로 주제별 기준 문안을 다시 만들었습니다.";};
-$("btnCopy").onclick=()=>{const t=commentPlain();const done=()=>toast("요약 코멘트 전체를 복사했습니다.");
+$("btnCopy").onclick=()=>{if(!SEL)return;const t=commentPlain();const done=()=>toast("요약 코멘트 전체를 복사했습니다.");
   const fallback=()=>{const ta=document.createElement("textarea");ta.value=t;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy");}catch(e){}ta.remove();ok?done():toast("복사하지 못했습니다. 각 칸에서 직접 복사해 주세요.");};
   try{navigator.clipboard.writeText(t).then(done,fallback);}catch(e){fallback();}};
 
@@ -619,7 +699,7 @@ $("btnCopy").onclick=()=>{const t=commentPlain();const done=()=>toast("요약 �
 const X={hdr:{fill:{fgColor:{rgb:"1D5B73"}},font:{bold:true,color:{rgb:"FFFFFF"}},alignment:{horizontal:"center",vertical:"center",wrapText:true}},
   good:{fill:{fgColor:{rgb:"E3F1E7"}},font:{color:{rgb:"1E6B3A"},bold:true}},crit:{fill:{fgColor:{rgb:"FBE4E1"}},font:{color:{rgb:"A42020"},bold:true}},
   warn:{fill:{fgColor:{rgb:"FBF0D6"}},font:{color:{rgb:"8A5A00"},bold:true}},tot:{font:{bold:true},fill:{fgColor:{rgb:"EEF2F4"}}},
-  title:{font:{bold:true,sz:14}},sub:{font:{color:{rgb:"5A6A74"}}}};
+  title:{font:{bold:true,sz:14}},sub:{font:{color:{rgb:"5A6A74"}}},sec:{font:{bold:true,sz:12}}};
 const BORDER={top:{style:"thin",color:{rgb:"D9E0E4"}},bottom:{style:"thin",color:{rgb:"D9E0E4"}},left:{style:"thin",color:{rgb:"D9E0E4"}},right:{style:"thin",color:{rgb:"D9E0E4"}}};
 function sheet(rows,widths,{border=true,from=0}={}){
   const ws={};let maxC=0;
@@ -628,7 +708,7 @@ function sheet(rows,widths,{border=true,from=0}={}){
     if(o.v===undefined||o.v===null)o.v="";
     const cell=typeof o.v==="number"&&isFinite(o.v)?{t:"n",v:o.v}:{t:"s",v:String(o.v)};
     if(o.z)cell.z=o.z;
-    let s=Object.assign({},o.s||{});if(border&&r>=from&&!o.nob)s.border=BORDER;
+    let s=Object.assign({},o.s||{});if(border&&r>=from&&!o.nob&&!(rows[r].length===1&&o.s&&(o.s===X.sec||o.s===X.title||o.s===X.sub)))s.border=BORDER;
     if(typeof o.v==="number")s.alignment=Object.assign({horizontal:"right"},s.alignment||{});
     cell.s=s;ws[XLSX.utils.encode_cell({r,c:ci})]=cell;});});
   ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length-1,0),c:Math.max(maxC-1,0)}});
@@ -636,67 +716,82 @@ function sheet(rows,widths,{border=true,from=0}={}){
 const H=arr=>arr.map(v=>({v,s:X.hdr}));
 const R=(v,s)=>({v:v==null?"-":v,z:"0.0%",s});
 const numOr=v=>v==null?"-":v;
+const SEC=t=>[{v:t,s:X.sec,nob:true}];
 function buildWorkbook(){
-  const m=CUR.m,p=PREV?.m,ms=metricList();const wb=XLSX.utils.book_new();
-  const tt=S.touchTarget/100,at=S.autoTarget/100,rj=S.rejectMax/100;
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null,ms=metricList();const wb=XLSX.utils.book_new();
+  const tt=S.touchTarget/100,at=S.autoTarget/100,rm=S.returnMax/100;
   const fl=(v,t,cmp)=>v==null?undefined:((cmp===">="?v>=t:v<=t)?undefined:X.crit);
-  // 1. 요약
-  const sum=[[{v:`${ymTxt(CUR)} 신계약 심사지표`,s:X.title,nob:true}],[{v:`당월 ${CUR.name} · 전월 ${PREV?PREV.name:"없음"} · 영업일 ${m.bizDays}일 · ${S.excl?"오류 행 제외":"오류 행 포함"} 산출`,s:X.sub,nob:true}],[],
-    H(["지표","당월","전월","증감","기준","판정","산출식"])];
+  const exc=ROWS.filter(r=>!r.include).length;
+  // 요약
+  const sum=[[{v:`${SEL.slice(0,4)}년 ${+SEL.slice(4)}월 신계약 심사지표`,s:X.title,nob:true}],
+    [{v:`파일 ${SOURCE} · 비교월 ${pk?mLabel(pk):"없음"} · 경과일수 ${S.dayMode} ${S.touchDays}일 · 오류 ${exc}행 제외`,s:X.sub,nob:true}],[],
+    H(["지표",mLabel(SEL),pk?mLabel(pk):"전월","증감","기준","판정","산출식"])];
   ms.forEach(x=>{const isR=x.kind==="rate";
     sum.push([x.name,isR?R(x.val):x.val,isR?R(x.prev):numOr(x.prev),{v:x.dTxt||"-",s:x.big?X.warn:undefined},x.targetTxt,
       {v:x.ok===null?"-":x.ok?"충족":x.cmp==="<="?"초과":"미달",s:x.ok===null?undefined:x.ok?X.good:X.crit},x.fx]);});
-  sum.push([]);sum.push([{v:"요약 코멘트",s:{font:{bold:true}},nob:true}]);
+  sum.push([]);sum.push(SEC("요약 코멘트"));
   const cStart=sum.length;sum.push(H(["주제","코멘트","","","","",""]));
   const WR={alignment:{wrapText:true,vertical:"top"}};
   COMMENTS.forEach(c=>{const st=c.cls==="crit"?X.crit:c.cls==="warn"?X.warn:c.cls==="good"?X.good:undefined;
-    sum.push([{v:c.title+(c.chip?` (${c.chip})`:""),s:Object.assign({},st||{},WR)},{v:c.text,s:WR},{v:""},{v:""},{v:""},{v:""},{v:""}]);});
-  const ws1=sheet(sum,[22,12,12,12,12,9,44],{from:3});
-  ws1["!merges"]=[];ws1["!rows"]=[];
-  for(let r=cStart;r<sum.length;r++){ws1["!merges"].push({s:{r,c:1},e:{r,c:6}});
-    if(r>cStart){const len=String(sum[r][1].v).length;ws1["!rows"][r]={hpt:Math.max(18,Math.ceil(len/52)*16+4)};}}
+    sum.push([{v:c.title+(c.chip?` (${c.chip})`:""),s:Object.assign({},st||{},WR)},{v:c.text,s:WR},"","","","",""]);});
+  const ws1=sheet(sum,[22,12,12,12,12,9,44],{from:3});ws1["!merges"]=[];ws1["!rows"]=[];
+  for(let r=cStart;r<sum.length;r++){ws1["!merges"].push({s:{r,c:1},e:{r,c:6}});if(r>cStart){const len=String(sum[r][1].v).length;ws1["!rows"][r]={hpt:Math.max(18,Math.ceil(len/52)*16+4)};}}
   XLSX.utils.book_append_sheet(wb,ws1,"요약");
-  // 2. 채널별
-  const pCh=p?Object.fromEntries(p.byCh.map(c=>[c.name,c])):{};
-  const ch=[H(["채널","접수","처리완료","심사중","자동심사율","터치대상","3일내","터치율","전월 터치율","증감(%p)","거절률"])];
-  m.byCh.concat([{...m,name:"합계",tot:true}]).forEach(c=>{const pc=c.tot?p:pCh[c.name];const ts=c.tot?X.tot:undefined;
-    ch.push([{v:c.name,s:ts},{v:c.total,s:ts},{v:c.done,s:ts},{v:c.pending,s:ts},R(c.auto,fl(c.auto,at,">=")||ts),{v:c.tBase,s:ts},{v:c.tIn,s:ts},R(c.touch,fl(c.touch,tt,">=")||ts),R(pc?.touch,ts),
-      {v:pc&&c.touch!=null&&pc.touch!=null?+((c.touch-pc.touch)*100).toFixed(1):"-",s:pc&&c.touch!=null&&pc.touch!=null&&Math.abs((c.touch-pc.touch)*100)>=S.momP?X.warn:ts},R(c.reject,fl(c.reject,rj,"<=")||ts)]);});
-  XLSX.utils.book_append_sheet(wb,sheet(ch,[10,8,9,8,11,9,8,9,11,10,9]),"채널별");
-  // 3. 심사결과
-  const st=[H(["계약상태","당월 건수","구성비","전월 건수","전월 구성비","증감(%p)"])];
-  STATUSES.concat(m.st["기타"]?["기타"]:[]).forEach(s=>{const sh=rate(m.st[s],m.total),ps=p?rate(p.st[s],p.total):null;const d=ps==null||sh==null?null:(sh-ps)*100;
-    st.push([s,m.st[s],R(sh),p?p.st[s]:"-",R(ps),{v:d==null?"-":+d.toFixed(1),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
-  st.push([{v:"합계",s:X.tot},{v:m.total,s:X.tot},R(1,X.tot),{v:p?p.total:"-",s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.total,p.total):"-",s:X.tot}]);
-  st.push([]);st.push(["거절률(심사결정 대비)",R(m.reject,fl(m.reject,rj,"<=")),"",R(p?.reject)]);
-  st.push(["조건부성립률(심사결정 대비)",R(m.condRate),"",R(p?.condRate)]);
-  XLSX.utils.book_append_sheet(wb,sheet(st,[26,10,9,10,11,10]),"심사결과");
-  // 4. 심사자별
-  const rv=[H(["심사자","최초배정","터치대상","3일내","터치율","평균경과(영업일)","재배정","처리(실제)","거절률"])];
-  m.byRv.forEach(r=>rv.push([r.name,r.assigned,r.tBase,r.tIn,R(r.touch,fl(r.touch,tt,">=")),r.avgLag==null?"-":{v:+r.avgLag.toFixed(2),z:"0.00"},r.reassigned,r.done,R(r.reject,fl(r.reject,rj,"<="))]));
-  XLSX.utils.book_append_sheet(wb,sheet(rv,[10,9,9,8,9,15,8,10,9]),"심사자별");
-  // 5. 데이터점검
-  const ck=[H(["행","증번","등급","유형","항목","내용"])];
-  CUR.issues.slice().sort((a,b)=>a.line-b.line).forEach(i=>ck.push([i.line,i.no||"(공란)",{v:i.sev,s:i.sev==="오류"?X.crit:X.warn},i.type,i.field,i.msg]));
-  if(CUR.issues.length===0)ck.push(["-","-","-","-","-","발견된 이상 없음"]);
-  XLSX.utils.book_append_sheet(wb,sheet(ck,[6,18,7,11,13,60]),"데이터점검");
-  // 6. 원본 + 점검표시
-  const iByLine={};CUR.issues.forEach(i=>{(iByLine[i.line]=iByLine[i.line]||[]).push(i);});
-  const fieldIdx={"증번":0,"계약일자":1,"채널":2,"최초심사자":3,"실제심사자":4,"계약상태":5,"자동심사결과":6,"심사시작일":7,"최초심사일":8,"특별조건부1":9};
-  const raw=[H(FIELDS.map(f=>f[1]).concat(["경과 영업일","3일내 터치","산출 반영","점검 결과"]))];
-  CUR.rows.forEach(r=>{const li=iByLine[r.line]||[];const cells=FIELDS.map(([k])=>{const v=r.raw[k];
-      if(["cdate","sdate","fdate"].includes(k)){const pd=k==="cdate"?r.pc:k==="sdate"?r.ps:r.pf;return pd.ok?fmt(pd.dn):String(v??"");}return String(v??"");}).map(v=>({v}));
-    li.forEach(i=>{const c=fieldIdx[i.field];if(c!=null){const sev=i.sev==="오류"?X.crit:X.warn;if(cells[c].s!==X.crit)cells[c].s=sev;}});
-    const used=!(S.excl&&r.err);
-    cells.push({v:r.lag==null?"":r.lag},{v:used?(r.touch==null?"":r.touch):""},{v:used?"Y":"N",s:used?undefined:X.crit},{v:li.map(i=>`[${i.sev}] ${i.msg}`).join(" / "),s:li.some(i=>i.sev==="오류")?X.crit:li.length?X.warn:undefined});
+  // 월별요약 (정답지 형식)
+  const chs=chList(),rvs=rvList();const mo=[];
+  mo.push(SEC("① 3일이내 터치율"));mo.push(H(["마감월","총 심사건수","3일이내 건수","3일초과 건수","터치율","날짜 공란(3일이내 처리)"]));
+  MONTHS.forEach(k=>{const a=M[k];mo.push([k,a.n,a.tIn,a.tOut,R(a.touch,fl(a.touch,tt,">=")),a.blankDates]);});
+  mo.push([]);mo.push(SEC("② 자동심사율"));mo.push(H(["마감월","자동심사 건수","인심사 건수","총 건수(공란 제외)","자동심사율","공란(제외) 건수"]));
+  MONTHS.forEach(k=>{const a=M[k];mo.push([k,a.auto,a.manual,a.auto+a.manual,R(a.autoRate,fl(a.autoRate,at,">=")),a.autoBlank]);});
+  mo.push([]);mo.push(SEC(`③-a 월별 × 채널별 처리 건수 (미결 ${S.inclPending?"포함":"제외"})`));mo.push(H(["마감월"].concat(chs,["합계"])));
+  MONTHS.forEach(k=>{const a=M[k];mo.push([k].concat(chs.map(c=>a.byCh[c]||0),[{v:a.proc,s:X.tot}]));});
+  mo.push([]);mo.push(SEC("③-b 월별 × 실제심사자별 처리 건수"));mo.push(H(["마감월"].concat(rvs,["합계"])));
+  MONTHS.forEach(k=>{const a=M[k];mo.push([k].concat(rvs.map(c=>a.byRv[c]||0),[{v:a.proc,s:X.tot}]));});
+  mo.push([]);mo.push(SEC("④ 심사결과 통계 (미결 제외)"));mo.push(H(["마감월","정상인수 합계","ㄴ 표준인수","ㄴ 조건부인수","반송","청철","합계","(참고) 미결"]));
+  MONTHS.forEach(k=>{const a=M[k];mo.push([k,a.normal,a.std,a.cond,a.ret,a.wd,{v:a.resTotal,s:X.tot},a.pend]);});
+  mo.push([]);mo.push(SEC("⑥ 최초심사자 / 실제심사자 구성"));mo.push(H(["마감월","최초=실제","최초≠실제","최초만 있음","실제만 있음","둘 다 공란","합계"]));
+  MONTHS.forEach(k=>{const c=M[k].comp;mo.push([k,c.same,c.diff,c.first,c.actual,c.none,{v:M[k].n,s:X.tot}]);});
+  XLSX.utils.book_append_sheet(wb,sheet(mo,[10].concat(Array(13).fill(11))),"월별요약");
+  // 채널별·심사자별 (선택 월)
+  const cr=[SEC(`${mLabel(SEL)} 채널별`),H(["채널",`처리 ${mLabel(SEL)}`,"전월","증감","터치율","자동심사율","총 심사건수","3일 초과"])];
+  chs.forEach(c=>{const s=chStats(c,SEL);const v=m.byCh[c]||0,pv=p?(p.byCh[c]||0):null;
+    cr.push([c,v,numOr(pv),{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(s.touch,fl(s.touch,tt,">=")),R(s.autoRate,fl(s.autoRate,at,">=")),s.n,s.tOut]);});
+  cr.push([{v:"합계",s:X.tot},{v:m.proc,s:X.tot},{v:numOr(p?.proc),s:X.tot},{v:p?chgTxt(m.proc,p.proc):"-",s:X.tot},R(m.touch,X.tot),R(m.autoRate,X.tot),{v:m.n,s:X.tot},{v:m.tOut,s:X.tot}]);
+  cr.push([]);cr.push(SEC(`${mLabel(SEL)} 실제심사자별`));cr.push(H(["실제심사자",`처리 ${mLabel(SEL)}`,"전월","증감","터치율","3일 초과","평균 경과일"]));
+  rvs.forEach(k=>{const s=rvStats(k,SEL);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;
+    cr.push([k,v,numOr(pv),{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(s.touch,s.n>=10?fl(s.touch,tt,">="):undefined),s.tOut,s.avgLag==null?"-":{v:+s.avgLag.toFixed(2),z:"0.00"}]);});
+  XLSX.utils.book_append_sheet(wb,sheet(cr,[14,12,10,10,10,11,11,10]),"채널·심사자별");
+  // 심사결과
+  const st=[H(["구분",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
+  [["정상인수","normal"],["ㄴ 표준인수","std"],["ㄴ 조건부인수","cond"],["반송","ret"],["청철","wd"]].forEach(([l,k])=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
+    st.push([l,m[k],R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
+  st.push([{v:"합계(미결 제외)",s:X.tot},{v:m.resTotal,s:X.tot},R(1,X.tot),{v:numOr(p?.resTotal),s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.resTotal,p.resTotal):"-",s:X.tot}]);
+  st.push(["(참고) 미결",m.pend,"",numOr(p?.pend),"",p?dTxt(m.pend,p.pend):"-"]);
+  st.push([]);st.push(["반송률",R(m.retRate,fl(m.retRate,rm,"<=")),"",R(p?.retRate)]);st.push(["조건부인수 비중(정상 대비)",R(m.condRate),"",R(p?.condRate)]);
+  XLSX.utils.book_append_sheet(wb,sheet(st,[24,10,9,10,11,10]),"심사결과");
+  // 데이터점검
+  const per={};RULES.forEach(([id])=>per[id]=0);ROWS.forEach(r=>r.codes.forEach(c=>per[c]++));
+  const ck=[SEC("규칙별 건수 (전체 행 기준)"),H(["규칙ID","구분","건수","처리","점검 규칙"])];
+  RULES.forEach(([id,sev,desc])=>ck.push([id,{v:sev,s:sev==="오류"?X.crit:X.warn},per[id],sev==="오류"?"지표 제외":"지표 포함",desc]));
+  ck.push([{v:"제외 행 수",s:X.tot},{v:"-",s:X.tot},{v:exc,s:X.tot},{v:"E 1개 이상",s:X.tot},{v:"오류 코드가 1개 이상 있어 지표에서 빠지는 행",s:X.tot}]);
+  ck.push([{v:"통과 행 수",s:X.tot},{v:"-",s:X.tot},{v:ROWS.length-exc,s:X.tot},{v:"지표 대상",s:X.tot},{v:"지표 집계 대상 행",s:X.tot}]);
+  ck.push([]);ck.push(SEC("상세"));ck.push(H(["행","증번","마감월","규칙","내용"]));
+  ISSUES.forEach(i=>ck.push([i.row.line,i.row.no||"(공란)",i.row.month||"-",{v:i.id,s:i.id[0]==="E"?X.crit:X.warn},i.msg]));
+  XLSX.utils.book_append_sheet(wb,sheet(ck,[10,12,9,12,60]),"데이터점검");
+  // 원본 + 계산열 (파일의 K~P와 같은 형식)
+  const fieldIdx={E1:[1,8],E2:[7,8],E3:[0],E4:[2,5],E5:[0,1],W1:[8],W2:[7],W3:[6],W4:[4],W5:[9],W6:[6,5],W7:[4],W8:[4],W9:[9],W10:[6]};
+  const raw=[H(FIELDS.map(f=>f[1]).concat(["마감월","차이일수(달력일)","차이일수(영업일)","점검_오류코드","지표포함(1=포함)","점검_경고코드"]))];
+  ROWS.forEach(r=>{const cells=FIELDS.map(([k])=>{const pd=k==="cdate"?r.pc:k==="sdate"?r.ps:k==="fdate"?r.pf:null;
+      if(pd)return{v:pd.ok?fmt(pd.dn):String(r.raw[k]??"")};return{v:String(r.raw[k]??"")};});
+    r.codes.forEach(c=>(fieldIdx[c]||[]).forEach(ci=>{const sv=c[0]==="E"?X.crit:X.warn;if(cells[ci].s!==X.crit)cells[ci].s=sv;}));
+    cells.push({v:r.month||""},{v:r.lagCal==null?"":r.lagCal},{v:r.lagBiz==null?"":r.lagBiz},{v:r.ecodes.join(" "),s:r.ecodes.length?X.crit:undefined},{v:r.include?1:0,s:r.include?undefined:X.crit},{v:r.wcodes.join(" "),s:r.wcodes.length?X.warn:undefined});
     raw.push(cells);});
-  const ws6=sheet(raw,[16,11,8,10,10,11,11,11,11,14,10,10,9,60]);ws6["!autofilter"]={ref:ws6["!ref"]};ws6["!freeze"]={xSplit:0,ySplit:1};
+  const ws6=sheet(raw,[11,11,8,10,10,9,11,11,11,13,9,10,10,12,10,14]);ws6["!autofilter"]={ref:ws6["!ref"]};
   XLSX.utils.book_append_sheet(wb,ws6,"원본_점검표시");
-  // 7. 산출기준
+  // 산출기준
   const df=[H(["항목","정의"])].concat(DEFS().map(([a,b])=>[a,b.replace(/<[^>]+>/g,"")]));
-  df.push(["공휴일",S.holidays.split("\n").filter(Boolean).join(", ")]);
-  const ws7=sheet(df,[22,100]);
-  XLSX.utils.book_append_sheet(wb,ws7,"산출기준");
+  df.push(["공휴일",[...HSET].sort().map(fmt).join(", ")]);
+  XLSX.utils.book_append_sheet(wb,sheet(df,[22,100]),"산출기준");
   return wb;}
 let dl=null,dlReady=null;
 function initDownloads(){dlReady=(async()=>{try{dl=await window.claude?.use?.("downloads")||null;}catch(e){dl=null;}})();}
@@ -709,103 +804,67 @@ async function saveFile(name,wb){
     setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},4000);toast("내려받았습니다: "+name);return;}
   try{await dl.save({filename:name,data:new Blob([buf])});toast("저장했습니다: "+name);}
   catch(e){toast({declined:"저장을 취소했습니다.",rate_limited:"이미 저장 확인 창이 열려 있습니다. 잠시 뒤 다시 시도해 주세요."}[e.code]||"파일을 저장하지 못했습니다 ("+(e.code||"오류")+").");}}
-$("btnXlsx").onclick=()=>{if(!CUR)return;try{saveFile(`신계약심사지표_${CUR.y}${String(CUR.mo).padStart(2,"0")}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
-$("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();const aoa=genSample(2026,9,640,20260901,true);
-  const ws=sheet([H(aoa[0])].concat(aoa.slice(1)),[16,11,8,10,10,11,11,11,11,14],{border:false});
-  XLSX.utils.book_append_sheet(wb,ws,"신계약마감");saveFile("신계약마감_양식_예시_202609.xlsx",wb);};
-
+$("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
+$("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
+  const rows=[H(FIELDS.map(f=>f[1]))].concat(SAMPLE.map(r=>r.map((v,i)=>[1,7,8].includes(i)&&typeof v==="number"?{v,z:"yyyy-mm-dd"}:{v})));
+  XLSX.utils.book_append_sheet(wb,sheet(rows,[11,11,8,10,10,9,11,11,11,13],{border:false}),"신계약마감");
+  const hol=[H(["날짜","공휴일명"])].concat(SAMPLE_HOL.map(([d,n])=>[{v:d+25569,z:"yyyy-mm-dd"},n]));
+  XLSX.utils.book_append_sheet(wb,sheet(hol,[12,20],{border:false}),"공휴일");
+  saveFile("신계약마감_업로드양식_예시.xlsx",wb);};
 function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,4200);}
 
 /* ---------- definitions ---------- */
 function DEFS(){return[
-  ["3일이내 터치율",`수동심사 건(자동심사결과 '이관') 중 심사시작일 다음 영업일부터 최초심사일까지 <code>${S.touchDays}영업일 이내</code>인 건 ÷ 판단 대상 건. 최초심사일이 없고 마감일까지 ${S.touchDays}영업일이 지나지 않은 건은 판단 보류로 분모에서 뺌. 지났으면 미달로 셈.`],
-  ["자동심사율",`자동심사결과 <code>통과</code> 건 ÷ 자동심사결과가 입력된 건. 통과·승인·Y·PASS는 통과, 이관·부적합·N은 수동으로 읽음.`],
-  ["신계약 처리건수",`계약상태가 <code>성립·조건부성립·거절·연기·청약철회</code>인 건. 심사중은 미처리로 따로 셈.`],
-  ["심사결과 통계",`계약상태별 건수와 접수 대비 구성비. 거절률·조건부성립률은 <code>성립+조건부성립+거절+연기</code>(심사결정 건) 대비.`],
-  ["영업일",`토·일요일과 설정한 공휴일을 뺀 날. 심사시작일 당일은 0일.`],
-  ["전월 대비",`비율 지표는 %p 차이, 건수는 증감률. 비율 ${S.momP}%p 이상, 건수 ${S.momC}% 이상 변하면 '변동 큼'으로 표시.`],
-  ["데이터 점검 · 오류",`증번 공란·중복, 날짜 형식 오류, 계약일자·계약상태·자동심사결과 공란, 심사시작일 < 계약일자, 최초심사일 < 심사시작일, 수동심사 건의 심사시작일 공란, 처리완료 수동심사 건의 최초심사일 공란. ${S.excl?"오류 행은 산출에서 제외.":"오류 행도 산출에 포함."}`],
-  ["데이터 점검 · 경고",`채널·최초심사자·실제심사자 공란, 마감월 밖 계약일자, 마감일 이후 최초심사일, 정의되지 않은 상태값, 자동심사 통과인데 거절·연기·조건부, 특별조건부1과 계약상태 불일치. 산출에는 포함.`],
-];}
+  ["마감월","계약일자의 연월(YYYYMM). 최초심사일·심사시작일이 다음 달로 넘어가도 계약월에 집계."],
+  ["① 3일이내 터치율",`3일이내 건수 ÷ 총 심사건수 (계약상태 무관, 증번별). 경과일수 = <code>심사시작일 − 최초심사일</code>(분배 후 의견 등록까지)이 <code>${S.touchDays}일 이하</code>이거나 두 날짜 중 하나라도 공란이면 3일이내. 현재 ${S.dayMode} 기준${S.dayMode==="영업일"?": 최초심사일 다음날부터 심사시작일까지 중 주말·공휴일을 뺀 일수":""}.`],
+  ["② 자동심사율",`자동심사 건수 ÷ (자동심사 + 인심사). 자동심사 = 자동심사결과 <code>가입가능·가입불가·조건부인수</code>, 인심사 = <code>인심사</code>, 공란은 제외.`],
+  ["③ 신계약 처리 건수",`월별×채널별, 월별×실제심사자별 건수. 미결 ${S.inclPending?"포함":"제외"}. 실제심사자 공란은 '(공란)'으로 따로 집계.`],
+  ["④ 심사결과 통계",`미결 제외. 정상인수 = 계약상태 <code>정상</code>, 그중 특별조건부1 값이 있으면 조건부인수, 없으면 표준인수. 반송·청철의 특별조건부1 값은 집계하지 않음. 반송률 = 반송 ÷ (정상+반송+청철).`],
+  ["전월 대비",`고른 마감월의 바로 전 달과 비교. 비율 지표는 %p 차이, 건수는 증감률. 비율 ${S.momP}%p, 건수 ${S.momC}% 이상 변하면 '변동 큼'.`],
+  ["목표값",`터치율 ${S.touchTarget}% 이상, 자동심사율 ${S.autoTarget}% 이상, 반송률 ${S.returnMax}% 이하. 임시 기본값이며 '산출 기준 설정'에서 바꿈.`],
+  ["허용값",`채널: ${listOf(S.channels).join(", ")} · 계약상태: ${listOf(S.statuses).join(", ")} (E4 기준)`],
+].concat(RULES.map(([id,sev,desc])=>[`${id} (${sev})`,desc+(sev==="오류"?" → 지표 제외":" → 지표 포함")]));}
 function renderDefs(){$("defs").innerHTML=DEFS().map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("");}
 
-/* ---------- sample data (fictional) ---------- */
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-function genSample(y,mo,n,seed,anomalies){
-  const rnd=mulberry32(seed);const pick=a=>a[Math.floor(rnd()*a.length)];
-  const wpick=(a,w)=>{const s=w.reduce((x,y)=>x+y,0);let r=rnd()*s;for(let i=0;i<a.length;i++){r-=w[i];if(r<0)return a[i];}return a[a.length-1];};
-  const start=Date.UTC(y,mo-1,1)/864e5,end=Date.UTC(y,mo,0)/864e5;const days=[];for(let d=start;d<=end;d++)if(isBiz(d))days.push(d);
-  const CH=["설계사","GA","TM","방카","CM"],REV=["김도윤","이서연","박지호","최민준","정하은","한유진"],CONDS=["부담보(위)","부담보(척추)","할증 25%","할증 50%","보험금 감액","부담보(갑상선)"];
-  const late=mo===9;const out=[FIELDS.map(f=>f[1])];
-  for(let i=0;i<n;i++){
-    const cd=days[Math.floor(rnd()*days.length)];const ch=wpick(CH,[40,30,12,10,8]);
-    const pAuto=(late?0.475:0.455)*(ch==="CM"?1.25:ch==="GA"?0.85:ch==="방카"?1.1:1);
-    const pass=rnd()<pAuto;const no=`L${y}${String(mo).padStart(2,"0")}${String(10000+i*7+Math.floor(rnd()*7)).padStart(5,"0")}`;
-    let r1,r2,st,sd,fd,cond="";
-    if(pass){r1="AUTO";r2="AUTO";sd=cd;fd=cd;st=rnd()<0.03?"청약철회":"성립";}
-    else{sd=addBiz(cd,rnd()<0.7?0:1);
-      const reviewer=pick(REV);
-      const w=ch==="GA"?(late?[18,24,20,13,10,8,7]:[22,26,22,12,8,6,4]):(reviewer==="한유진"&&late?[16,24,24,14,10,7,5]:[36,32,20,7,3,1,1]);
-      const lag=wpick([0,1,2,3,4,5,6],w);fd=addBiz(sd,lag);r1=reviewer;r2=rnd()<0.08?pick(REV):r1;
-      st=wpick(["성립","조건부성립","거절","연기","청약철회"],[58,20,late?11:8,5,4]);if(st==="조건부성립")cond=pick(CONDS);
-      if(fd>end){fd=null;st="심사중";cond="";}else if(bizDiff(sd,end)<=2&&rnd()<0.5){st="심사중";cond="";}
-    }
-    out.push([no,fmt(cd),ch,r1,r2,st,pass?"통과":"이관",fmt(sd),fd==null?"":fmt(fd),cond]);
-  }
-  if(anomalies){const used=new Set();const find=fn=>{for(let i=1;i<out.length;i++){if(!used.has(i)&&fn(out[i])){used.add(i);return out[i];}}return null;};
-    const man=r=>r[6]==="이관"&&r[5]!=="심사중"&&r[5]!=="청약철회"&&r[8];const cd=v=>parseDate(v).dn;
-    find(r=>r[0].endsWith("3")&&r[2])[2]="";find(r=>r[2]==="TM")[2]="";
-    find(man)[3]="";find(man)[3]="";
-    let r=find(r=>man(r)&&cd(r[8])-cd(r[7])>=1);r[8]=fmt(cd(r[7])-2);r=find(r=>man(r));r[8]=fmt(cd(r[7])-1);
-    r=find(r=>man(r));r[7]=fmt(cd(r[1])-3);
-    find(r=>man(r)&&r[5]==="성립")[9]="부담보(위)";find(r=>man(r)&&r[5]==="성립")[9]="할증 25%";
-    find(r=>man(r)&&r[5]==="조건부성립")[9]="";
-    find(r=>r[6]==="통과"&&r[5]==="성립")[5]="거절";
-    const a=find(r=>true),b=find(r=>true);b[0]=a[0];
-    find(r=>true)[1]="2026-09-31";
-    find(r=>man(r)&&r[5]==="성립")[8]="";
-  }
-  return out;}
+/* ---------- sample data: 사용자가 제공한 가상 더미 워크북 (신계약마감 A~J열, 공휴일, 기준표) ---------- */
+const SAMPLE=[["P0000001",46235,"GA","심사자A","","미결","인심사",46238,46235,""],["P0000002",46235,"GA","","자동심사","미결","가입가능","",46235,""],["P0000003",46235,"전속","심사자E","","미결","인심사",46239,46237,""],["P0000004",46235,"GA","심사자B","심사자B","반송","인심사",46237,46236,""],["P0000005",46235,"GA","심사자A","심사자A","정상","인심사",46236,46235,""],["P0000006",46235,"GA","심사자F","심사자F","정상","인심사",46239,46238,""],["P0000007",46235,"GA","","자동심사","정상","조건부인수","",46235,"일부보장제외"],["P0000008",46235,"GA","","자동심사","정상","가입가능","",46237,""],["P0000009",46235,"GA","심사자B","심사자B","정상","인심사",46237,46235,""],["P0000010",46235,"GA","심사자C","심사자G","정상","인심사",46239,46237,""],["P0000011",46235,"TM","","자동심사","정상","가입가능","",46237,""],["P0000012",46235,"방카","심사자H","심사자H","정상","인심사",46240,46235,""],["P0000013",46235,"방카","","자동심사","정상","가입가능",46246,46238,""],["P0000014",46235,"전속","심사자A","심사자E","정상","인심사",46239,46237,""],["P0000015",46235,"전속","심사자C","심사자C","정상","인심사",46236,46235,""],["P0000016",46235,"전속","심사자D","심사자D","정상","인심사",46237,46235,""],["P0000017",46235,"전속","","자동심사","정상","가입가능","",46236,""],["P0000018",46235,"GA","","자동심사","청철","가입가능","",46237,""],["P0000019",46236,"GA","심사자E","","미결","인심사",46236,46236,""],["P0000020",46236,"TM","심사자C","심사자C","미결","인심사",46240,46237,""],["P0000021",46236,"방카","심사자B","","미결","인심사",46240,46237,""],["P0000022",46236,"전속","심사자A","","미결","인심사",46237,46237,""],["P0000023",46236,"GA","심사자E","심사자E","반송","인심사",46238,46237,""],["P0000024",46236,"방카","","자동심사","반송","가입불가",46239,46239,""],["P0000025",46236,"방카","","자동심사","반송","가입불가","",46239,""],["P0000026",46236,"GA","","심사자B","정상","인심사",46237,46237,""],["P0000027",46236,"GA","","자동심사","정상","조건부인수","",46237,""],["P0000028",46236,"GA","심사자D","심사자D","정상","인심사",46239,46238,""],["P0000029",46236,"GA","심사자D","심사자A","정상","인심사",46237,46237,""],["P0000030",46236,"GA","심사자B","심사자B","정상","인심사",46237,46236,"부담보"],["P0000031",46236,"TM","","자동심사","정상","가입가능",46238,46236,""],["P0000032",46236,"방카","","자동심사","정상","가입가능","",46239,""],["P0000033",46236,"방카","심사자B","심사자B","정상","인심사",46245,46238,""],["P0000034",46236,"방카","심사자A","심사자A","정상","인심사",46239,46237,"할증"],["P0000035",46236,"방카","","자동심사","정상","가입가능","",46236,""],["P0000036",46236,"방카","","자동심사","정상","가입가능","",46237,""],["P0000037",46236,"방카","","자동심사","정상","가입가능","",46237,""],["P0000038",46236,"전속","심사자E","심사자E","정상","인심사",46239,46239,"감액"],["P0000039",46236,"전속","","자동심사","정상","가입가능","",46239,""],["P0000040",46236,"전속","","자동심사","정상","가입가능","",46239,""],["P0000041",46236,"GA","","자동심사","청철","가입가능",46241,46238,""],["P0000042",46236,"방카","심사자D","심사자D","청철","인심사",46238,46238,""],["P0000043",46237,"GA","심사자A","","미결","",46240,46238,""],["P0000044",46237,"GA","","자동심사","미결","조건부인수","",46239,""],["P0000045",46237,"방카","심사자E","","미결","인심사",46241,46239,""],["P0000046",46237,"전속","심사자F","","미결","인심사",46241,46238,""],["P0000047",46237,"전속","심사자A","","미결","인심사",46241,46238,""],["P0000048",46237,"GA","심사자C","심사자C","반송","인심사",46239,46238,""],["P0000049",46237,"GA","심사자E","심사자F","반송","인심사",46245,46240,""],["P0000050",46237,"GA","심사자B","심사자B","반송","인심사",46238,46238,""],["P0000051",46237,"방카","","자동심사","반송","가입불가","",46239,""],["P0000052",46237,"전속","심사자B","심사자B","반송","인심사",46237,46237,""],["P0000053",46237,"GA","","자동심사","정상","가입가능",46241,46237,""],["P0000054",46237,"GA","","자동심사","정상","가입가능","",46240,""],["P0000055",46237,"GA","심사자H","심사자H","정상","",46241,46238,""],["P0000056",46237,"GA","","자동심사","정상","조건부인수","",46240,"감액"],["P0000057",46237,"TM","","자동심사","정상","가입가능","",46239,""],["P0000058",46237,"TM","심사자G","심사자A","정상","",46241,"","일부보장제외"],["P0000059",46237,"TM","심사자D","심사자D","정상","인심사",46242,46239,""],["P0000060",46237,"방카","","자동심사","정상","조건부인수","",46237,"할증"],["P0000061",46237,"방카","","자동심사","정상","가입가능","",46240,""],["P0000062",46237,"방카","심사자H","심사자H","정상","인심사",46248,46240,"일부보장제외"],["P0000063",46237,"방카","","자동심사","정상","가입가능","",46239,""],["P0000064",46237,"방카","심사자C","심사자C","정상","인심사",46237,46237,"감액"],["P0000065",46237,"전속","","자동심사","정상","가입가능","",46238,""],["P0000066",46237,"GA","심사자B","심사자B","청철","인심사",46244,46238,""],["P0000067",46237,"GA","심사자B","심사자B","청철","",46243,46240,""],["P0000068",46237,"TM","","자동심사","청철","가입가능","",46238,""],["P0000069",46238,"GA","심사자C","","미결","인심사",46241,46238,""],["P0000070",46238,"방카","심사자A","","미결","인심사",46246,46238,""],["P0000071",46238,"GA","","심사자B","정상","인심사",46246,46241,""],["P0000072",46238,"GA","","자동심사","정상","가입가능","",46241,""],["P0000073",46238,"GA","심사자B","심사자B","정상","",46240,46239,""],["P0000074",46238,"GA","","자동심사","정상","가입가능",46242,46245,""],["P0000075",46238,"GA","","자동심사","정상","가입가능","",46238,""],["P0000076",46238,"GA","심사자A","심사자A","정상","인심사",46239,46238,""],["P0000077",46238,"GA","심사자C","심사자C","정상","인심사",46241,46238,"할증"],["P0000078",46238,"GA","심사자C","심사자C","정상","",46242,46240,"할증"],["P0000079",46238,"GA","","자동심사","정상","가입가능","",46239,""],["P0000080",46238,"GA","심사자A","심사자A","정상","인심사",46244,46241,""],["P0000081",46238,"TM","","자동심사","정상","가입가능","",46238,""],["P0000082",46238,"방카","","자동심사","정상","가입가능","",46238,""],["P0000083",46238,"방카","심사자A","","정상","인심사",46241,46241,"할증"],["P0000084",46238,"방카","심사자C","심사자C","정상","인심사",46242,46240,""],["P0000085",46238,"방카","","자동심사","정상","가입가능","",46239,""],["P0000086",46238,"방카","","자동심사","정상","가입가능","",46240,""],["P0000087",46238,"방카","","자동심사","정상","가입가능","",46238,""],["P0000088",46238,"방카","심사자F","심사자G","정상","인심사",46240,46240,""],["P0000089",46238,"방카","","자동심사","정상","가입가능","",46241,""],["P0000090",46238,"전속","","자동심사","정상","조건부인수","",46238,"부담보"],["P0000091",46238,"전속","","자동심사","정상","가입가능","",46241,""],["P0000092",46238,"전속","","자동심사","정상","가입가능","",46238,""],["P0000093",46238,"전속","","자동심사","정상","가입가능",46243,46241,""],["P0000094",46238,"전속","","자동심사","정상","가입가능",46241,46240,""],["P0000095",46238,"전속","심사자C","심사자C","정상","인심사",46239,46238,"할증"],["P0000096",46238,"전속","심사자B","심사자B","정상","인심사",46244,46241,""],["P0000097",46238,"전속","심사자E","심사자E","정상","인심사",46238,46238,""],["P0000098",46238,"전속","심사자A","심사자A","정상","인심사","",46238,"감액"],["P0000099",46239,"GA","","자동심사","미결","조건부인수",46244,46241,""],["P0000100",46239,"GA","심사자D","","미결","인심사",46243,46240,""],["P0000101",46239,"GA","","자동심사","미결","조건부인수",46242,46241,""],["P0000102",46239,"GA","","자동심사","반송","가입불가","",46239,""],["P0000103",46239,"방카","심사자E","심사자E","반송","인심사",46240,46240,""],["P0000104",46239,"방카","심사자C","심사자F","반송","인심사",46239,46239,""],["P0000105",46239,"전속","","자동심사","반송","가입불가",46244,46242,""],["P0000106",46239,"전속","심사자A","심사자G","반송","인심사",46242,46239,""],["P0000107",46239,"GA","","자동심사","정상","가입가능","",46240,""],["P0000108",46239,"GA","","자동심사","정상","가입가능",46241,46240,""],["P0000109",46239,"GA","","자동심사","정상","가입가능","",46241,""],["P0000110",46239,"TM","","자동심사","정상","가입가능","",46241,""],["P0000111",46239,"TM","","자동심사","정상","가입가능","",46240,""],["P0000112",46239,"방카","","자동심사","정상","조건부인수","",46241,"감액"],["P0000113",46239,"방카","","자동심사","정상","가입가능","",46239,""],["P0000114",46239,"방카","심사자F","","정상","인심사",46249,46240,""],["P0000115",46239,"방카","","심사자G","정상","인심사",46240,46240,""],["P0000116",46239,"방카","","자동심사","정상","가입가능",46247,46241,""],["P0000117",46239,"방카","","자동심사","정상","가입가능","",46239,""],["P0000118",46239,"전속","심사자G","심사자G","정상","인심사",46239,46239,""],["P0000119",46239,"전속","","자동심사","정상","가입가능",46239,46239,""],["P0000120",46239,"전속","","자동심사","정상","가입가능",46242,46245,""],["P0000121",46239,"전속","","자동심사","정상","가입가능",46244,46242,""],["P0000122",46239,"전속","","자동심사","정상","가입가능","",46242,""],["P0000123",46239,"GA","","자동심사","청철","조건부인수","",46239,""],["P0000124",46239,"방카","","자동심사","청철","가입불가","",46242,""],["P0000125",46240,"GA","심사자A","","미결","인심사",46247,46242,""],["P0000126",46240,"GA","심사자A","","미결","인심사",46244,46241,""],["P0000127",46240,"TM","심사자D","","미결","인심사",46244,46242,""],["P0000128",46240,"GA","","자동심사","반송","가입불가","",46240,""],["P0000129",46240,"GA","","자동심사","반송","가입불가","",46242,""],["P0000130",46240,"GA","심사자B","심사자B","반송","",46242,46240,""],["P0000131",46240,"TM","","자동심사","반송","가입불가","",46242,""],["P0000132",46240,"전속","심사자C","","반송","인심사",46240,46240,""],["P0000133",46240,"GA","","자동심사","정산","가입가능","",46243,""],["P0000134",46240,"GA","","자동심사","정상","가입불가",46244,46243,""],["P0000135",46240,"GA","","자동심사","정상","가입가능",46243,46240,""],["P0000136",46240,"GA","","자동심사","정상","가입가능","",46241,""],["P0000137",46240,"TM","심사자C","심사자C","정상","",46245,46243,""],["P0000138",46240,"TM","","자동심사","정상","가입가능","",46243,""],["P0000139",46240,"TM","","자동심사","정상","가입가능",46242,46240,""],["P0000140",46240,"방카","심사자C","심사자C","정상","인심사","",46240,"할증"],["P0000141",46240,"방카","","자동심사","정상","가입가능","",46242,""],["P0000142",46240,"방카","","자동심사","정상","가입가능","",46243,""],["P0000143",46240,"방카","심사자E","심사자E","정상","",46244,46243,""],["P0000144",46240,"방카","","자동심사","정상","가입가능","",46241,""],["P0000145",46240,"전속","","자동심사","정상","조건부인수","",46243,"할증"],["P0000146",46240,"전속","","자동심사","정상","가입가능","",46240,""],["P0000147",46240,"전속","심사자B","심사자B","정상","인심사",46252,46243,"할증"],["P0000148",46240,"전속","심사자B","심사자B","정상","인심사",46245,46242,""],["P0000149",46240,"GA","심사자D","심사자D","청철","인심사",46241,46241,""],["P0000150",46240,"전속","","심사자B","청철","",46242,46241,""],["P0000151",46240,"전속","","자동심사","청철","가입가능","",46242,""],["P0000152",46241,"GA","심사자H","","미결","인심사",46242,46242,""],["P0000153",46241,"GA","심사자C","심사자C","반송","인심사",46246,46243,""],["P0000154",46241,"GA","심사자C","심사자C","반송","인심사",46242,46241,""],["P0000155",46241,"GA","심사자E","심사자E","반송","인심사",46245,46242,""],["P0000156",46241,"GA","심사자A","심사자A","반송","인심사",46244,46243,""],["P0000157",46241,"TM","","자동심사","반송","가입불가",46241,46241,""],["P0000158",46241,"TM","","자동심사","반송","가입불가","",46243,""],["P0000159",46241,"전속","심사자A","심사자A","반송","인심사",46243,46243,""],["P0000160",46241,"GA","","심사자C","정상","인심사","",46242,"부담보"],["P0000161",46241,"GA","","자동심사","정상","가입가능",46243,46241,""],["P0000162",46241,"GA","","자동심사","정상","가입가능","",46242,""],["P0000163",46241,"GA","","자동심사","정상","가입가능","",46244,""],["P0000164",46241,"GA","심사자G","심사자G","정상","인심사",46243,46243,""],["P0000165",46241,"GA","심사자C","심사자C","정상","인심사",46244,46243,"부담보"],["P0000166",46241,"GA","심사자A","심사자A","정상","인심사",46242,46242,""],["P0000167",46241,"GA","","자동심사","정상","조건부인수","",46244,"부담보"],["P0000168",46241,"GA","","심사자A","정상","인심사",46244,46243,""],["P0000169",46241,"GA","","자동심사","정상","조건부인수","",46244,"부담보"],["P0000170",46241,"TM","심사자A","심사자B","정상","인심사",46244,46244,"감액"],["P0000171",46241,"방카","","자동심사","정상","조건부인수","",46243,""],["P0000172",46241,"방카","","자동심사","정상","가입가능",46249,46242,""],["P0000173",46241,"방카","","자동심사","정상","조건부인수","",46243,"부담보"],["P0000174",46241,"전속","","자동심사","정상","가입가능","",46244,""],["P0000175",46241,"전속","","자동심사","정상","가입가능","",46241,""],["P0000176",46241,"GA","심사자A","심사자A","청철","",46245,46242,""],["P0000177",46242,"TM","심사자B","","미결","인심사",46245,46245,""],["P0000178",46242,"전속","심사자B","","미결","인심사",46253,46244,""],["P0000179",46242,"방카","심사자D","심사자D","반송","인심사",46244,46244,""],["P0000180",46242,"GA","심사자C","심사자C","정상","인심사",46246,46245,""],["P0000181",46242,"GA","","자동심사","정상","가입가능",46244,46242,""],["P0000182",46242,"GA","","자동심사","정상","가입가능","",46245,""],["P0000183",46242,"GA","","자동심사","정상","조건부인수","",46243,"일부보장제외"],["P0000184",46242,"GA","심사자C","심사자C","정상","인심사",46246,46245,""],["P0000185",46242,"GA","","자동심사","정상","가입가능","",46244,""],["P0000186",46242,"GA","심사자A","심사자A","정상","인심사",46245,46242,"일부보장제외"],["P0000187",46242,"GA","","자동심사","정상","가입가능",46245,46244,""],["P0000188",46242,"GA","","자동심사","정상","가입가능","",46245,""],["P0000189",46242,"TM","","자동심사","정상","가입가능","",46242,""],["P0000190",46242,"TM","","자동심사","정상","가입가능","",46245,""],["P0000191",46242,"TM","","자동심사","정상","가입불가","",46244,""],["P0000192",46242,"방카","","자동심사","정상","가입가능","",46245,""],["P0000193",46242,"방카","심사자A","심사자A","정상","인심사",46247,46243,"일부보장제외"],["P0000194",46242,"방카","","자동심사","정상","가입가능",46245,46245,""],["P0000195",46242,"전속","","자동심사","정상","가입가능",46246,46243,""],["P0000196",46242,"전속","심사자B","심사자B","정상","",46247,46244,""],["P0000197",46242,"전속","","자동심사","정상","가입가능","",46243,""],["P0000198",46242,"전속","심사자B","심사자B","정상","",46247,46244,""],["P0000199",46242,"GA","심사자B","심사자B","청철","인심사",46246,46243,""],["P0000200",46242,"전속","심사자A","심사자A","청철","인심사",46246,46243,""],["P0000201",46243,"GA","","자동심사","반송","가입가능","",46244,"부담보"],["P0000202",46243,"GA","심사자G","심사자G","반송","인심사",46249,46246,""],["P0000203",46243,"GA","심사자B","심사자B","반송","인심사",46248,46245,""],["P0000204",46243,"전속","심사자D","심사자D","반송","인심사",46245,46245,""],["P0000205",46243,"GA","심사자H","심사자H","정상","인심사",46246,46244,""],["P0000206",46243,"GA","심사자H","심사자A","정상","",46246,46243,""],["P0000207",46243,"GA","","자동심사","정상","가입가능","",46243,""],["P0000208",46243,"GA","","자동심사","정상","가입가능","",46243,""],["P0000209",46243,"GA","심사자E","심사자E","정상","인심사",46250,46246,""],["P0000210",46243,"GA","","자동심사","정상","가입가능","",46246,""],["P0000211",46243,"GA","","자동심사","정상","가입가능","",46245,""],["P0000212",46243,"GA","","심사자E","정상","인심사",46245,46244,""],["P0000213",46243,"GA","심사자B","심사자E","정상","인심사",46246,46245,"부담보"],["P0000214",46243,"GA","심사자F","심사자F","정상","인심사",46243,46243,""],["P0000215",46243,"GA","","자동심사","정상","가입가능",46247,46244,""],["P0000216",46243,"GA","","자동심사","정상","조건부인수","",46245,"부담보"],["P0000217",46243,"TM","","자동심사","정상","가입가능","",46245,""],["P0000218",46243,"방카","","자동심사","정상","가입가능","",46245,""],["P0000219",46243,"방카","","자동심사","정상","가입가능","",46246,""],["P0000220",46243,"방카","심사자C","심사자A","정상","인심사",46248,46246,""],["P0000221",46243,"방카","","자동심사","정상","가입가능","",46244,""],["P0000222",46243,"전속","","자동심사","정상","가입가능",46247,46244,""],["P0000223",46243,"전속","심사자H","심사자H","정상","인심사",46246,46244,""],["P0000224",46243,"전속","","자동심사","정상","가입가능","",46243,""],["P0000225",46243,"전속","","자동심사","정상","가입가능","",46244,""],["P0000226",46243,"전속","심사자C","심사자C","정상","인심사",46255,46246,""],["P0000227",46243,"방카","심사자H","심사자H","청철","인심사",46246,46243,""],["P0000228",46244,"GA","심사자A","심사자A","반송","인심사",46253,46247,""],["P0000229",46244,"GA","","자동심사","반송","가입가능","",46246,"부담보"],["P0000230",46244,"전속","","자동심사","반송","가입불가","",46246,""],["P0000231",46244,"GA","","자동심사","정상","가입가능",46247,46247,""],["P0000232",46244,"GA","","자동심사","정상","가입가능",46248,46246,""],["P0000233",46244,"GA","심사자D","심사자D","정상","인심사",46247,46244,""],["P0000234",46244,"GA","심사자A","심사자F","정상","인심사",46247,46246,""],["P0000235",46244,"GA","","심사자D","정상","인심사",46248,46247,"일부보장제외"],["P0000236",46244,"방카","심사자B","심사자B","정상","인심사",46246,46245,""],["P0000237",46244,"전속","심사자B","심사자B","정상","인심사",46254,46245,""],["P0000238",46244,"GA","","자동심사","청철","가입가능","",46247,"할증"],["P0000239",46244,"GA","","자동심사","청철","조건부인수","",46244,""],["P0000240",46245,"GA","심사자D","심사자D","미결","인심사",46255,46248,""],["P0000241",46245,"GA","심사자H","","미결","인심사",46253,46246,""],["P0000242",46245,"GA","심사자D","","미결","인심사",46249,46247,""],["P0000243",46245,"방카","심사자C","","미결","인심사",46247,46246,""],["P0000244",46245,"방카","","자동심사","반송","가입불가","",46248,""],["P0000245",46245,"전속","","자동심사","반송","가입불가",46246,46246,""],["P0000246",46245,"GA","","자동심사","정상","가입가능",46254,46248,""],["P0000247",46245,"GA","","자동심사","정상","가입가능",46247,46246,""],["P0000248",46245,"GA","심사자C","심사자C","정상","인심사",46248,46245,""],["P0000249",46245,"GA","","자동심사","정상","가입가능","",46246,""],["P0000250",46245,"GA","","자동심사","정상","가입가능","",46247,""],["P0000251",46245,"GA","심사자D","심사자D","정상","인심사",46250,46247,""],["P0000252",46245,"TM","","자동심사","정상","가입가능","",46246,""],["P0000253",46245,"방카","심사자B","심사자B","정상","인심사",46247,46247,"부담보"],["P0000254",46245,"방카","","자동심사","정상","가입가능",46246,46245,""],["P0000255",46245,"방카","","자동심사","정상","가입가능","",46246,""],["P0000256",46245,"방카","","자동심사","정상","가입가능",46248,46246,""],["P0000257",46245,"전속","심사자A","심사자A","정상","",46253,46247,""],["P0000258",46245,"전속","심사자D","심사자D","정상","인심사",46249,46247,""],["P0000259",46245,"전속","심사자D","심사자D","정상","인심사",46249,46247,""],["P0000260",46245,"전속","","자동심사","정상","가입가능",46247,46246,""],["P0000261",46245,"전속","","심사자D","정상","인심사",46253,46248,""],["P0000262",46245,"GA","심사자B","심사자B","청철","",46251,46248,""],["P0000263",46245,"방카","심사자H","심사자H","청철","인심사",46250,46247,""],["P0000264",46246,"GA","심사자E","심사자E","미결","인심사",46250,46247,""],["P0000265",46246,"GA","","자동심사","반송","가입가능","",46248,"부담보"],["P0000266",46246,"TM","심사자G","심사자G","반송","",46247,46247,""],["P0000267",46246,"방카","심사자C","심사자C","반송","인심사",46254,46247,""],["P0000268",46246,"GA","","자동심사","정상","가입가능","",46247,""],["P0000269",46246,"GA","","자동심사","정상","가입가능","",46247,""],["P0000270",46246,"GA","심사자A","심사자A","정상","인심사",46256,46247,"부담보"],["P0000271",46246,"GA","심사자D","심사자D","정상","인심사",46251,46247,""],["P0000272",46246,"GA","심사자A","심사자A","정상","",46253,46249,"부담보"],["P0000273",46246,"GA","","자동심사","정상","가입가능",46253,46247,""],["P0000274",46246,"GA","심사자C","심사자A","정상","인심사",46247,"",""],["P0000275",46246,"GA","","자동심사","정상","가입가능","",46249,""],["P0000276",46246,"GA","","자동심사","정상","가입가능","",46249,""],["P0000277",46246,"방카","심사자B","심사자B","정상","인심사",46249,46249,"할증"],["P0000278",46246,"방카","","자동심사","정상","가입가능","",46249,""],["P0000279",46246,"방카","","자동심사","정상","가입가능","",46246,""],["P0000280",46246,"전속","","자동심사","정상","가입가능",46248,46248,""],["P0000281",46246,"전속","","자동심사","정상","가입가능",46248,46248,""],["P0000282",46246,"전속","심사자B","심사자B","정상","인심사","",46249,""],["P0000283",46246,"GA","심사자A","심사자A","청철","인심사",46248,46248,""],["P0000284",46246,"GA","","자동심사","청철","가입가능","",46248,""],["P0000285",46246,"전속","","자동심사","청철","가입가능","",46247,""],["P0000286",46247,"GA","심사자E","","미결","인심사",46253,46250,""],["P0000287",46247,"GA","심사자C","심사자C","미결","",46249,46249,""],["P0000288",46247,"GA","심사자E","","미결","인심사",46249,46249,""],["P0000289",46247,"GA","심사자A","","미결","인심사",46247,46247,""],["P0000290",46247,"전속","심사자A","심사자A","미결","인심사",46252,46250,""],["P0000291",46247,"GA","심사자A","심사자A","반송","인심사",46251,46248,""],["P0000292",46247,"GA","심사자B","심사자B","반송","인심사",46251,46249,""],["P0000293",46247,"TM","","자동심사","반송","가입불가",46250,46248,""],["P0000294",46247,"방카","심사자H","심사자C","반송","인심사",46251,46249,""],["P0000295",46247,"전속","심사자A","심사자A","반송","인심사",46248,46248,""],["P0000296",46247,"전속","","자동심사","반송","가입불가","",46248,""],["P0000297",46247,"전속","","자동심사","반송","가입불가","",46248,""],["P0000298",46247,"GA","","자동심사","정상","가입가능","",46248,""],["P0000299",46247,"GA","","자동심사","정상","조건부인수","",46248,"할증"],["P0000300",46247,"GA","심사자B","심사자B","정상","인심사",46257,46248,""],["P0000301",46247,"GA","심사자A","심사자A","정상","인심사",46249,46249,""],["P0000302",46247,"GA","","자동심사","정상","가입가능",46255,46250,""],["P0000303",46247,"GA","심사자B","심사자F","정상","인심사",46251,46250,"일부보장제외"],["P0000304",46247,"GA","심사자G","심사자G","정상","인심사",46251,46250,""],["P0000305",46247,"GA","심사자A","심사자A","정상","인심사",46251,46249,""],["P0000306",46247,"GA","심사자B","심사자B","정상","인심사","",46247,"부담보"],["P0000307",46247,"TM","","자동심사","정상","가입가능",46252,46247,""],["P0000308",46247,"TM","","자동심사","정상","조건부인수","",46250,"부담보"],["P0000309",46247,"TM","","자동심사","정상","가입가능",46248,46247,""],["P0000310",46247,"방카","","자동심사","정상","조건부인수","",46247,"부담보"],["P0000311",46247,"방카","심사자B","심사자B","정상","인심사",46251,46249,""],["P0000312",46247,"방카","","자동심사","정상","가입가능","",46247,""],["P0000313",46247,"방카","","자동심사","정상","가입가능","",46249,""],["P0000314",46247,"GA","심사자A","심사자A","청철","인심사",46250,46248,""],["P0000315",46248,"전속","심사자A","","미결","인심사",46253,46251,""],["P0000316",46248,"GA","심사자C","심사자C","반송","인심사",46252,46250,""],["P0000317",46248,"GA","심사자A","심사자A","반송","인심사",46249,46248,""],["P0000318",46248,"TM","심사자B","심사자B","반송","인심사",46254,46251,""],["P0000319",46248,"GA","심사자A","심사자A","정상","인심사",46249,46248,""],["P0000320",46248,"GA","","자동심사","정상","조건부인수",46248,46248,"부담보"],["P0000321",46248,"GA","심사자E","심사자E","정상","인심사",46250,46250,"할증"],["P0000322",46248,"GA","심사자C","심사자C","정상","인심사",46249,46249,""],["P0000323",46248,"GA","심사자C","심사자C","정상","인심사",46252,46248,""],["P0000324",46248,"GA","심사자C","심사자C","정상","인심사",46249,46248,""],["P0000325",46248,"GA","심사자A","심사자A","정상","인심사",46252,46251,""],["P0000326",46248,"GA","심사자G","","정상","인심사",46252,46249,"감액"],["P0000327",46248,"GA","심사자E","심사자E","정상","인심사",46250,46250,""],["P0000328",46248,"TM","","자동심사","정상","가입가능","",46250,""],["P0000329",46248,"TM","","자동심사","정상","가입가능",46253,46249,""],["P0000330",46248,"TM","","자동심사","정상","가입가능","",46248,""],["P0000331",46248,"TM","심사자C","심사자C","정상","인심사",46251,46251,""],["P0000332",46248,"방카","","자동심사","정상","가입가능","",46248,""],["P0000333",46248,"방카","","자동심사","정상","가입가능","",46251,""],["P0000334",46248,"방카","","자동심사","정상","가입가능","",46248,""],["P0000335",46248,"전속","심사자F","심사자F","정상","인심사",46254,46251,""],["P0000336",46248,"전속","","자동심사","정상","가입가능","",46248,""],["P0000337",46249,"GA","","자동심사","미결","가입가능",46253,46249,""],["P0000338",46249,"GA","심사자C","","미결","인심사",46252,46250,""],["P0000339",46249,"GA","심사자B","","미결","인심사",46255,46252,""],["P0000340",46249,"GA","심사자D","심사자D","미결","인심사",46252,46252,""],["P0000341",46249,"전속","","자동심사","미결","가입가능","",46250,""],["P0000342",46249,"GA","","자동심사","반송","가입불가",46252,46252,""],["P0000343",46249,"TM","심사자E","심사자E","반송","인심사",46253,46250,""],["P0000344",46249,"GA","","자동심사","정상","가입가능",46250,46250,""],["P0000345",46249,"GA","","자동심사","정상","가입가능","",46252,""],["P0000346",46249,"GA","","자동심사","정상","가입가능",46250,46249,""],["P0000347",46249,"TM","심사자E","심사자E","정상","인심사",46251,46251,""],["P0000348",46249,"TM","","자동심사","정상","가입가능",46251,46250,""],["P0000349",46249,"방카","","자동심사","정상","가입가능","",46251,""],["P0000350",46249,"방카","","자동심사","정상","조건부인수",46253,46251,""],["P0000351",46249,"방카","","자동심사","정상","가입가능","",46249,""],["P0000352",46249,"방카","","자동심사","정상","가입가능",46257,46252,""],["P0000353",46249,"전속","","자동심사","정상","가입가능","",46252,""],["P0000354",46249,"전속","심사자B","심사자B","정상","인심사",46250,46250,""],["P0000355",46249,"전속","심사자C","심사자C","정상","",46252,46249,""],["P0000356",46249,"전속","심사자H","심사자F","정상","인심사",46258,46250,""],["P0000357",46249,"전속","","자동심사","정상","조건부인수","",46250,"부담보"],["P0000358",46249,"전속","심사자A","심사자A","정상","인심사",46251,46249,""],["P0000359",46249,"전속","심사자D","심사자A","청철","인심사",46254,46252,""],["P0000360",46250,"GA","심사자E","","미결","인심사",46252,46252,""],["P0000361",46250,"방카","심사자F","","미결","인심사",46251,46250,""],["P0000362",46250,"방카","심사자F","심사자F","반송","인심사",46257,46252,""],["P0000363",46250,"GA","","자동심사","정상","가입가능","",46253,""],["P0000364",46250,"GA","","자동심사","정상","가입가능","",46250,""],["P0000365",46250,"GA","심사자H","심사자H","정상","인심사",46253,46250,"감액"],["P0000366",46250,"GA","","자동심사","정상","가입가능",46251,46250,""],["P0000367",46250,"GA","심사자A","심사자F","정상","",46254,46252,""],["P0000368",46250,"GA","","자동심사","정상","가입가능",46255,46253,""],["P0000369",46250,"TM","","자동심사","정상","가입가능","",46251,""],["P0000370",46250,"방카","심사자E","심사자E","정상","인심사",46253,46252,""],["P0000371",46250,"방카","","자동심사","정상","가입가능","",46250,""],["P0000372",46250,"방카","","자동심사","정상","가입가능","",46250,""],["P0000373",46250,"전속","","자동심사","정상","가입가능","",46253,""],["P0000374",46250,"전속","심사자C","심사자C","정상","인심사",46256,46253,""],["P0000375",46250,"전속","","자동심사","정상","가입가능","",46251,""],["P0000376",46250,"전속","","자동심사","정상","가입가능","",46251,""],["P0000377",46251,"GA","심사자G","","미결","인심사",46257,46254,""],["P0000378",46251,"방카","심사자B","","미결","인심사","",46254,""],["P0000379",46251,"방카","심사자D","","미결","인심사",46254,46253,""],["P0000380",46251,"전속","심사자C","","미결","인심사",46255,46252,""],["P0000381",46251,"GA","","자동심사","정상","가입가능",46259,46254,""],["P0000382",46251,"GA","심사자D","심사자D","정상","인심사",46253,46252,"일부보장제외"],["P0000383",46251,"GA","심사자G","자동심사","정상","인심사",46252,46251,"일부보장제외"],["P0000384",46251,"GA","","자동심사","정상","가입가능",46255,46254,""],["P0000385",46251,"GA","","자동심사","정상","가입가능","",46254,""],["P0000386",46251,"TM","","자동심사","정상","가입가능","",46253,""],["P0000387",46251,"TM","심사자D","심사자D","정상","인심사",46252,46252,""],["P0000388",46251,"방카","","자동심사","정상","가입가능",46254,46254,""],["P0000389",46251,"방카","","자동심사","정상","조건부인수","",46253,"부담보"],["P0000390",46251,"전속","","자동심사","정상","가입가능","",46253,""],["P0000391",46251,"전속","심사자A","심사자H","정상","인심사",46253,46253,"부담보"],["P0000392",46251,"전속","","자동심사","청철","조건부인수","",46253,""],["P0000393",46252,"GA","심사자B","","미결","인심사",46257,46254,""],["P0000394",46252,"GA","심사자A","심사자A","반송","인심사",46258,46255,""],["P0000395",46252,"방카","심사자B","심사자B","반송","",46255,46255,""],["P0000396",46252,"GA","","자동심사","정상","가입가능","",46252,""],["P0000397",46252,"GA","","자동심사","정상","가입가능",46257,46254,""],["P0000398",46252,"GA","","자동심사","정상","가입가능","",46255,""],["P0000399",46252,"GA","","자동심사","정상","가입가능","",46253,""],["P0000400",46252,"GA","","자동심사","정상","조건부인수","",46255,"감액"],["P0000401",46252,"GA","","자동심사","정상","가입가능","",46252,""],["P0000402",46252,"GA","심사자E","심사자E","정상","인심사",46258,46255,""],["P0000403",46252,"방카","","자동심사","정상","가입가능",46256,46253,""],["P0000404",46252,"방카","","자동심사","정상","가입가능","",46254,""],["P0000405",46252,"방카","","자동심사","정상","가입가능","",46255,""],["P0000406",46252,"방카","심사자F","심사자F","정상","인심사",46256,46255,"부담보"],["P0000407",46252,"전속","심사자A","심사자A","정상","인심사",46253,46253,""],["P0000408",46252,"전속","","자동심사","정상","가입가능",46257,46253,""],["P0000409",46252,"전속","심사자A","심사자A","정상","인심사",46253,46253,""],["P0000410",46252,"전속","","자동심사","정상","가입가능","",46253,""],["P0000411",46252,"전속","","자동심사","정상","가입가능","",46254,""],["P0000412",46252,"방카","","자동심사","청철","조건부인수",46256,46253,""],["P0000413",46253,"GA","심사자D","심사자D","정상","",46262,46254,"감액"],["P0000414",46253,"GA","","자동심사","정상","가입가능","",46254,""],["P0000415",46253,"GA","심사자B","심사자B","정상","인심사",46255,46254,"할증"],["P0000416",46253,"GA","심사자B","심사자B","정상","인심사",46257,46254,""],["P0000417",46253,"GA","심사자B","심사자D","정상","인심사",46255,46254,""],["P0000418",46253,"GA","심사자D","심사자E","정상","",46256,46253,""],["P0000419",46253,"GA","","자동심사","정상","가입가능",46255,46253,""],["P0000420",46253,"GA","심사자B","심사자G","정상","인심사",46256,46256,"할증"],["P0000421",46253,"GA","","자동심사","정상","가입가능",46256,46255,""],["P0000422",46253,"GA","","자동심사","정상","가입가능","",46253,""],["P0000423",46253,"GA","","자동심사","정상","가입가능","",46253,""],["P0000424",46253,"GA","심사자B","심사자B","정상","인심사",46263,46256,""],["P0000425",46253,"GA","심사자C","심사자C","정상","인심사",46256,46254,""],["P0000426",46253,"GA","","자동심사","정상","가입가능","",46253,""],["P0000427",46253,"GA","","자동심사","정상","가입가능",46255,46253,""],["P0000428",46253,"GA","심사자A","심사자A","정상","인심사",46258,46255,"감액"],["P0000429",46253,"GA","","자동심사","정상","가입가능","",46254,""],["P0000430",46253,"TM","","자동심사","정상","가입가능","",46255,""],["P0000431",46253,"방카","","자동심사","정상","조건부인수",46255,46253,"할증"],["P0000432",46253,"방카","","자동심사","정상","가입가능",46260,46255,""],["P0000433",46253,"방카","","자동심사","정상","가입가능","",46256,""],["P0000434",46253,"전속","심사자A","심사자A","정상","인심사",46259,46254,""],["P0000435",46254,"GA","심사자B","심사자F","반송","인심사",46259,46254,""],["P0000436",46254,"방카","심사자C","심사자C","반송","인심사",46256,46254,""],["P0000437",46254,"GA","","자동심사","정상","가입가능","",46255,""],["P0000438",46254,"GA","","자동심사","정상","가입가능",46258,46256,""],["P0000439",46254,"GA","","자동심사","정상","가입가능","",46254,""],["P0000440",46254,"GA","심사자D","심사자D","정상","인심사",46260,46254,""],["P0000441",46254,"GA","","자동심사","정상","가입가능","",46257,""],["P0000442",46254,"GA","심사자A","자동심사","정상","인심사",46256,46256,""],["P0000443",46254,"TM","","자동심사","정상","가입가능","",46256,""],["P0000444",46254,"TM","","자동심사","정상","조건부인수","",46255,"할증"],["P0000445",46254,"TM","심사자B","심사자B","정상","",46263,46255,"부담보"],["P0000446",46254,"방카","","자동심사","정상","조건부인수","",46254,"부담보"],["P0000447",46254,"방카","","자동심사","정상","가입가능",46256,46256,""],["P0000448",46254,"방카","","자동심사","정상","가입가능",46256,46255,""],["P0000449",46254,"전속","심사자B","심사자B","정상","인심사",46257,46257,""],["P0000450",46254,"전속","","자동심사","정상","가입가능","",46257,""],["P0000451",46254,"전속","","자동심사","정상","가입가능","",46255,""],["P0000452",46254,"방카","","자동심사","청철","가입가능","",46257,""],["P0000453",46255,"TM","","자동심사","미결","가입가능","",46256,""],["P0000454",46255,"방카","심사자B","","미결","인심사",46264,46258,""],["P0000455",46255,"방카","","자동심사","반송","가입불가","",46255,""],["P0000456",46255,"GA","","자동심사","정산","가입가능",46264,46258,""],["P0000457",46255,"GA","","자동심사","정상","가입가능","",46258,""],["P0000458",46255,"GA","","자동심사","정상","조건부인수",46257,46257,"부담보"],["P0000459",46255,"GA","","자동심사","정상","조건부인수",46256,46256,"일부보장제외"],["P0000460",46255,"GA","심사자E","심사자E","정상","인심사",46260,46257,"일부보장제외"],["P0000461",46255,"GA","심사자B","심사자B","정상","인심사",46257,46256,""],["P0000462",46255,"GA","","자동심사","정상","가입가능","",46256,""],["P0000463",46255,"GA","","자동심사","정상","가입가능","",46255,""],["P0000464",46255,"TM","","자동심사","정상","가입가능",46261,46258,""],["P0000465",46255,"방카","","자동심사","정상","가입가능","",46257,""],["P0000466",46255,"방카","","자동심사","정상","가입가능","",46257,""],["P0000467",46255,"전속","","자동심사","정상","가입가능","",46258,""],["P0000468",46255,"전속","심사자D","심사자D","정상","인심사",46256,46255,""],["P0000469",46255,"전속","","자동심사","정상","가입가능","",46258,""],["P0000470",46255,"GA","심사자C","심사자C","청철","인심사",46260,46257,""],["P0000471",46256,"전속","","자동심사","미결","가입가능","",46258,""],["P0000472",46256,"전속","","자동심사","반송","가입불가",46262,46259,""],["P0000473",46256,"GA","","자동심사","정상","가입가능","",46259,""],["P0000474",46256,"GA","","자동심사","정상","가입가능","",46258,""],["P0000475",46256,"GA","","자동심사","정상","가입가능","",46257,""],["P0000476",46256,"GA","","자동심사","정상","가입가능","",46257,""],["P0000477",46256,"GA","","자동심사","정상","조건부인수","",46256,"할증"],["P0000478",46256,"GA","심사자B","심사자B","정상","인심사",46261,46258,"할증"],["P0000479",46256,"GA","","자동심사","정상","가입가능","",46258,""],["P0000480",46256,"TM","심사자A","심사자A","정상","",46260,46258,""],["P0000464",46255,"TM","","자동심사","정상","가입가능",46261,46258,""],["P0000482",46256,"방카","","자동심사","정상","조건부인수","",46258,"부담보"],["P0000483",46256,"방카","","자동심사","정상","가입가능","",46257,""],["P0000484",46256,"전속","심사자A","심사자A","정상","",46262,46259,""],["P0000485",46256,"전속","","자동심사","정상","가입가능","",46258,""],["P0000486",46256,"전속","심사자D","","정상","인심사",46257,46257,"일부보장제외"],["P0000487",46256,"전속","","자동심사","정상","가입가능",46260,46257,""],["P0000488",46256,"전속","","자동심사","정상","가입가능","",46256,""],["P0000489",46256,"전속","","자동심사","정상","가입가능","",46259,""],["P0000490",46256,"GA","","자동심사","청철","가입가능","",46258,""],["P0000491",46256,"GA","","자동심사","청철","가입가능",46261,46259,""],["P0000492",46257,"GA","심사자A","심사자A","미결","인심사",46259,46257,""],["P0000493",46257,"GA","심사자A","심사자A","미결","인심사",46259,46259,""],["P0000494",46257,"GA","심사자E","","미결","인심사",46266,46259,""],["P0000495",46257,"GA","심사자E","심사자E","반송","인심사",46258,46258,""],["P0000496",46257,"전속","심사자C","심사자C","반송","인심사",46257,46257,"부담보"],["P0000497",46257,"GA","심사자E","심사자B","정상","인심사",46266,46259,"감액"],["P0000498",46257,"GA","심사자H","심사자B","정상","인심사",46263,46260,""],["P0000499",46257,"GA","심사자A","심사자A","정상","인심사",46258,46258,""],["P0000500",46257,"GA","심사자D","심사자D","정상","인심사","",46260,""],["P0000501",46257,"GA","","자동심사","정상","가입가능","",46260,""],["P0000502",46257,"GA","","자동심사","정상","가입가능",46262,46259,""],["P0000503",46257,"GA","","자동심사","정상","조건부인수","",46257,"감액"],["P0000504",46257,"TM","","자동심사","정상","가입가능","",46259,""],["P0000505",46257,"TM","심사자F","심사자G","정상","인심사",46259,46257,""],["P0000506",46257,"방카","","자동심사","정상","가입가능","",46260,""],["P0000507",46257,"방카","심사자B","심사자B","정상","",46260,46259,""],["P0000508",46257,"방카","","자동심사","정상","가입가능","",46260,""],["P0000509",46257,"방카","","자동심사","정상","조건부인수","",46257,"부담보"],["P0000510",46257,"방카","심사자D","심사자D","정상","인심사",46261,46259,"감액"],["P0000511",46257,"방카","심사자C","심사자C","정상","인심사",46260,46260,""],["P0000512",46257,"전속","","자동심사","정상","가입가능","",46259,""],["P0000513",46257,"전속","심사자B","심사자B","정상","인심사",46257,46257,""],["P0000514",46257,"전속","","자동심사","정상","가입가능",46262,46260,""],["P0000515",46257,"GA","","자동심사","청철","가입가능",46266,46260,""],["P0000516",46257,"GA","","자동심사","청철","가입가능","",46257,""],["P0000517",46258,"TM","심사자G","","미결","인심사",46261,46258,""],["P0000518",46258,"방카","심사자A","심사자A","미결","인심사",46265,46258,""],["P0000519",46258,"전속","심사자A","","미결","인심사",46259,46259,""],["P0000520",46258,"GA","심사자C","심사자A","반송","인심사",46264,46261,""],["P0000521",46258,"GA","","자동심사","정상","가입가능","",46260,""],["P0000522",46258,"GA","","자동심사","정상","가입가능","",46261,""],["P0000523",46258,"GA","","자동심사","정상","조건부인수","",46259,"감액"],["P0000524",46258,"GA","심사자A","심사자A","정상","인심사",46259,46259,""],["P0000525",46258,"GA","심사자A","심사자A","정상","인심사",46260,46258,""],["P0000526",46258,"GA","심사자E","심사자H","정상","인심사",46260,46259,"감액"],["P0000527",46258,"TM","","자동심사","정상","가입가능",46263,46260,""],["P0000528",46258,"방카","","자동심사","정상","가입가능",46261,46260,""],["P0000529",46258,"전속","","자동심사","정상","조건부인수","",46259,"감액"],["P0000530",46258,"전속","심사자D","심사자D","정상","",46262,46258,""],["P0000531",46258,"전속","심사자C","심사자D","정상","",46269,46260,""],["P0000532",46258,"전속","심사자B","심사자B","정상","인심사",46259,46259,""],["P0000533",46258,"GA","","자동심사","청철","조건부인수",46260,46258,""],["P0000534",46259,"GA","심사자C","","미결","인심사",46264,46261,""],["P0000535",46259,"전속","심사자A","","미결","인심사",46259,46259,""],["P0000536",46259,"GA","","자동심사","반송","가입불가","",46260,""],["P0000537",46259,"GA","","자동심사","반송","가입불가","",46259,""],["P0000538",46259,"GA","","자동심사","정상","조건부인수",46263,46261,"일부보장제외"],["P0000539",46259,"GA","심사자A","심사자A","정상","인심사",46260,46260,""],["P0000540",46259,"GA","심사자F","심사자F","정상","인심사",46268,46259,"일부보장제외"],["P0000541",46259,"GA","","자동심사","정상","가입가능","",46259,""],["P0000542",46259,"GA","심사자G","심사자G","정상","인심사",46262,46260,""],["P0000543",46259,"GA","","자동심사","정상","조건부인수","",46262,"감액"],["P0000544",46259,"GA","심사자E","심사자E","정상","인심사",46263,46261,""],["P0000545",46259,"GA","심사자A","심사자A","정상","인심사",46260,46260,"할증"],["P0000546",46259,"GA","","자동심사","정상","가입가능","",46260,""],["P0000547",46259,"방카","심사자C","심사자C","정상","인심사",46262,46259,"일부보장제외"],["P0000548",46259,"방카","","자동심사","정상","가입가능","",46262,""],["P0000549",46259,"방카","심사자A","심사자A","정상","인심사",46264,46262,""],["P0000550",46259,"전속","","자동심사","정상","가입가능","",46260,""],["P0000551",46259,"전속","심사자D","심사자D","정상","인심사",46262,46262,"감액"],["P0000552",46259,"전속","심사자B","심사자B","정상","인심사",46261,46259,"부담보"],["P0000553",46259,"GA","","자동심사","청철","가입가능",46267,46262,""],["P0000554",46259,"GA","심사자A","심사자A","청철","인심사",46265,46262,""],["P0000555",46260,"GA","심사자A","","미결","인심사",46265,46261,""],["P0000556",46260,"전속","","자동심사","반송","가입불가","",46263,""],["P0000557",46260,"GA","","자동심사","정상","가입가능",46268,46262,""],["P0000558",46260,"GA","","자동심사","정상","가입가능","",46260,""],["P0000559",46260,"GA","심사자G","심사자G","정상","인심사",46264,46261,""],["P0000560",46260,"GA","","자동심사","정상","가입가능","",46261,""],["P0000561",46260,"GA","심사자H","심사자H","정상","인심사",46262,46260,"일부보장제외"],["P0000562",46260,"GA","","자동심사","정상","조건부인수","",46260,"부담보"],["P0000563",46260,"GA","심사자B","심사자B","정상","인심사",46264,46263,"일부보장제외"],["P0000564",46260,"GA","심사자A","심사자A","정상","인심사",46261,46261,"일부보장제외"],["P0000565",46260,"TM","","자동심사","정상","가입가능","",46260,""],["P0000566",46260,"TM","","자동심사","정상","가입가능","",46262,""],["P0000567",46260,"방카","","자동심사","정상","가입가능","",46262,""],["P0000568",46260,"방카","","자동심사","정상","가입가능",46271,46262,""],["P0000569",46260,"방카","","자동심사","정상","가입가능","",46263,""],["P0000570",46260,"전속","","자동심사","정상","가입가능","",46260,""],["P0000571",46260,"전속","심사자H","심사자H","정상","인심사",46269,46261,""],["P0000572",46260,"전속","","자동심사","정상","가입가능","",46261,""],["P0000573",46260,"전속","","자동심사","정상","가입가능",46261,46260,""],["P0000574",46260,"TM","","자동심사","청철","가입가능","",46261,""],["P0000575",46260,"전속","","자동심사","청철","가입가능","",46263,""],["P0000576",46261,"GA","심사자B","","미결","인심사",46267,46261,""],["P0000577",46261,"GA","심사자F","심사자F","미결","인심사",46265,46264,""],["P0000578",46261,"GA","심사자B","심사자B","반송","인심사",46265,46262,""],["P0000579",46261,"GA","","자동심사","반송","가입불가",46264,46262,""],["P0000580",46261,"전속","","자동심사","반송","가입불가",46262,46262,""],["P0000581",46261,"GA","","자동심사","정상","조건부인수",46271,46264,"할증"],["P0000582",46261,"GA","","자동심사","정상","가입가능","",46263,""],["P0000583",46261,"GA","심사자D","심사자D","정상","인심사",46263,46262,""],["P0000584",46261,"GA","","자동심사","정상","가입가능","",46264,""],["P0000585",46261,"GA","심사자A","심사자H","정상","",46264,46264,"감액"],["P0000586",46261,"GA","심사자E","심사자A","정상","인심사",46262,46261,""],["P0000587",46261,"GA","심사자G","심사자G","정상","인심사","",46262,""],["P0000588",46261,"GA","심사자E","심사자E","정상","인심사",46263,46263,""],["P0000589",46261,"TM","","자동심사","정상","조건부인수",46261,46261,"일부보장제외"],["P0000590",46261,"TM","","자동심사","정상","가입가능","",46262,""],["P0000591",46261,"TM","","자동심사","정상","가입가능",46262,46262,""],["P0000592",46261,"방카","","자동심사","정상","가입가능",46265,46264,""],["P0000593",46261,"방카","","자동심사","정상","가입가능","",46263,""],["P0000594",46261,"방카","","자동심사","정상","조건부인수","",46262,"할증"],["P0000595",46261,"방카","심사자A","심사자B","정상","",46272,46264,""],["P0000596",46261,"방카","","자동심사","정상","가입가능","",46261,""],["P0000597",46261,"전속","심사자B","심사자B","정상","",46262,46262,""],["P0000598",46261,"전속","","자동심사","정상","가입가능","",46263,""],["P0000599",46261,"전속","","심사자B","정상","인심사",46267,46264,""],["P0000600",46261,"전속","심사자A","심사자A","청철","인심사",46265,46264,""],["P0000601",46266,"GA","심사자A","심사자A","미결","인심사",46273,46266,""],["P0000602",46266,"GA","심사자B","심사자B","반송","인심사",46273,46268,""],["P0000603",46266,"방카","","자동심사","반송","가입불가",46268,46266,""],["P0000604",46266,"GA","","자동심사","정상","가입가능",46266,46266,""],["P0000605",46266,"GA","","자동심사","정상","조건부인수",46269,46266,"할증"],["P0000606",46266,"GA","심사자A","심사자A","정상","인심사",46270,46267,""],["P0000607",46266,"GA","","자동심사","정상","가입가능","",46267,""],["P0000608",46266,"GA","","자동심사","정상","가입가능","",46268,""],["P0000609",46266,"GA","심사자E","심사자G","정상","인심사",46270,46269,""],["P0000610",46266,"TM","","자동심사","정상","가입가능",46271,46269,""],["P0000611",46266,"방카","","자동심사","정상","조건부인수","",46269,"부담보"],["P0000612",46266,"방카","","자동심사","정상","가입가능","",46267,""],["P0000613",46266,"방카","","자동심사","정상","가입가능","",46267,""],["P0000614",46266,"방카","","자동심사","정상","조건부인수","",46267,"일부보장제외"],["P0000615",46266,"방카","심사자A","심사자A","정상","인심사",46271,46268,"할증"],["P0000616",46266,"전속","심사자A","심사자F","정상","인심사",46266,46266,"부담보"],["P0000617",46266,"전속","심사자B","심사자B","정상","인심사",46273,46267,""],["P0000618",46266,"전속","","자동심사","정상","가입가능","",46268,""],["P0000619",46266,"전속","","자동심사","정상","가입가능","",46266,""],["P0000620",46266,"GA","심사자B","심사자B","청철","",46269,46268,""],["P0000621",46266,"GA","심사자D","","청철","인심사",46268,46268,""],["P0000622",46267,"GA","심사자A","심사자A","반송","인심사",46271,46267,""],["P0000623",46267,"방카","심사자D","심사자D","반송","인심사",46267,46267,""],["P0000624",46267,"GA","심사자D","심사자D","정상","인심사",46268,46268,""],["P0000625",46267,"GA","","자동심사","정상","가입가능",46272,46270,""],["P0000626",46267,"GA","","자동심사","정상","가입가능",46272,46269,""],["P0000627",46267,"GA","","자동심사","정상","가입가능","",46267,""],["P0000628",46267,"GA","","자동심사","정상","가입가능","",46269,""],["P0000629",46267,"GA","심사자C","심사자C","정상","",46269,46268,"부담보"],["P0000630",46267,"TM","","자동심사","정상","가입가능","",46270,""],["P0000631",46267,"TM","","자동심사","정상","가입가능",46270,46268,""],["P0000632",46267,"TM","","자동심사","정상","가입가능","",46269,""],["P0000633",46267,"방카","","자동심사","정상","가입가능","",46268,""],["P0000634",46267,"방카","","자동심사","정상","가입가능",46272,46269,""],["P0000635",46267,"방카","","자동심사","정상","가입가능",46276,46268,""],["P0000636",46267,"전속","","자동심사","정상","가입가능","",46270,""],["P0000637",46267,"전속","심사자D","심사자A","정상","인심사",46269,46269,"일부보장제외"],["P0000638",46267,"전속","심사자F","심사자E","정상","인심사",46270,46269,""],["P0000639",46267,"전속","","자동심사","정상","가입가능","",46268,""],["P0000640",46267,"전속","","자동심사","정상","가입가능","",46268,""],["P0000641",46267,"GA","심사자G","심사자G","청철","",46270,46268,""],["P0000642",46267,"TM","심사자E","심사자E","청철","인심사",46269,46267,""],["P0000643",46268,"GA","심사자D","","미결","",46272,46270,""],["P0000644",46268,"GA","심사자C","심사자C","반송","인심사",46271,46270,""],["P0000645",46268,"GA","심사자A","심사자A","반송","인심사",46271,46270,""],["P0000646",46268,"방카","","자동심사","반송","가입불가",46278,46270,""],["P0000647",46268,"GA","","자동심사","정상","가입가능","",46271,""],["P0000648",46268,"GA","","자동심사","정상","가입가능","",46271,""],["P0000649",46268,"GA","심사자C","심사자A","정상","인심사",46270,46269,"부담보"],["P0000650",46268,"GA","심사자A","심사자E","정상","인심사",46272,46269,""],["P0000651",46268,"GA","심사자A","심사자C","정상","",46272,46269,"할증"],["P0000652",46268,"GA","","자동심사","정상","가입가능","",46268,""],["P0000653",46268,"GA","심사자F","심사자G","정상","인심사",46271,46271,""],["P0000654",46268,"TM","심사자A","심사자A","정상","인심사",46274,46271,""],["P0000655",46268,"TM","","자동심사","정상","가입가능","",46271,""],["P0000656",46268,"방카","","자동심사","정상","조건부인수","",46269,"감액"],["P0000657",46268,"방카","심사자E","심사자E","정상","인심사",46271,46268,""],["P0000658",46268,"방카슈","심사자C","심사자C","정상","인심사",46271,46271,""],["P0000659",46268,"전속","심사자B","심사자B","정상","",46274,46270,""],["P0000660",46268,"전속","심사자G","심사자G","정상","",46276,46268,"감액"],["P0000661",46268,"전속","심사자D","심사자D","정상","인심사",46270,46270,""],["P0000662",46268,"전속","","자동심사","정상","가입가능","",46271,""],["P0000663",46268,"전속","","자동심사","정상","가입가능",46271,46270,""],["P0000664",46268,"GA","심사자A","심사자A","청철","인심사","",46271,""],["P0000665",46268,"전속","심사자H","심사자H","청철","인심사",46277,46270,""],["P0000666",46268,"전속","심사자E","심사자E","청철","인심사",46268,46268,""],["P0000667",46269,"GA","심사자D","심사자D","미결","인심사",46272,46271,""],["P0000668",46269,"전속","","자동심사","미결","조건부인수",46275,46272,""],["P0000669",46269,"GA","심사자B","심사자B","반송","인심사",46276,46270,""],["P0000670",46269,"방카","","자동심사","반송","가입가능",46272,46270,"부담보"],["P0000671",46269,"GA","","심사자A","정상","인심사",46271,46271,""],["P0000672",46269,"GA","심사자C","심사자C","정상","인심사",46275,46270,""],["P0000673",46269,"GA","","자동심사","정상","가입가능","",46272,""],["P0000674",46269,"GA","","자동심사","정상","가입가능","",46270,""],["P0000675",46269,"GA","","자동심사","정상","가입가능","",46270,""],["P0000676",46269,"GA","","자동심사","정상","가입가능",46277,46271,""],["P0000677",46269,"GA","","자동심사","정상","가입가능",46271,46271,""],["P0000678",46269,"GA","심사자E","심사자E","정상","인심사",46274,46272,""],["P0000679",46269,"GA","심사자C","심사자C","정상","인심사",46270,46270,"감액"],["P0000680",46269,"GA","","자동심사","정상","가입가능","",46270,""],["P0000681",46269,"GA","","자동심사","정상","가입가능",46270,46269,""],["P0000682",46269,"GA","심사자C","심사자C","정상","인심사",46274,46271,""],["P0000683",46269,"GA","","자동심사","정상","조건부인수","",46271,"일부보장제외"],["P0000684",46269,"GA","","자동심사","정상","가입가능","",46270,""],["P0000685",46269,"GA","심사자H","심사자H","정상","인심사",46270,46270,""],["P0000686",46269,"TM","","자동심사","정상","가입가능","",46272,""],["P0000687",46269,"TM","","자동심사","정상","가입가능","",46271,""],["P0000688",46269,"TM","심사자B","심사자B","정상","인심사",46274,46269,""],["P0000689",46269,"TM","","자동심사","정상","가입가능","",46269,""],["P0000690",46269,"TM","","자동심사","정상","가입가능","",46269,""],["P0000691",46269,"방카","심사자F","심사자H","정상","","",46271,"일부보장제외"],["P0000692",46269,"방카","","자동심사","정상","가입가능","",46269,""],["P0000693",46269,"방카","","자동심사","정상","가입가능","",46270,""],["P0000694",46269,"방카","","심사자D","정상","인심사",46273,46271,""],["P0000695",46269,"전속","심사자A","심사자A","정상","인심사",46270,46269,"일부보장제외"],["P0000696",46269,"전속","","자동심사","정상","가입가능","",46272,""],["P0000697",46270,"GA","심사자G","","미결","인심사",46276,46273,""],["P0000698",46270,"방카","심사자B","심사자B","미결","인심사",46280,46271,""],["P0000699",46270,"방카","","자동심사","미결","가입가능","",46270,""],["P0000700",46270,"방카","","자동심사","반송","가입불가","",46272,""],["P0000701",46270,"방카","","자동심사","반송","가입가능","",46270,"부담보"],["P0000702",46270,"방카","","자동심사","반송","가입불가","",46273,""],["P0000703",46270,"전속","","자동심사","반송","가입가능","",46271,"부담보"],["P0000704",46270,"전속","심사자C","심사자C","반송","인심사",46274,46273,""],["P0000705",46270,"GA","","자동심사","정상","가입가능","",46273,""],["P0000706",46270,"GA","심사자B","심사자B","정상","인심사",46273,46273,"할증"],["P0000707",46270,"GA","","자동심사","정상","가입가능","",46271,""],["P0000708",46270,"TM","","자동심사","정상","가입가능","",46270,""],["P0000709",46270,"방카","","자동심사","정상","조건부인수","",46271,"부담보"],["P0000710",46270,"방카","","자동심사","정상","조건부인수","",46270,"할증"],["P0000711",46270,"방카","","자동심사","정상","가입가능","",46273,""],["P0000712",46270,"방카","","자동심사","정상","가입가능","",46272,""],["P0000713",46270,"전속","","자동심사","정상","가입가능","",46270,""],["P0000714",46270,"전속","","자동심사","정상","가입가능","",46272,""],["P0000715",46270,"GA","심사자B","심사자B","청철","인심사",46273,46272,"할증"],["P0000716",46270,"방카","","자동심사","청철","가입가능",46278,46270,""],["P0000717",46271,"GA","심사자B","","미결","인심사",46274,46274,""],["P0000718",46271,"방카","심사자C","","미결","인심사",46276,46273,""],["P0000719",46271,"GA","심사자H","심사자H","반송","인심사",46273,46273,""],["P0000720",46271,"방카","","자동심사","반송","가입불가","",46274,""],["P0000721",46271,"전속","심사자B","심사자B","반송","인심사",46272,46272,""],["P0000722",46271,"G.A","심사자C","심사자C","정상","인심사",46271,46271,"감액"],["P0000723",46271,"GA","","자동심사","정상","가입가능",46274,46272,""],["P0000724",46271,"GA","","자동심사","정상","가입가능","",46274,""],["P0000725",46271,"GA","심사자B","심사자B","정상","인심사",46275,46274,""],["P0000726",46271,"GA","","자동심사","정상","가입가능","",46273,""],["P0000727",46271,"GA","심사자D","심사자D","정상","인심사",46273,46271,""],["P0000728",46271,"GA","심사자B","심사자B","정상","인심사",46275,46272,"부담보"],["P0000729",46271,"GA","심사자G","심사자E","정상","인심사",46272,46271,""],["P0000730",46271,"TM","심사자C","심사자C","정상","인심사","",46273,""],["P0000731",46271,"TM","","자동심사","정상","가입가능",46274,46272,""],["P0000732",46271,"TM","","자동심사","정상","가입가능","",46274,""],["P0000733",46271,"방카","","자동심사","정상","가입가능","",46274,""],["P0000734",46271,"방카","심사자A","심사자A","정상","",46277,46274,""],["P0000735",46271,"방카","","자동심사","정상","가입가능",46273,46272,""],["P0000736",46271,"방카","","자동심사","정상","가입가능",46280,46273,""],["P0000737",46271,"전속","심사자A","심사자G","정상","인심사",46273,46273,""],["P0000738",46271,"전속","심사자A","심사자C","정상","인심사",46273,"",""],["P0000739",46271,"전속","심사자G","심사자G","정상","인심사",46275,46274,""],["P0000740",46271,"GA","","자동심사","청철","가입가능","",46273,""],["P0000741",46272,"GA","심사자A","","미결","인심사",46277,46275,""],["P0000742",46272,"GA","심사자B","","미결","인심사",46274,46272,""],["P0000743",46272,"GA","심사자B","심사자B","미결","인심사",46277,"",""],["P0000744",46272,"TM","심사자F","심사자F","반송","",46274,46274,""],["P0000745",46272,"GA","심사자E","","정상","","",46274,"일부보장제외"],["P0000746",46272,"GA","","자동심사","정상","가입가능","",46274,""],["P0000747",46272,"GA","심사자C","","정상","인심사",46274,46272,""],["P0000748",46272,"GA","","자동심사","정상","조건부인수","",46275,"할증"],["P0000749",46272,"GA","심사자C","심사자C","정상","인심사",46283,46286,""],["P0000750",46272,"GA","","자동심사","정상","가입가능","",46274,""],["P0000751",46272,"TM","","자동심사","정상","가입가능","",46274,""],["P0000752",46272,"방카","","자동심사","정상","가입가능",46276,46274,""],["P0000753",46272,"방카","심사자B","심사자B","정상","인심사",46277,46275,""],["P0000754",46272,"방카","","자동심사","정상","조건부인수","",46272,"일부보장제외"],["P0000755",46272,"방카","","자동심사","정상","가입가능",46273,46272,""],["P0000756",46272,"방카","","자동심사","정상","가입가능","",46273,""],["P0000757",46272,"방카","심사자D","심사자B","정상","인심사","",46272,""],["P0000758",46272,"방카","심사자B","심사자B","정상","인심사",46275,46275,""],["P0000759",46272,"전속","","자동심사","정상","가입가능","",46274,""],["P0000760",46272,"전속","","자동심사","정상","가입가능","",46273,""],["P0000761",46272,"전속","","자동심사","정상","조건부인수",46273,46272,"부담보"],["P0000762",46272,"방카","심사자B","심사자B","청철","인심사",46283,46275,""],["P0000763",46272,"방카","심사자A","심사자A","청철","인심사",46274,46273,""],["P0000764",46272,"방카","","자동심사","청철","가입가능","",46272,""],["P0000765",46273,"GA","심사자B","심사자B","미결","인심사",46277,46276,""],["P0000766",46273,"GA","","심사자F","반송","인심사",46277,46275,""],["P0000767",46273,"GA","심사자E","심사자E","반송","인심사",46274,46273,""],["P0000768",46273,"GA","","자동심사","정상","가입가능","",46276,""],["P0000769",46273,"GA","심사자F","심사자F","정상","인심사",46281,46275,"일부보장제외"],["P0000770",46273,"GA","심사자D","심사자D","정상","인심사",46277,46275,"일부보장제외"],["P0000771",46273,"GA","","자동심사","정상","조건부인수","",46273,"일부보장제외"],["P0000772",46273,"GA","","자동심사","정상","가입가능",46275,46275,""],["P0000773",46273,"GA","심사자G","심사자G","정상","인심사",46273,46273,""],["P0000774",46273,"GA","","자동심사","정상","가입가능","",46274,""],["P0000775",46273,"GA","심사자H","심사자H","정상","인심사",46282,46276,"감액"],["P0000776",46273,"GA","","자동심사","정상","가입가능","",46276,""],["P0000777",46273,"GA","","자동심사","정상","가입가능","",46275,""],["P0000778",46273,"GA","","자동심사","정상","가입가능","",46273,""],["P0000779",46273,"GA","심사자A","심사자D","정상","인심사",46278,46274,""],["P0000780",46273,"TM","","자동심사","정상","가입가능","",46274,""],["P0000781",46273,"TM","심사자A","심사자A","정상","인심사",46274,46274,""],["P0000782",46273,"TM","심사자A","심사자A","정상","인심사",46276,46274,""],["P0000783",46273,"방카","","자동심사","정상","가입가능","",46272,""],["P0000784",46273,"방카","","자동심사","정상","조건부인수","",46276,"일부보장제외"],["P0000785",46273,"전속","심사자A","심사자A","정상","인심사",46274,46274,"부담보"],["P0000786",46273,"전속","","자동심사","정상","가입가능","",46276,""],["P0000787",46273,"전속","심사자D","심사자D","정상","",46276,46275,"부담보"],["P0000723",46271,"GA","","자동심사","정상","가입가능",46274,46272,""],["P0000789",46273,"GA","","심사자F","청철","인심사",46279,46273,""],["P0000790",46273,"GA","심사자C","심사자C","청철","인심사",46276,46273,""],["P0000791",46273,"GA","","자동심사","청철","가입가능",46280,46275,""],["P0000792",46274,"GA","심사자A","","미결","인심사",46277,46276,""],["P0000793",46274,"GA","심사자C","","미결","인심사",46280,46274,""],["P0000794",46274,"GA","심사자E","심사자E","반송","인심사",46277,46276,""],["P0000795",46274,"GA","심사자D","심사자F","정상","",46277,46277,""],["P0000796",46274,"GA","","자동심사","정상","가입가능","",46275,""],["P0000797",46274,"GA","","자동심사","정상","조건부인수",46277,46277,"일부보장제외"],["P0000798",46274,"GA","심사자C","심사자E","정상","인심사",46277,46276,""],["P0000799",46274,"GA","","자동심사","정상","가입가능","",46276,""],["P0000800",46274,"GA","","자동심사","정상","가입가능","",46277,""],["P0000801",46274,"TM","","자동심사","정상","가입가능","",46275,""],["P0000802",46274,"TM","","자동심사","정상","가입가능","",46274,""],["P0000803",46274,"TM","","자동심사","정상","가입가능","",46276,""],["P0000804",46274,"방카","","자동심사","정상","가입가능","",46276,""],["P0000805",46274,"방카","","자동심사","정상","가입가능","",46274,""],["P0000806",46274,"전속","","자동심사","정상","가입가능","",46274,""],["P0000807",46274,"전속","","자동심사","정상","가입가능","",46275,""],["P0000808",46274,"GA","","자동심사","청철","가입가능",46279,46276,""],["P0000809",46274,"방카","심사자A","심사자A","청철","",46277,46274,""],["P0000810",46275,"전속","심사자C","","미결","인심사",46279,46278,""],["P0000811",46275,"GA","심사자G","심사자G","반송","인심사",46281,46278,""],["P0000812",46275,"방카","","자동심사","반송","가입불가","",46278,""],["P0000813",46275,"GA","심사자D","심사자D","정상","인심사",46281,46275,""],["P0000814",46275,"GA","","자동심사","정상","가입가능","",46275,""],["P0000815",46275,"GA","","자동심사","정상","가입가능","",46278,""],["P0000816",46275,"GA","","자동심사","정상","가입가능","",46276,""],["P0000815",46275,"GA","","자동심사","정상","가입가능","",46278,""],["P0000818",46275,"TM","심사자A","심사자A","정상","인심사",46280,46277,""],["P0000819",46275,"방카","","자동심사","정상","가입가능","",46278,""],["P0000820",46275,"방카","","자동심사","정상","가입가능","",46276,""],["P0000821",46275,"방카","","자동심사","정상","가입가능","",46276,""],["P0000822",46275,"방카","심사자B","심사자C","정상","인심사",46278,46278,""],["P0000823",46275,"방카","","자동심사","정상","가입가능","",46276,""],["P0000824",46275,"방카","심사자A","심사자A","정상","인심사",46278,46275,""],["P0000825",46275,"방카","","자동심사","정상","가입가능","",46275,""],["P0000826",46275,"방카","","자동심사","정상","가입가능","",46275,""],["P0000827",46275,"전속","","자동심사","정상","가입가능","",46277,""],["P0000828",46275,"전속","심사자B","심사자B","정상","",46277,46275,""],["P0000829",46275,"전속","심사자A","심사자A","정상","인심사",46277,46275,""],["P0000830",46275,"전속","","자동심사","정상","가입가능","",46275,""],["P0000831",46275,"전속","심사자B","심사자B","정상","인심사",46277,46277,""],["P0000832",46275,"GA","","자동심사","청철","가입가능","",46278,""],["P0000833",46276,"GA","심사자A","","미결","인심사",46279,46277,""],["P0000834",46276,"GA","심사자B","심사자B","미결","인심사",46280,46278,""],["P0000835",46276,"전속","심사자C","","미결","인심사",46279,46278,""],["P0000836",46276,"GA","","자동심사","반송","가입불가",46280,46279,""],["P0000837",46276,"방카","","자동심사","반송","가입불가","",46277,""],["P0000838",46276,"전속","","자동심사","반송","가입불가",46279,46276,""],["P0000839",46276,"GA","","자동심사","정상","가입가능","",46279,""],["P0000840",46276,"GA","","자동심사","정상","가입가능","",46279,""],["P0000841",46276,"GA","","심사자H","정상","인심사",46277,46276,""],["P0000842",46276,"GA","심사자D","심사자D","정상","인심사",46280,46278,""],["P0000843",46276,"GA","","자동심사","정상","가입가능","",46278,""],["P0000844",46276,"GA","","자동심사","정상","가입가능",46282,46276,""],["P0000845",46276,"GA","심사자B","심사자B","정상","인심사",46285,46276,""],["P0000846",46276,"GA","","자동심사","정상","가입가능",46285,46277,""],["P0000847",46276,"GA","","자동심사","정상","가입가능","",46277,""],["P0000848",46276,"GA","심사자A","심사자A","정상","인심사","",46276,""],["P0000849",46276,"GA","심사자B","","정상","",46280,46277,""],["P0000850",46276,"GA","심사자F","심사자F","정상","인심사",46285,46278,"감액"],["P0000851",46276,"GA","심사자A","심사자A","정상","인심사",46281,46278,"감액"],["P0000852",46276,"GA","심사자E","심사자E","정상","인심사",46278,46278,"일부보장제외"],["P0000853",46276,"GA","","자동심사","정상","가입가능","",46278,""],["P0000854",46276,"TM","","자동심사","정상","가입가능","",46279,""],["P0000855",46276,"방카","심사자A","심사자A","정상","인심사",46279,46276,""],["P0000856",46276,"방카","심사자F","심사자F","정상","",46280,46279,""],["P0000857",46276,"방카","","자동심사","정상","가입가능",46276,46276,""],["P0000858",46276,"전속","","자동심사","정상","조건부인수","",46277,"감액"],["P0000859",46276,"전속","","자동심사","정상","가입가능",46276,46276,""],["P0000860",46276,"전속","","자동심사","청철","가입가능",46280,46277,""],["P0000861",46277,"GA","심사자E","","미결","인심사",46281,46280,""],["P0000862",46277,"전속","심사자C","","미결","인심사",46284,46277,""],["P0000863",46277,"GA","심사자A","심사자C","반송","인심사",46279,46277,""],["P0000864",46277,"GA","심사자B","심사자B","반송","인심사",46277,46277,""],["P0000865",46277,"전속","","자동심사","반송","가입불가",46282,46280,""],["P0000866",46277,"GA","심사자F","심사자F","정상","인심사",46282,46278,""],["P0000867",46277,"GA","심사자A","심사자A","정상","인심사",46280,46280,""],["P0000868",46277,"GA","","자동심사","정상","가입가능","",46277,""],["P0000869",46277,"GA","","자동심사","정상","가입가능",46280,46279,""],["P0000870",46277,"GA","","자동심사","정상","가입가능",46277,46277,""],["P0000871",46277,"GA","심사자H","심사자C","정상","",46277,46277,"일부보장제외"],["P0000872",46277,"GA","","자동심사","정상","가입가능","",46277,""],["P0000873",46277,"TM","심사자A","심사자C","정상","인심사",46284,46280,""],["P0000874",46277,"TM","","자동심사","정상","가입가능",46287,46280,""],["P0000875",46277,"방카","심사자H","심사자H","정상","인심사",46286,46279,"부담보"],["P0000876",46277,"전속","심사자B","심사자B","정상","인심사",46280,46278,""],["P0000877",46277,"전속","","자동심사","정상","가입가능","",46280,""],["P0000878",46277,"전속","심사자G","심사자A","정상","인심사",46278,46278,""],["P0000879",46277,"전속","심사자D","심사자D","정상","인심사",46281,46279,"감액"],["P0000880",46277,"전속","심사자H","심사자D","정상","인심사",46277,46277,""],["P0000881",46277,"TM","심사자A","심사자A","청철","인심사",46280,46277,"할증"],["P0000882",46277,"전속","","자동심사","청철","가입가능",46281,46277,""],["P0000883",46278,"전속","심사자C","","미결","인심사",46281,46279,""],["P0000884",46278,"전속","심사자A","심사자A","미결","인심사",46282,46280,""],["P0000885",46278,"TM","","자동심사","반송","가입불가","",46278,""],["P0000886",46278,"GA","","자동심사","정상","가입가능",46281,46281,""],["P0000887",46278,"GA","심사자B","심사자B","정상","인심사",46281,46278,""],["P0000888",46278,"GA","","자동심사","정상","가입가능","",46281,""],["P0000889",46278,"GA","심사자B","심사자B","정상","인심사",46289,46281,""],["P0000890",46278,"GA","심사자B","심사자B","정상","인심사",46289,46281,""],["P0000891",46278,"GA","심사자B","심사자B","정상","인심사",46289,46280,""],["P0000892",46278,"GA","심사자D","심사자D","정상","인심사",46281,46279,""],["P0000893",46278,"방카","심사자A","심사자A","정상","인심사",46280,46278,""],["P0000894",46278,"방카","심사자E","심사자E","정상","인심사",46280,46278,"할증"],["P0000895",46278,"전속","","심사자A","정상","인심사",46281,46280,""],["P0000896",46278,"전속","","자동심사","정상","가입가능","",46281,""],["P0000897",46278,"전속","","자동심사","정상","가입가능","",46281,""],["P0000898",46278,"GA","심사자A","심사자A","청철","인심사",46281,46281,""],["P0000899",46278,"전속","심사자E","심사자C","청철","",46282,46279,""],["P0000900",46278,"전속","","자동심사","청철","가입가능","",46280,""],["P0000901",46279,"GA","심사자B","","미결","인심사","",46279,""],["P0000902",46279,"GA","심사자D","","미결","인심사",46288,46281,""],["P0000903",46279,"전속","","자동심사","반송","가입불가",46280,46279,""],["P0000904",46279,"GA","","자동심사","정상","가입가능","",46280,""],["P0000905",46279,"GA","","자동심사","정상","가입가능",46282,46281,""],["P0000906",46279,"GA","심사자B","심사자B","정상","인심사",46282,46282,""],["P0000907",46279,"GA","심사자B","심사자B","정상","인심사",46281,46279,""],["P0000908",46279,"GA","","자동심사","정상","가입가능","",46282,""],["P0000909",46279,"GA","","심사자F","정상","인심사",46283,46282,""],["P0000910",46279,"GA","심사자G","심사자H","정상","인심사",46283,46280,""],["P0000911",46279,"GA","","심사자A","정상","인심사",46281,46280,"부담보"],["P0000912",46279,"GA","","자동심사","정상","가입가능",46284,46280,""],["P0000913",46279,"GA","","자동심사","정상","조건부인수",46282,46280,"감액"],["P0000914",46279,"TM","","자동심사","정상","가입가능","",46279,""],["P0000915",46279,"TM","","자동심사","정상","가입가능","",46279,""],["P0000916",46279,"방카","","자동심사","정상","가입가능","",46279,""],["P0000917",46279,"방카","심사자E","심사자E","정상","인심사",46284,46282,""],["P0000918",46279,"방카","","자동심사","정상","가입가능","",46280,""],["P0000919",46279,"방카","","심사자G","정상","가입가능","",46281,""],["P0000920",46279,"전속","","자동심사","정상","가입가능","",46281,""],["P0000921",46279,"전속","","자동심사","정상","가입가능","",46279,""],["P0000922",46279,"전속","","자동심사","정상","가입가능","",46281,""],["P0000923",46279,"전속","","자동심사","정상","가입가능","",46281,""],["P0000924",46279,"전속","심사자C","심사자C","정상","인심사",46282,46281,""],["P0000925",46279,"전속","심사자G","심사자G","정상","인심사",46282,46281,""],["P0000926",46279,"전속","심사자B","심사자B","정상","인심사",46280,46279,""],["P0000927",46279,"전속","심사자B","심사자B","정상","인심사",46280,46279,""],["P0000928",46279,"전속","","자동심사","정상","가입가능",46284,46281,""],["P0000929",46279,"전속","","자동심사","정상","가입가능","",46279,""],["P0000930",46279,"전속","심사자B","심사자B","정상","인심사",46283,46280,""],["P0000931",46279,"방카","","자동심사","청철","가입가능","",46282,""],["P0000932",46280,"TM","심사자C","","미결","",46283,46280,""],["P0000933",46280,"GA","심사자H","심사자H","반송","인심사",46286,46282,""],["P0000934",46280,"GA","심사자E","심사자E","반송","인심사",46284,46282,""],["P0000935",46280,"GA","","자동심사","반송","가입불가","",46283,""],["P0000936",46280,"GA","심사자D","심사자D","반송","인심사",46283,46282,""],["P0000937",46280,"GA","심사자G","","정상","인심사",46287,46282,""],["P0000938",46280,"GA","","자동심사","정상","조건부인수",46283,46281,"할증"],["P0000939",46280,"GA","","자동심사","정상","가입가능",46282,46281,""],["P0000940",46280,"GA","심사자E","심사자E","정상","인심사",46284,46282,""],["P0000941",46280,"GA","","자동심사","정상","가입가능","",46281,""],["P0000942",46280,"GA","","자동심사","정상","가입가능",46286,46283,""],["P0000943",46280,"GA","","자동심사","정상","조건부인수",46286,46280,"부담보"],["P0000944",46280,"TM","","자동심사","정상","가입가능","",46283,""],["P0000945",46280,"방카","심사자A","심사자A","정상","",46289,46282,""],["P0000946",46280,"방카","","자동심사","정상","가입가능","",46281,""],["P0000947",46280,"방카","","자동심사","정상","가입가능","",46280,""],["P0000948",46280,"방카","","자동심사","정상","가입가능","",46281,""],["P0000949",46280,"전속","","자동심사","정상","가입가능","",46283,""],["P0000950",46280,"GA","심사자G","심사자G","청철","인심사",46285,46283,"할증"],["P0000951",46281,"GA","심사자F","","미결","인심사",46285,46283,""],["P0000952",46281,"GA","심사자F","심사자F","미결","인심사",46282,46282,""],["P0000953",46281,"TM","심사자D","","미결","인심사",46286,46282,""],["P0000954",46281,"방카","심사자B","심사자B","미결","",46283,46283,""],["P0000955",46281,"전속","심사자A","","미결","인심사",46285,46284,""],["P0000956",46281,"GA","심사자D","심사자D","반송","인심사",46291,46284,""],["P0000957",46281,"GA","심사자D","심사자C","정상","인심사",46284,46283,"부담보"],["P0000958",46281,"GA","심사자A","심사자A","정상","인심사",46282,46282,""],["P0000959",46281,"GA","심사자B","심사자B","정상","인심사",46284,46281,""],["P0000960",46281,"GA","","자동심사","정상","가입가능",46283,46283,""],["P0000961",46281,"GA","","자동심사","정상","조건부인수","",46282,"일부보장제외"],["P0000962",46281,"GA","","자동심사","정상","가입가능","",46282,""],["P0000963",46281,"GA","","자동심사","정상","가입가능","",46281,""],["P0000964",46281,"GA","","자동심사","정상","가입가능","",46283,""],["P0000965",46281,"GA","심사자E","심사자E","정상","인심사",46285,46283,""],["P0000966",46281,"GA","심사자D","심사자D","정상","인심사",46285,46282,""],["P0000967",46281,"TM","","자동심사","정상","가입가능","",46282,""],["P0000968",46281,"TM","","자동심사","정상","가입가능","",46282,""],["P0000969",46281,"TM","","자동심사","정상","조건부인수","",46283,"일부보장제외"],["P0000970",46281,"TM","심사자E","심사자E","정상","",46284,46281,""],["P0000971",46281,"방카","","자동심사","정상","가입가능","",46284,""],["P0000972",46281,"방카","","자동심사","정상","가입가능",46289,46281,""],["P0000973",46281,"전속","","심사자A","정상","인심사",46284,46281,""],["P0000974",46281,"전속","","자동심사","청철","가입가능","",46284,""],["P0000975",46282,"GA","심사자G","","미결","인심사",46293,46284,""],["P0000976",46282,"GA","심사자H","","미결","인심사","",46282,""],["P0000977",46282,"GA","심사자A","","미결","인심사",46293,46284,""],["P0000978",46282,"방카","심사자F","","미결","인심사",46287,46285,""],["P0000979",46282,"전속","","자동심사","미결","조건부인수","",46282,""],["P0000980",46282,"GA","심사자D","심사자D","반송","인심사",46284,46284,""],["P0000981",46282,"GA","심사자F","심사자F","반송","인심사",46282,46282,""],["P0000982",46282,"방카","심사자B","심사자B","반송","인심사",46286,46283,""],["P0000983",46282,"GA","","자동심사","정상","가입가능",46285,46283,""],["P0000984",46282,"GA","","자동심사","정상","가입가능",46283,46283,""],["P0000985",46282,"GA","","자동심사","정상","가입가능","",46279,""],["P0000986",46282,"GA","심사자B","심사자B","정상","인심사",46288,46282,""],["P0000987",46282,"GA","","자동심사","정상","가입가능",46286,46284,""],["P0000988",46282,"GA","심사자H","심사자H","정상","인심사","",46282,""],["P0000989",46282,"GA","심사자B","심사자B","정상","인심사",46287,46284,"감액"],["P0000990",46282,"GA","심사자D","심사자D","정상","인심사",46285,46284,"부담보"],["P0000991",46282,"GA","","자동심사","정상","가입가능","",46283,""],["P0000992",46282,"GA","","자동심사","정상","가입가능",46288,46285,""],["P0000993",46282,"TM","","자동심사","정상","가입가능","",46284,""],["P0000994",46282,"TM","","자동심사","정상","가입가능",46291,46285,""],["P0000995",46282,"TM","","자동심사","정상","가입가능",46288,46285,""],["P0000996",46282,"방카","","자동심사","정상","가입가능","",46283,""],["P0000997",46282,"방카","","자동심사","정상","조건부인수","",46284,"감액"],["P0000998",46282,"방카","심사자A","","정상","인심사",46285,46282,""],["P0000999",46282,"방카","","자동심사","정상","가입가능","",46284,""],["P0001000",46282,"전속","심사자B","심사자B","정상","인심사",46285,46282,""],["P0001001",46282,"전속","심사자B","심사자B","정상","인심사",46289,46283,""],["P0001002",46282,"전속","","자동심사","정상","조건부인수",46287,46284,"일부보장제외"],["P0001003",46282,"전속","심사자H","심사자H","정상","인심사",46284,46282,""],["P0001004",46283,"GA","심사자A","","미결","인심사",46287,46285,""],["P0001005",46283,"GA","심사자D","심사자D","반송","인심사",46286,46286,""],["P0001006",46283,"방카","","자동심사","반송","가입불가","",46286,""],["P0001007",46283,"GA","심사자F","심사자F","정상","인심사",46287,46285,""],["P0001008",46283,"GA","심사자E","심사자E","정상","인심사",46291,46286,""],["P0001009",46283,"GA","","자동심사","정상","가입가능","",46285,""],["P0001010",46283,"GA","심사자A","심사자A","정상","인심사",46285,46283,""],["P0001011",46283,"GA","심사자B","심사자B","정상","인심사",46288,46285,""],["P0001012",46283,"GA","심사자B","심사자B","정상","인심사",46285,46285,"일부보장제외"],["P0001013",46283,"GA","","자동심사","정상","조건부인수",46287,46283,"부담보"],["P0001014",46283,"GA","","자동심사","정상","가입가능","",46286,""],["P0001015",46283,"GA","심사자D","심사자C","정상","인심사",46294,46286,""],["P0001016",46283,"TM","","자동심사","정상","가입가능",46286,46284,""],["P0001017",46283,"방카","","자동심사","정상","조건부인수","",46283,"일부보장제외"],["P0001018",46283,"방카","","자동심사","정상","가입가능","",46285,""],["P0001019",46283,"방카","","자동심사","정상","가입가능",46288,46284,""],["P0001020",46283,"방카","심사자C","심사자C","정상","인심사",46286,46285,""],["P0001021",46283,"방카","","심사자D","정상","인심사",46287,46284,"일부보장제외"],["P0001022",46283,"방카","심사자G","심사자G","정상","인심사",46286,46283,""],["P0001023",46283,"전속","","자동심사","정상","가입가능",46285,46284,""],["P0001024",46283,"전속","","자동심사","정상","가입가능","",46284,""],["P0001025",46283,"전속","","자동심사","정상","가입가능",46285,46283,""],["P0001026",46283,"전속","","자동심사","정상","가입가능","",46283,""],["P0001027",46283,"전속","","자동심사","정상","가입가능","",46286,""],["P0001028",46284,"GA","심사자C","","미결","인심사",46288,46286,""],["P0001029",46284,"GA","심사자D","","미결","인심사",46288,46287,""],["P0001030",46284,"GA","심사자D","","미결","인심사",46285,46284,""],["P0001031",46284,"전속","심사자C","심사자C","반송","인심사",46286,46286,""],["P0001032",46284,"GA","","심사자B","정상","가입가능","",46285,""],["P0001033",46284,"GA","","자동심사","정상","가입가능",46290,46287,""],["P0001034",46284,"GA","심사자B","심사자B","정상","인심사",46293,46286,""],["P0001035",46284,"GA","","자동심사","정상","가입가능","",46287,""],["P0001036",46284,"GA","심사자B","심사자B","정상","인심사",46284,46284,"부담보"],["P0001037",46284,"GA","심사자D","심사자D","정상","인심사",46288,46286,""],["P0001038",46284,"GA","","자동심사","정상","가입가능","",46287,""],["P0001039",46284,"GA","","자동심사","정상","가입가능",46295,46286,""],["P0001040",46284,"GA","","자동심사","정상","가입가능","",46287,""],["P0001041",46284,"TM","심사자A","심사자A","정상","인심사",46285,46284,""],["P0001042",46284,"방카","심사자A","심사자A","정상","인심사",46285,46285,""],["P0001043",46284,"방카","심사자F","심사자F","정상","인심사",46290,46287,"할증"],["P0001044",46284,"방카","","자동심사","정상","가입가능","",46287,""],["P0001045",46284,"전속","심사자B","심사자B","정상","인심사",46286,46286,"할증"],["P0001046",46284,"전속","심사자B","심사자E","정상","인심사",46293,46284,""],["P0001047",46284,"전속","심사자F","심사자F","정상","인심사",46284,46284,""],["P0001048",46284,"전속","심사자B","심사자B","정상","",46291,46284,""],["P0001049",46284,"전속","심사자A","심사자F","정상","인심사",46290,46287,""],["P0001050",46284,"GA","심사자C","심사자C","청철","인심사",46286,46285,""],["P0001051",46285,"GA","","자동심사","반송","가입불가","",46287,""],["P0001052",46285,"GA","심사자A","심사자A","반송","인심사",46291,46286,""],["P0001053",46285,"방카","","자동심사","반송","가입불가",46291,46286,""],["P0001054",46285,"방카","심사자C","심사자A","반송","","",46286,""],["P0001055",46285,"방카","","자동심사","반송","가입불가","",46285,""],["P0001056",46285,"GA","","자동심사","정상","가입가능",46287,46286,""],["P0001057",46285,"GA","심사자C","","정상","인심사",46291,46287,""],["P0001058",46285,"GA","","자동심사","정상","가입가능","",46287,""],["P0001059",46285,"방카","","자동심사","정상","조건부인수","",46286,"일부보장제외"],["P0001060",46285,"방카","","자동심사","정상","가입가능","",46288,""],["P0001061",46285,"방카","심사자E","심사자E","정상","",46287,46287,""],["P0001062",46285,"방카","심사자E","심사자E","정상","인심사","",46287,"부담보"],["P0001063",46285,"전속","","자동심사","정상","가입가능",46287,46287,""],["P0001064",46285,"전속","심사자D","심사자D","정상","인심사",46287,46287,"감액"],["P0001065",46285,"전속","","자동심사","정상","가입가능","",46286,""],["P0001066",46285,"전속","","자동심사","정상","가입가능",46288,46288,""],["P0001067",46285,"전속","","자동심사","청철","가입불가","",46288,""],["P0001068",46286,"GA","심사자E","","미결","인심사",46293,46287,""],["P0001069",46286,"GA","","자동심사","반송","가입불가","",46286,""],["P0001070",46286,"방카","","자동심사","반송","가입불가","",46287,""],["P0001071",46286,"GA","심사자B","심사자B","정상","인심사",46288,46286,""],["P0001072",46286,"GA","심사자D","심사자D","정상","인심사",46289,46288,""],["P0001073",46286,"GA","심사자E","심사자E","정상","인심사",46291,46289,"감액"],["P0001074",46286,"GA","심사자A","심사자A","정상","인심사",46291,46288,"감액"],["P0001075",46286,"GA","","자동심사","정상","가입가능","",46289,""],["P0001076",46286,"GA","","자동심사","정상","조건부인수",46286,46286,"감액"],["P0001077",46286,"GA","심사자E","심사자E","정상","인심사",46291,46288,""],["P0001078",46286,"GA","","자동심사","정상","가입가능","",46289,""],["P0001079",46286,"TM","","자동심사","정상","가입가능","",46288,""],["P0001080",46286,"방카","","자동심사","정상","가입가능",46288,46287,""],["P0001081",46286,"방카","","자동심사","정상","가입가능","",46288,""],["P0001082",46286,"방카","심사자A","심사자A","정상","인심사",46289,46288,""],["P0001083",46286,"전속","","자동심사","정상","가입가능","",46288,""],["P0001084",46286,"전속","","자동심사","정상","가입가능","",46287,""],["P0001085",46287,"GA","심사자E","","미결","",46292,46287,""],["P0001086",46287,"GA","심사자C","심사자C","미결","인심사",46293,46290,""],["P0001087",46287,"방카","심사자D","심사자D","반송","인심사",46290,46288,""],["P0001088",46287,"방카","심사자D","심사자D","반송","",46292,46290,"부담보"],["P0001089",46287,"GA","심사자A","심사자A","정상","인심사",46289,46289,""],["P0001090",46287,"GA","","자동심사","정상","가입가능","",46290,""],["P0001091",46287,"GA","","자동심사","정상","조건부인수","",46290,"할증"],["P0001092",46287,"GA","","자동심사","정상","가입가능","",46290,""],["P0001093",46287,"GA","","자동심사","정상","가입가능","",46289,""],["P0001094",46287,"GA","","자동심사","정상","가입가능","",46290,""],["P0001095",46287,"GA","","자동심사","정상","가입가능",46292,46289,""],["P0001096",46287,"GA","심사자F","심사자A","정상","인심사",46290,46287,""],["P0001097",46287,"TM","심사자A","심사자A","정상","",46292,46289,"일부보장제외"],["P0001098",46287,"TM","","자동심사","정상","가입가능","",46288,""],["P0001099",46287,"방카","","자동심사","정상","가입가능","",46290,""],["P0001100",46287,"방카","","자동심사","정상","가입가능","",46287,""],["P0001101",46287,"전속","심사자A","심사자A","정상","인심사",46290,46288,""],["P0001102",46287,"전속","심사자A","심사자C","청철","인심사",46292,46289,""],["P0001103",46288,"방카","심사자F","","미결","인심사",46290,46290,""],["P0001104",46288,"전속","심사자A","심사자A","반송","인심사",46289,46288,""],["P0001105",46288,"GA","심사자B","심사자B","정상","인심사",46294,46291,""],["P0001106",46288,"GA","심사자A","심사자A","정상","인심사",46290,46289,""],["P0001107",46288,"GA","","자동심사","정상","가입가능","",46289,""],["P0001108",46288,"GA","심사자D","심사자D","정상","",46295,46291,"부담보"],["P0001109",46288,"GA","심사자C","심사자C","정상","인심사",46294,46288,""],["P0001110",46288,"GA","심사자B","심사자B","정상","인심사",46294,46291,""],["P0001111",46288,"GA","심사자C","심사자C","정상","인심사",46291,46289,""],["P0001112",46288,"GA","심사자A","심사자A","정상","인심사",46290,46288,""],["P0001113",46288,"TM","","자동심사","정상","가입가능","",46289,""],["P0001114",46288,"TM","","자동심사","정상","가입가능","",46289,""],["P0001115",46288,"TM","","자동심사","정상","가입가능",46291,46289,""],["P0001116",46288,"방카","심사자B","심사자B","정상","인심사",46295,46289,""],["P0001117",46288,"방카","심사자D","심사자D","정상","인심사",46292,46290,""],["P0001118",46288,"방카","","자동심사","정상","가입가능",46294,46291,""],["P0001119",46288,"전속","","자동심사","정상","가입가능",46291,46291,""],["P0001120",46289,"GA","심사자E","","미결","인심사",46295,46292,""],["P0001121",46289,"TM","심사자B","심사자B","미결","인심사",46293,46290,""],["P0001122",46289,"전속","심사자B","","미결","인심사",46294,46291,""],["P0001123",46289,"GA","심사자B","심사자H","반송","인심사",46293,46291,""],["P0001124",46289,"GA","심사자E","심사자E","정상","인심사",46294,46290,"할증"],["P0001125",46289,"GA","","자동심사","정상","가입가능","",46291,""],["P0001126",46289,"GA","심사자C","심사자C","정상","인심사",46295,46289,""],["P0001127",46289,"GA","심사자F","심사자F","정상","인심사",46295,46291,""],["P0001128",46289,"GA","심사자A","심사자A","정상","인심사",46291,46289,"감액"],["P0001129",46289,"TM","","자동심사","정상","가입가능","",46290,""],["P0001130",46289,"방카","","심사자F","정상","인심사",46294,46291,""],["P0001131",46289,"방카","심사자A","심사자G","정상","",46292,46289,""],["P0001132",46289,"방카","심사자B","심사자B","정상","인심사",46293,46290,""],["P0001133",46289,"방카","","자동심사","정상","가입가능","",46290,""],["P0001134",46289,"방카","","자동심사","정상","가입가능",46298,46289,""],["P0001135",46289,"방카","","자동심사","정상","가입가능","",46291,""],["P0001136",46289,"방카","","자동심사","정상","조건부인수","",46291,"부담보"],["P0001137",46289,"전속","","자동심사","정상","가입가능","",46291,""],["P0001138",46289,"방카","","자동심사","청철","가입가능","",46288,""],["P0001139",46289,"전속","","자동심사","청철","가입가능","",46292,""],["P0001140",46290,"방카","심사자A","","미결","인심사",46290,46290,""],["P0001141",46290,"전속","","자동심사","미결","가입가능","",46292,""],["P0001142",46290,"전속","심사자B","","미결","인심사",46292,46290,""],["P0001143",46290,"전속","","자동심사","미결","가입가능","",46292,""],["P0001144",46290,"GA","심사자E","심사자E","반송","인심사",46292,46291,""],["P0001145",46290,"전속","","자동심사","반송","가입불가","",46290,""],["P0001146",46290,"전속","심사자E","심사자E","반송","인심사",46295,46293,""],["P0001147",46290,"전속","","자동심사","반송","가입불가",46291,46291,""],["P0001148",46290,"GA","","자동심사","정상","가입가능","",46292,""],["P0001149",46290,"GA","심사자H","심사자A","정상","인심사",46291,46290,""],["P0001150",46290,"GA","심사자A","","정상","인심사",46293,46290,""],["P0001151",46290,"GA","","자동심사","정상","가입가능","",46290,""],["P0001152",46290,"GA","","자동심사","정상","가입가능","",46293,""],["P0001153",46290,"GA","","자동심사","정상","가입가능","",46292,""],["P0001154",46290,"GA","심사자A","심사자A","정상","",46296,46293,""],["P0001155",46290,"TM","","자동심사","정상","가입가능","",46293,""],["P0001156",46290,"TM","심사자D","심사자D","정상","인심사",46294,46291,"일부보장제외"],["P0001157",46290,"방카","","자동심사","정상","가입가능","",46292,""],["P0001158",46290,"방카","","자동심사","정상","가입가능","",46290,""],["P0001159",46290,"방카","","자동심사","정상","가입가능","",46290,""],["P0001160",46290,"방카","심사자C","심사자C","정상","인심사",46299,46293,"일부보장제외"],["P0001161",46290,"방카","","자동심사","정상","가입가능","",46290,""],["P0001162",46290,"방카","","자동심사","정상","가입가능",46292,46291,""],["P0001163",46290,"전속","심사자B","","정상","인심사",46292,46290,""],["P0001164",46290,"전속","심사자E","심사자E","정상","",46300,46291,""],["P0001165",46290,"전속","","자동심사","정상","가입가능","",46293,""],["P0001166",46291,"GA","심사자A","","미결","",46294,46294,""],["P0001167",46291,"GA","심사자H","","반송","인심사",46302,46293,""],["P0001168",46291,"GA","","자동심사","정상","가입가능","",46294,""],["P0001169",46291,"GA","심사자E","심사자E","정상","인심사",46291,46291,""],["P0001170",46291,"GA","","자동심사","정상","가입가능","",46291,""],["P0001171",46291,"GA","","자동심사","정상","가입가능","",46291,""],["P0001172",46291,"GA","","자동심사","정상","가입가능","",46291,""],["P0001173",46291,"GA","","자동심사","정상","가입가능",46296,46293,""],["P0001174",46291,"GA","","자동심사","정상","가입가능","",46291,""],["P0001175",46291,"방카","","자동심사","정상","가입가능",46293,46292,""],["P0001176",46291,"방카","심사자C","심사자C","정상","인심사",46294,46293,""],["P0001177",46291,"전속","심사자E","심사자E","정상","인심사",46292,46292,""],["P0001178",46291,"전속","","자동심사","정상","조건부인수","",46293,"감액"],["P0001179",46291,"GA","","자동심사","청철","가입가능","",46294,""],["P0001180",46291,"전속","심사자C","심사자C","청철","인심사",46295,46294,""],["P0001181",46292,"GA","심사자C","","미결","인심사",46292,46292,""],["P0001182",46292,"GA","","자동심사","미결","가입가능","",46292,""],["P0001183",46292,"방카","심사자E","","미결","인심사",46296,46293,""],["P0001184",46292,"전속","심사자C","심사자C","반송","인심사",46297,46294,""],["P0001185",46292,"GA","심사자B","심사자H","정상","인심사",46298,46295,""],["P0001186",46292,"GA","","자동심사","정상","가입가능","",46293,""],["P0001187",46292,"GA","심사자A","심사자A","정상","인심사",46293,46293,""],["P0001188",46292,"GA","","자동심사","정상","가입가능",46294,46293,""],["P0001189",46292,"TM","","자동심사","정상","가입가능",46292,46292,""],["P0001190",46292,"방카","","자동심사","정상","가입가능","",46292,""],["P0001191",46292,"방카","","자동심사","정상","가입가능","",46293,""],["P0001192",46292,"방카","","자동심사","정상","조건부인수","",46292,"할증"],["P0001193",46292,"방카","심사자A","심사자A","정상","인심사",46301,46295,""],["P0001194",46292,"전속","심사자C","심사자E","정상","인심사",46295,46293,""],["P0001195",46292,"전속","","자동심사","정상","가입가능","",46294,""],["P0001196",46292,"전속","심사자D","심사자D","정상","인심사",46295,46293,""],["P0001197",46292,"전속","심사자H","심사자H","정상","인심사",46303,46295,""],["P0001198",46292,"전속","","자동심사","정상","가입가능",46295,46292,""],["P0001199",46292,"GA","심사자D","심사자C","청철","인심사",46296,46293,""],["P0001200",46292,"GA","","심사자E","청철","인심사",46295,46295,""]];
+const SAMPLE_HOL=[[20680,"광복절"],[20682,"광복절 대체공휴일"],[20720,"추석 연휴"],[20721,"추석"],[20722,"추석 연휴"],[20729,"개천절"],[20731,"개천절 대체공휴일"],[20735,"한글날"]];
+const SAMPLE_CRITERIA={"inclPending":false,"touchDays":3,"dayMode":"영업일","channels":"GA, 전속, 방카, TM","statuses":"정상, 반송, 청철, 미결"};
+function applyCriteria(c){if(!c)return false;Object.assign(S,c);fillSettings();return true;}
 function loadSample(){
-  CUR=check(buildDataset(genSample(2026,9,640,20260901,true),"예시_신계약마감_202609.xlsx"));
-  PREV=check(buildDataset(genSample(2026,8,612,20260801,false),"예시_신계약마감_202608.xlsx"));
-  isSample=true;$("fnCur").textContent="예시: "+CUR.name;$("fnPrev").textContent="예시: "+PREV.name;recompute(true);}
+  ROWS=prepRows(SAMPLE.map((a,i)=>{const r={line:i+2,file:"예시",raw:{}};FIELDS.forEach(([k],ci)=>r.raw[k]=a[ci]);return r;}));
+  EXTRA_HOL=SAMPLE_HOL.slice();applyCriteria(SAMPLE_CRITERIA);
+  SOURCE="예시_더미데이터.xlsx (신계약마감)";isSample=true;SEL=null;ruleFilter=null;$("fnIn").textContent="예시: 가상 더미 1,200건";recompute(true);}
 
-/* ---------- pipeline ---------- */
-function render0(){["chkSum","chkTypes","tblIssues","cards","tblCh","tblSt","tblRv","meta","comments"].forEach(id=>$(id).innerHTML="");COMMENTS=[];$("banner").hidden=true;}
-function recompute(fresh){
-  buildHolidays();
-  [CUR,PREV].forEach(d=>{if(d){check(d);compute(d);}});
-  renderDefs();render();
-  if(fresh)redraft();
-  $("sumNote").textContent=fresh?"주제별 기준 문안을 지표에 맞춰 새로 만들었습니다.":"";
-}
-async function handleFile(file,which){
-  $("loadErr").hidden=true;
-  try{const aoa=await aoaFromFile(file);const ds=buildDataset(aoa,file.name);
-    if(which==="cur"){CUR=ds;if(isSample){PREV=null;$("fnPrev").textContent="";}isSample=false;$("fnCur").textContent=file.name;}
-    else{if(isSample){CUR=null;isSample=false;$("fnCur").textContent="";}
-      PREV=ds;$("fnPrev").textContent=file.name;
-      if(!CUR){render0();$("loadErr").hidden=false;$("loadErr").textContent="전월 파일을 받았습니다. 당월 마감 데이터를 올리면 산출합니다.";return;}}
-    recompute(true);toast(`${file.name} · ${nf(ds.rows.length)}행을 읽었습니다.`);
-  }catch(e){$("loadErr").hidden=false;$("loadErr").textContent=`${file.name}: ${e.message||"파일을 읽지 못했습니다."}`;}}
-[["dropCur","fileCur","cur"],["dropPrev","filePrev","prev"]].forEach(([d,f,w])=>{
-  const el=$(d),inp=$(f);
-  inp.onchange=()=>{if(inp.files[0])handleFile(inp.files[0],w);inp.value="";};
-  el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("over");});
-  el.addEventListener("dragleave",()=>el.classList.remove("over"));
-  el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("over");const fl=e.dataTransfer.files[0];if(fl)handleFile(fl,w);});});
+/* ---------- uploads ---------- */
+async function handleFiles(files){
+  $("loadErr").hidden=true;const all=[];const names=[];const hol=[];let crit=null;
+  try{for(const f of files){const r=await readFile(f);all.push(...parseRows(r.aoa,f.name));names.push(`${f.name} (${r.sheet})`);hol.push(...r.holidays);if(r.criteria)crit=Object.assign(crit||{},r.criteria);}
+    if(!all.length)throw new Error("열 제목 아래에 데이터 행이 없습니다.");
+    ROWS=prepRows(all);EXTRA_HOL=hol;const usedCrit=applyCriteria(crit);
+    SOURCE=names.join(", ");isSample=false;SEL=null;ruleFilter=null;$("fnIn").textContent=SOURCE;recompute(true);
+    if(!MONTHS.length)throw new Error("계약일자를 날짜로 읽을 수 있는 행이 없어 마감월을 나누지 못했습니다.");
+    toast(`${nf(all.length)}행을 읽었습니다.`+(hol.length?` 공휴일 ${hol.length}일`:"")+(usedCrit?" · 기준표 반영":""));
+  }catch(e){$("loadErr").hidden=false;$("loadErr").textContent=e.message||"파일을 읽지 못했습니다.";}}
+const drop=$("drop"),inp=$("fileIn");
+inp.onchange=()=>{if(inp.files.length)handleFiles([...inp.files]);inp.value="";};
+drop.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});
+drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files.length)handleFiles([...e.dataTransfer.files]);});
 $("btnSample").onclick=()=>{$("loadErr").hidden=true;loadSample();toast("예시 데이터를 불러왔습니다.");};
 
-/* settings form */
-function fillSettings(){$("sTouch").value=S.touchTarget;$("sDays").value=S.touchDays;$("sAuto").value=S.autoTarget;$("sRej").value=S.rejectMax;$("sMomP").value=S.momP;$("sMomC").value=S.momC;$("sExcl").checked=S.excl;$("holi").value=S.holidays;}
+/* ---------- settings form ---------- */
+function fillSettings(){$("sDays").value=S.touchDays;$("sMode").value=S.dayMode;$("sPend").checked=S.inclPending;$("sCh").value=S.channels;$("sSt").value=S.statuses;
+  $("sTouch").value=S.touchTarget;$("sAuto").value=S.autoTarget;$("sRet").value=S.returnMax;$("sMomP").value=S.momP;$("sMomC").value=S.momC;$("holi").value=S.holidays;}
 $("btnApply").onclick=()=>{const g=(id,def)=>{const v=parseFloat($(id).value);return isFinite(v)?v:def;};
-  S.touchTarget=g("sTouch",90);S.touchDays=Math.round(g("sDays",3));S.autoTarget=g("sAuto",45);S.rejectMax=g("sRej",5);S.momP=g("sMomP",3);S.momC=g("sMomC",10);S.excl=$("sExcl").checked;S.holidays=$("holi").value;
-  try{localStorage.setItem("uwm-settings",JSON.stringify(S));}catch(e){}
-  if(CUR)recompute(true);toast("산출 기준을 적용했습니다.");};
+  S.touchDays=Math.round(g("sDays",3));S.dayMode=$("sMode").value;S.inclPending=$("sPend").checked;S.channels=$("sCh").value;S.statuses=$("sSt").value;
+  S.touchTarget=g("sTouch",90);S.autoTarget=g("sAuto",50);S.returnMax=g("sRet",15);S.momP=g("sMomP",3);S.momC=g("sMomC",10);S.holidays=$("holi").value;
+  try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+  if(ROWS.length)recompute(true);toast("산출 기준을 적용했습니다.");};
+$("btnReset").onclick=()=>{Object.assign(S,DEFAULTS);try{localStorage.removeItem(LS);}catch(e){}fillSettings();if(ROWS.length)recompute(true);toast("기본값으로 되돌렸습니다.");};
 
 /* boot */
-fillSettings();buildHolidays();
+fillSettings();buildHolidays();renderDefs();
 if(!window.XLSX){$("loadErr").hidden=false;$("loadErr").textContent="엑셀 처리 모듈을 불러오지 못했습니다. 네트워크를 확인한 뒤 새로고침해 주세요.";}
 else loadSample();
 initCaps();initDownloads();
