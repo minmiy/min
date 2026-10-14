@@ -213,7 +213,7 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-tbl .selc{border-left:2px solid var(--accent)!important;border-right:2px solid var(--accent)!important;font-weight:700}
 .rp-tbl th.selc{border-top:2px solid var(--accent)!important}
 .rp-tbl td.selb{border-bottom:2px solid var(--accent)!important}
-.rp-tbl td.gap{width:4mm;padding:0;background:var(--sheet)!important;border-top:none}
+.rp-tbl td.gap{width:9mm;padding:0;background:var(--sheet)!important;border-top:none}
 .rp-tbl td.sub{background:var(--sheet)!important;padding-left:2mm}
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
 .rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
@@ -319,7 +319,7 @@ td.zero{color:var(--ink-3)}
 .recon.good{background:var(--good-bg);color:var(--good);border-color:transparent}
 .recon.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
 #tblSt td.grp{text-align:center;font-weight:600;border-bottom:none}
-#tblSt td.gap{width:18px;padding:0;border-right:1px solid var(--line)}
+#tblSt td.gap{width:44px;min-width:44px;padding:0;border-right:1px solid var(--line)}
 #tblSt tr.grp-top+tr td:not(.gap){border-top:1px solid var(--line-2)}
 #tblSt tr.grp-top td.n{font-weight:600}
 #tblSt tr.grp-end td{border-bottom:1px solid var(--line)}
@@ -1470,8 +1470,8 @@ function buildDocx(){
     return new d.TableCell({borders:brd,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
       children:[new d.Paragraph({alignment:numL&&!t.includes("%")?d.AlignmentType.RIGHT:d.AlignmentType.CENTER,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp"||!!(o.c&&o.c.includes("selc")),color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
-    ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[320,1780,1621,1621,1621,1621,1622]}:{}),
-    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",hdr:ri===0,first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
+    ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[600,1500,1621,1621,1621,1621,1622]}:{}),
+    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",hdr:ri===0,first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?600:undefined}))}))});
   const stTxt=RPS.final?`최종 확인 ${RPS.final.at}${RPS.final.by?` · ${RPS.final.by}`:""}`:"초안";
   const kids=[new d.Paragraph({alignment:d.AlignmentType.RIGHT,spacing:{after:0},children:[new d.TextRun({text:stTxt,font:FONT,size:16,bold:true,color:RPS.final?"1E6B3A":"A42020"})]}),P(D.title,{size:30,bold:true,after:80}),
     new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
