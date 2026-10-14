@@ -187,8 +187,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-lbl{font-size:8pt;font-weight:600;color:var(--ink-2);margin-top:.6mm}
 .rp-badge{font-size:8pt;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .rp-tbl td:first-child{background:var(--paper)}
-.rp-tbl td.grp{background:var(--paper);font-weight:700;text-align:center;vertical-align:middle}
-.rp-tbl td.gap{width:4mm;padding:0}
+.rp-tbl td.grp{background:var(--sheet)!important;font-weight:700;text-align:center;vertical-align:middle;border-bottom:none}
+.rp-tbl td.gap{width:4mm;padding:0;background:var(--sheet)!important;border-top:none}
 .rp-tbl td.sub{background:var(--sheet)!important;padding-left:2mm}
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
 .rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
@@ -256,8 +256,9 @@ td.zero{color:var(--ink-3)}
 .recon b{font-variant-numeric:tabular-nums}
 .recon.good{background:var(--good-bg);color:var(--good);border-color:transparent}
 .recon.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
-#tblSt td.grp{text-align:center;font-weight:600;background:var(--paper);border-bottom:1px solid var(--line)}
-#tblSt td.gap{width:18px;padding:0;border-right:1px solid var(--line);background:var(--paper)}
+#tblSt td.grp{text-align:center;font-weight:600;border-bottom:none}
+#tblSt td.gap{width:18px;padding:0;border-right:1px solid var(--line)}
+#tblSt tr.grp-top+tr td:not(.gap){border-top:1px solid var(--line-2)}
 #tblSt tr.grp-top td.n{font-weight:600}
 #tblSt tr.grp-end td{border-bottom:1px solid var(--line)}
 .grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
@@ -1141,14 +1142,15 @@ function buildWorkbook(){
   XLSX.utils.book_append_sheet(wb,sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11])),"심사자별");
   // 심사결과
   const st=[H(["구분","",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
-  const GRP={font:{bold:true},alignment:{horizontal:"center",vertical:"center"},fill:{fgColor:{rgb:"EEF2F4"}}};
+  const GRP={font:{bold:true},alignment:{horizontal:"center",vertical:"center"}};
   [["정상인수","","normal"],["","표준인수","std"],["","조건부인수","cond"],["반송","","ret"],["청철","","wd"]].forEach(([g,l,k],ri)=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
-    st.push([{v:g,s:ri===0?GRP:ri<3?{fill:{fgColor:{rgb:"EEF2F4"}}}:undefined},{v:l,s:ri===0?GRP:undefined},{v:m[k],s:ri===0?{font:{bold:true}}:undefined},R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
+    st.push([{v:g,s:ri===0?GRP:undefined},{v:l,s:ri===0?GRP:undefined},{v:m[k],s:ri===0?{font:{bold:true}}:undefined},R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
   st.push([{v:"합계(미결 제외)",s:X.tot},{v:"",s:X.tot},{v:m.resTotal,s:X.tot},R(1,X.tot),{v:numOr(p?.resTotal),s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.resTotal,p.resTotal):"-",s:X.tot}]);
   st.push(["(참고) 미결","",m.pend,"",numOr(p?.pend),"",p?dTxt(m.pend,p.pend):"-"]);
   st.push([]);st.push(["반송률","",R(m.retRate,fl(m.retRate,rm,"<=")),"",R(p?.retRate)]);st.push(["조건부인수 비중(정상 대비)","",R(m.condRate),"",R(p?.condRate)]);
   const wsSt=sheet(st,[4,14,10,9,10,11,10]);
   wsSt["!merges"]=[{s:{r:0,c:0},e:{r:0,c:1}},{s:{r:1,c:0},e:{r:1,c:1}},{s:{r:2,c:0},e:{r:3,c:0}},{s:{r:4,c:0},e:{r:4,c:1}},{s:{r:5,c:0},e:{r:5,c:1}},{s:{r:6,c:0},e:{r:6,c:1}},{s:{r:7,c:0},e:{r:7,c:1}},{s:{r:9,c:0},e:{r:9,c:1}},{s:{r:10,c:0},e:{r:10,c:1}}];
+  {const T=BORDER.top;wsSt.A2.s.border={...BORDER,bottom:undefined};["A3","A4"].forEach(a=>{if(!wsSt[a])wsSt[a]={t:"s",v:"",s:{}};wsSt[a].s={...(wsSt[a].s||{}),border:{left:T,right:T,top:a==="A3"?undefined:undefined,bottom:a==="A4"?T:undefined}};});}
   XLSX.utils.book_append_sheet(wb,wsSt,"심사결과");
 
   // 데이터점검
@@ -1193,10 +1195,13 @@ function buildDocx(){
   const FONT="Malgun Gothic";const B={style:d.BorderStyle.SINGLE,size:4,color:"999999"};const BR={top:B,bottom:B,left:B,right:B};
   const P=(text,o={})=>new d.Paragraph({pageBreakBefore:!!o.pb,spacing:{after:o.after??40,before:o.before??0,line:o.line??260},children:[new d.TextRun({text,font:FONT,size:o.size||18,bold:o.bold,color:o.color})]});
   const cell=(c,{h=false,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&!o.lbl&&tdN(t)==="n";
-    return new d.TableCell({borders:BR,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
-      children:[new d.Paragraph({alignment:h||o.c==="grp"?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad",color:o.c==="bad"?"A42020":undefined})]})]});};
+    const NB={style:d.BorderStyle.NONE,size:0,color:"FFFFFF"};const brd=o.c==="grp"?{...BR,bottom:NB}:o.c==="gap"?{...BR,top:NB}:BR;
+    if(o.c==="grp"||o.c==="gap"){h=false;first=false;}
+    return new d.TableCell({borders:brd,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
+      children:[new d.Paragraph({alignment:h||o.c==="grp"?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp",color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
-    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?250:undefined}))}))});
+    ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[320,1780,1621,1621,1621,1621,1622]}:{}),
+    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
   const kids=[P(D.title,{size:30,bold:true,after:80}),
     new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
       new d.TableRow({children:[cell("보고 기간",{h:true,w:1300}),cell(D.period),cell("작성일",{h:true,w:1100}),cell(D.date)]}),
