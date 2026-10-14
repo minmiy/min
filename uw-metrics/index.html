@@ -188,8 +188,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-badge{font-size:8pt;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .rp-tbl td:first-child{background:var(--paper)}
 .rp-tbl td.grp{background:var(--paper);font-weight:700;text-align:center;vertical-align:middle}
-.rp-tbl td.sub{background:var(--sheet)!important;padding-left:2.5mm}
-.rp-tbl td.sub.sum{font-weight:700}
+.rp-tbl td.gap{width:4mm;padding:0}
+.rp-tbl td.sub{background:var(--sheet)!important;padding-left:2mm}
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
 .rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
 .rp-tbl th,.rp-tbl td{border:.5pt solid var(--line);padding:.45mm 1.5mm;white-space:nowrap}
@@ -256,9 +256,9 @@ td.zero{color:var(--ink-3)}
 .recon b{font-variant-numeric:tabular-nums}
 .recon.good{background:var(--good-bg);color:var(--good);border-color:transparent}
 .recon.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
-#tblSt td.grp{border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-weight:600;vertical-align:middle;background:var(--paper);width:1%}
-#tblSt td.sub{padding-left:12px}
-#tblSt td.sub.sum,#tblSt tr.grp-top td.n{font-weight:600}
+#tblSt td.grp{text-align:center;font-weight:600;background:var(--paper);border-bottom:1px solid var(--line)}
+#tblSt td.gap{width:18px;padding:0;border-right:1px solid var(--line);background:var(--paper)}
+#tblSt tr.grp-top td.n{font-weight:600}
 #tblSt tr.grp-end td{border-bottom:1px solid var(--line)}
 .grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
 
@@ -804,8 +804,8 @@ function renderMetrics(){
   const cells=(k)=>{const v=m[k],pv=p?p[k]:null;const sh=rate(v,m.resTotal),psh=p?rate(pv,p.resTotal):null;const big=psh!=null&&Math.abs((sh-psh)*100)>=S.momP;
     return`<td class="n">${nf(v)}</td><td class="n">${pct(sh)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${big?"cell-warn":""}">${p?ppTxt(sh,psh):"-"}</td>`;};
   $("tblSt").innerHTML=`<thead><tr><th colspan="2">구분</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
-    `<tr class="grp-top"><td rowspan="3" class="grp">정상인수</td><td class="sub sum">계</td>${cells("normal")}</tr>`+
-    `<tr><td class="sub">표준인수</td>${cells("std")}</tr><tr class="grp-end"><td class="sub">조건부인수</td>${cells("cond")}</tr>`+
+    `<tr class="grp-top"><td colspan="2" class="grp">정상인수</td>${cells("normal")}</tr>`+
+    `<tr><td rowspan="2" class="gap"></td><td class="sub">표준인수</td>${cells("std")}</tr><tr class="grp-end"><td class="sub">조건부인수</td>${cells("cond")}</tr>`+
     `<tr><td colspan="2">반송</td>${cells("ret")}</tr><tr><td colspan="2">청철</td>${cells("wd")}</tr>`+
     `<tr class="total"><td colspan="2">합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr></tbody>`;
   // reviewers × months (trend, last 12 months up to the selected month)
@@ -949,8 +949,8 @@ function reportData(){
   const rr=(l,k,isRet)=>{const sh=rate(m[k],m.resTotal);return[l,nf(m[k]),isRet?{v:pct(sh),c:sh>rm?"bad":""}:pct(sh),p?nf(p[k]):"-",p?pct(rate(p[k],p.resTotal)):"-",p?ppTxt(sh,rate(p[k],p.resTotal)):"-"];};
   const sub=(l,row,c="sub")=>{row[0]={v:l,lbl:true,c};return row;};
   const result=[[{v:"구분",cs:2},"건수","구성비","전월","전월 구성비","증감"],
-    [{v:"정상인수",rs:3,c:"grp"}].concat(sub("계",rr("","normal"),"sub sum")),
-    [{skip:true}].concat(sub("표준인수",rr("","std"))),
+    [{v:"정상인수",cs:2,c:"grp"}].concat(rr("","normal").slice(1)),
+    [{v:"",rs:2,c:"gap"}].concat(sub("표준인수",rr("","std"))),
     [{skip:true}].concat(sub("조건부인수",rr("","cond"))),
     [{v:"반송",cs:2}].concat(rr("","ret",true).slice(1)),[{v:"청철",cs:2}].concat(rr("","wd").slice(1)),
     [{v:"합계(미결 제외)",cs:2},nf(m.resTotal),"100.0%",p?nf(p.resTotal):"-","100.0%",p?chgTxt(m.resTotal,p.resTotal):"-"]];
@@ -1142,13 +1142,13 @@ function buildWorkbook(){
   // 심사결과
   const st=[H(["구분","",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
   const GRP={font:{bold:true},alignment:{horizontal:"center",vertical:"center"},fill:{fgColor:{rgb:"EEF2F4"}}};
-  [["정상인수","계","normal"],["","표준인수","std"],["","조건부인수","cond"],["반송","","ret"],["청철","","wd"]].forEach(([g,l,k],ri)=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
-    st.push([{v:g,s:ri<3?GRP:undefined},{v:l,s:l==="계"?{font:{bold:true}}:undefined},m[k],R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
+  [["정상인수","","normal"],["","표준인수","std"],["","조건부인수","cond"],["반송","","ret"],["청철","","wd"]].forEach(([g,l,k],ri)=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
+    st.push([{v:g,s:ri===0?GRP:ri<3?{fill:{fgColor:{rgb:"EEF2F4"}}}:undefined},{v:l,s:ri===0?GRP:undefined},{v:m[k],s:ri===0?{font:{bold:true}}:undefined},R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
   st.push([{v:"합계(미결 제외)",s:X.tot},{v:"",s:X.tot},{v:m.resTotal,s:X.tot},R(1,X.tot),{v:numOr(p?.resTotal),s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.resTotal,p.resTotal):"-",s:X.tot}]);
   st.push(["(참고) 미결","",m.pend,"",numOr(p?.pend),"",p?dTxt(m.pend,p.pend):"-"]);
   st.push([]);st.push(["반송률","",R(m.retRate,fl(m.retRate,rm,"<=")),"",R(p?.retRate)]);st.push(["조건부인수 비중(정상 대비)","",R(m.condRate),"",R(p?.condRate)]);
-  const wsSt=sheet(st,[12,12,10,9,10,11,10]);
-  wsSt["!merges"]=[{s:{r:0,c:0},e:{r:0,c:1}},{s:{r:1,c:0},e:{r:3,c:0}},{s:{r:4,c:0},e:{r:4,c:1}},{s:{r:5,c:0},e:{r:5,c:1}},{s:{r:6,c:0},e:{r:6,c:1}},{s:{r:7,c:0},e:{r:7,c:1}},{s:{r:9,c:0},e:{r:9,c:1}},{s:{r:10,c:0},e:{r:10,c:1}}];
+  const wsSt=sheet(st,[4,14,10,9,10,11,10]);
+  wsSt["!merges"]=[{s:{r:0,c:0},e:{r:0,c:1}},{s:{r:1,c:0},e:{r:1,c:1}},{s:{r:2,c:0},e:{r:3,c:0}},{s:{r:4,c:0},e:{r:4,c:1}},{s:{r:5,c:0},e:{r:5,c:1}},{s:{r:6,c:0},e:{r:6,c:1}},{s:{r:7,c:0},e:{r:7,c:1}},{s:{r:9,c:0},e:{r:9,c:1}},{s:{r:10,c:0},e:{r:10,c:1}}];
   XLSX.utils.book_append_sheet(wb,wsSt,"심사결과");
 
   // 데이터점검
@@ -1194,9 +1194,9 @@ function buildDocx(){
   const P=(text,o={})=>new d.Paragraph({pageBreakBefore:!!o.pb,spacing:{after:o.after??40,before:o.before??0,line:o.line??260},children:[new d.TextRun({text,font:FONT,size:o.size||18,bold:o.bold,color:o.color})]});
   const cell=(c,{h=false,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&!o.lbl&&tdN(t)==="n";
     return new d.TableCell({borders:BR,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
-      children:[new d.Paragraph({alignment:h?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad",color:o.c==="bad"?"A42020":undefined})]})]});};
+      children:[new d.Paragraph({alignment:h||o.c==="grp"?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad",color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
-    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:ci===0&&!cv(c).lbl,sz}))}))});
+    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?250:undefined}))}))});
   const kids=[P(D.title,{size:30,bold:true,after:80}),
     new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
       new d.TableRow({children:[cell("보고 기간",{h:true,w:1300}),cell(D.period),cell("작성일",{h:true,w:1100}),cell(D.date)]}),
