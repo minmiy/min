@@ -171,9 +171,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .report{overflow-x:auto;padding-block:4px 12px}
 .rp-page{background:var(--sheet);color:var(--ink);width:210mm;box-sizing:border-box;padding:15mm;margin:0 auto;border:1px solid var(--line);box-shadow:0 2px 14px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:2.6mm;font-size:9pt;line-height:1.45}
 .rp-head{display:flex;flex-direction:column;gap:2mm;position:relative}
-.rp-stamp{position:absolute;right:0;top:-1mm;font-size:9pt;font-weight:700;letter-spacing:.15em;border:1.5pt solid;border-radius:3px;padding:.6mm 2.5mm;transform:rotate(-4deg)}
+.rp-stamp{position:absolute;right:0;top:-2mm;font-size:14pt;font-weight:800;letter-spacing:.2em;border:2pt solid;border-radius:2px;padding:1mm 4mm;line-height:1.2}
 .rp-stamp.draft{color:var(--crit);border-color:var(--crit)}
-.rp-stamp.final{color:var(--good);border-color:var(--good);letter-spacing:.02em}
+.rp-stamp.final{color:var(--good);border-color:var(--good);letter-spacing:.02em;font-size:11pt;padding:1.5mm 3mm}
 .report.capturing .rp-text{background:none;border-color:transparent;padding-inline:0}
 .report.capturing .rp-edit{border-bottom-color:transparent}
 .report.capturing .rp-edit:empty::before{content:""}
@@ -195,6 +195,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-badge{font-size:8pt;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .rp-tbl td:first-child{background:var(--paper)}
 .rp-tbl td.grp{background:var(--sheet)!important;font-weight:700;text-align:center;vertical-align:middle;border-bottom:none}
+.rp-tbl .selc{border-left:2px solid var(--accent)!important;border-right:2px solid var(--accent)!important;font-weight:700}
+.rp-tbl th.selc{border-top:2px solid var(--accent)!important}
+.rp-tbl td.selb{border-bottom:2px solid var(--accent)!important}
 .rp-tbl td.gap{width:4mm;padding:0;background:var(--sheet)!important;border-top:none}
 .rp-tbl td.sub{background:var(--sheet)!important;padding-left:2mm}
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
@@ -256,6 +259,10 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6
 #tblRv td:first-child,#tblRv th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet)}
 #tblRv th:first-child{background:var(--paper)}
 th.sel{background:var(--accent-soft);color:var(--ink)}
+#tblRv td.n{color:var(--ink)}
+#tblRv th.sel,#tblRv td.sel{border-left:2px solid var(--accent);border-right:2px solid var(--accent);font-weight:700}
+#tblRv th.sel{border-top:2px solid var(--accent)}
+#tblRv tr:last-child td.sel{border-bottom:2px solid var(--accent)}
 td.sel{background:var(--accent-soft);font-weight:600}
 td.sep,th.sep{border-left:1.5px solid var(--line)}
 td.zero{color:var(--ink-3)}
@@ -826,13 +833,13 @@ function renderMetrics(){
   renderTops();
   const people=rvs.filter(k=>k!=="(공란)"&&!isAutoName(k));
   const pMax=Math.max(1,...people.flatMap(k=>WIN.map(mm=>M[mm].byRv[k]||0)));
-  const heat=(v,mx)=>{const a=Math.round(Math.min(1,v/mx)*55);return a?`style="background:color-mix(in srgb, var(--accent) ${a}%, transparent)${a>38?";color:var(--sheet)":""}"`:"";};
+  const heat=(v,mx)=>{const a=Math.round(Math.min(1,v/mx)*42);return a?`style="background:color-mix(in srgb, var(--accent) ${a}%, transparent)"`:"";};
   $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th>${WIN.map(mm=>`<th class="n${mm===SEL?" sel":""}">${mm.slice(2,4)}.${mm.slice(4)}</th>`).join("")}<th class="n sep">합계</th><th class="n">월평균</th><th class="n">전월 대비</th><th class="n">터치율</th></tr></thead><tbody>`+
     rvs.map(k=>{const isP=people.includes(k);const vals=WIN.map(mm=>M[mm].byRv[k]||0);const tot=vals.reduce((a,b)=>a+b,0);
       const mx=isP?pMax:Math.max(1,...vals);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;const st=rvStats(k,SEL);
-      return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
+      return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n${WIN[i]===SEL?" sel":""}" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
     (()=>{const sP=mm=>people.reduce((n,k)=>n+(M[mm].byRv[k]||0),0);const tot=WIN.reduce((n,mm)=>n+sP(mm),0);const PA=rvAgg(people,SEL);
-      return`<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n">${nf(sP(mm))}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n">${p?dTxt(sP(SEL),sP(pk)):"-"}</td><td class="n">${pct(PA.touch)}</td></tr></tbody>`;})();
+      return`<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(sP(mm))}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n">${p?dTxt(sP(SEL),sP(pk)):"-"}</td><td class="n">${pct(PA.touch)}</td></tr></tbody>`;})();
   // months
   const mcols=[["n","총 심사건수","c"],["tIn","3일이내","c"],["tOut","3일초과","c"],["touch","터치율","r",cT],["auto","자동심사","c"],["manual","인심사","c"],["autoRate","자동심사율","r",cA],
     ["proc","처리 건수","c"],["normal","정상인수","c"],["std","표준","c"],["cond","조건부","c"],["ret","반송","c"],["wd","청철","c"],["pend","미결","c"]];
@@ -904,7 +911,7 @@ const tdN=v=>/^[+\-−±]?[\d,.]+(%|%p|건|일)?$/.test(String(v).trim())||/^[+\
 const cv=c=>c!==null&&typeof c==="object"?c:{v:c};
 const spanA=o=>`${o.rs?` rowspan="${o.rs}"`:""}${o.cs?` colspan="${o.cs}"`:""}`;
 function rpTable(rows,{tot=false}={}){const [h,...b]=rows;
-  return`<table class="rp-tbl"><thead><tr>${h.map(x=>{const o=cv(x);return`<th${spanA(o)}>${esc(o.v)}</th>`;}).join("")}</tr></thead><tbody>${b.map((r,ri)=>`<tr${tot&&ri===b.length-1?' class="tot"':""}>${r.map((c,ci)=>{const o=cv(c);if(o.skip)return"";return`<td${spanA(o)} class="${ci>0&&!o.lbl?tdN(o.v):""}${o.c?" "+o.c:""}">${esc(o.v)}</td>`;}).join("")}</tr>`).join("")}</tbody></table>`;}
+  return`<table class="rp-tbl"><thead><tr>${h.map(x=>{const o=cv(x);return`<th${spanA(o)}${o.c?` class="${o.c}"`:""}>${esc(o.v)}</th>`;}).join("")}</tr></thead><tbody>${b.map((r,ri)=>`<tr${tot&&ri===b.length-1?' class="tot"':""}>${r.map((c,ci)=>{const o=cv(c);if(o.skip)return"";return`<td${spanA(o)} class="${ci>0&&!o.lbl?tdN(o.v):""}${o.c?" "+o.c:""}">${esc(o.v)}</td>`;}).join("")}</tr>`).join("")}</tbody></table>`;}
 const RV_PEOPLE=()=>rvList().filter(k=>k!=="(공란)"&&!isAutoName(k));
 function rvAgg(people,mm){return agg(inMonth(mm).filter(r=>people.includes(r.r2)));}
 /* 보고서 문안: 소주제별 1~2문장 초안 */
@@ -977,8 +984,9 @@ function reportData(){
     [{v:"반송",cs:2}].concat(rr("","ret",true).slice(1)),[{v:"청철",cs:2}].concat(rr("","wd").slice(1)),
     [{v:"합계(미결 제외)",cs:2},nf(m.resTotal),"100.0%",p?nf(p.resTotal):"-","100.0%",p?chgTxt(m.resTotal,p.resTotal):"-"]];
   const people=RV_PEOPLE();const WIN=winMonths();const sumP=mm=>people.reduce((n,k)=>n+(M[mm].byRv[k]||0),0);
-  const rmonth=[["심사자"].concat(WIN.map(mm=>`${mm.slice(2,4)}.${mm.slice(4)}`),["합계"])].concat(people.map(k=>[k].concat(WIN.map(mm=>nf(M[mm].byRv[k]||0)),[nf(WIN.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0))])),
-    [["합계"].concat(WIN.map(mm=>nf(sumP(mm))),[nf(WIN.reduce((n,mm)=>n+sumP(mm),0))])]);
+  const sc=(mm,v,last)=>mm===SEL?{v,c:last?"selc selb":"selc"}:v;
+  const rmonth=[["심사자"].concat(WIN.map(mm=>sc(mm,`${mm.slice(2,4)}.${mm.slice(4)}`)),["합계"])].concat(people.map(k=>[k].concat(WIN.map(mm=>sc(mm,nf(M[mm].byRv[k]||0))),[nf(WIN.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0))])),
+    [["합계"].concat(WIN.map(mm=>sc(mm,nf(sumP(mm)),true)),[nf(WIN.reduce((n,mm)=>n+sumP(mm),0))])]);
   const PA=rvAgg(people,SEL),PP=p?rvAgg(people,pk):null;
   const rtouch=[["심사자","심사건수","3일이내","3일초과","터치율","전월","증감","평균 경과일"]].concat(people.map(k=>{const a=rvStats(k,SEL),b=p?rvStats(k,pk):null;
       return[k,nf(a.n),nf(a.tIn),nf(a.tOut),bad(a.touch,a.n<10||a.touch==null||a.touch>=tt),b&&b.n?pct(b.touch):"-",b&&b.n?ppTxt(a.touch,b.touch):"-",a.avgLag==null?"-":a.avgLag.toFixed(2)+"일"];}),
@@ -1165,7 +1173,11 @@ function buildWorkbook(){
   rv.push([{v:"합계",s:X.tot}].concat(MONTHS.map(mm=>({v:M[mm].proc,s:X.tot})),[{v:MONTHS.reduce((n,mm)=>n+M[mm].proc,0),s:X.tot},{v:p?m.proc-p.proc:"-",s:X.tot},{v:p?chgTxt(m.proc,p.proc):"-",s:X.tot},R(1,X.tot),R(m.touch,X.tot),{v:m.tOut,s:X.tot},{v:m.avgLag==null?"-":+m.avgLag.toFixed(2),s:X.tot}]));
   rv.push([]);rv.push(SEC(`${mLabel(SEL)} 지표별 1위 심사자`));rv.push(H(["지표","1위","값","건수","기준"]));
   topLists().forEach(l=>rv.push([l.title,{v:l.winners.map(x=>x.who).join(", ")||"-",s:{font:{bold:true}}},l.winners[0]?.txt||"-",l.winners.map(x=>x.cnt).join(", ")||"-",l.basis]));
-  XLSX.utils.book_append_sheet(wb,sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11])),"심사자별");
+  const wsRv=sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11]));
+  {const ci=1+MONTHS.indexOf(SEL),r0=1,r1=2+rvs.length,SBD={style:"medium",color:{rgb:"1D5B73"}};
+   for(let r=r0;r<=r1;r++){const a=XLSX.utils.encode_cell({r,c:ci});if(!wsRv[a])continue;const st=wsRv[a].s||{};
+     wsRv[a].s={...st,font:{...(st.font||{}),bold:true},border:{...(st.border||BORDER),left:SBD,right:SBD,...(r===r0?{top:SBD}:{}),...(r===r1?{bottom:SBD}:{})}};}}
+  XLSX.utils.book_append_sheet(wb,wsRv,"심사자별");
   // 심사결과
   const st=[H(["구분","",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
   const GRP={font:{bold:true},alignment:{horizontal:"center",vertical:"center"}};
@@ -1221,10 +1233,12 @@ function buildDocx(){
   const FONT="Malgun Gothic";const B={style:d.BorderStyle.SINGLE,size:4,color:"999999"};const BR={top:B,bottom:B,left:B,right:B};
   const P=(text,o={})=>new d.Paragraph({pageBreakBefore:!!o.pb,spacing:{after:o.after??40,before:o.before??0,line:o.line??260},children:[new d.TextRun({text,font:FONT,size:o.size||18,bold:o.bold,color:o.color})]});
   const cell=(c,{h=false,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&!o.lbl&&tdN(t)==="n";
-    const NB={style:d.BorderStyle.NONE,size:0,color:"FFFFFF"};const brd=o.c==="grp"?{...BR,bottom:NB}:o.c==="gap"?{...BR,top:NB}:BR;
+    const NB={style:d.BorderStyle.NONE,size:0,color:"FFFFFF"};const SB={style:d.BorderStyle.SINGLE,size:14,color:"1D5B73"};
+    let brd=o.c==="grp"?{...BR,bottom:NB}:o.c==="gap"?{...BR,top:NB}:BR;
+    if(o.c&&o.c.includes("selc"))brd={...brd,left:SB,right:SB,...(h?{top:SB}:{}),...(o.c.includes("selb")?{bottom:SB}:{})};
     if(o.c==="grp"||o.c==="gap"){h=false;first=false;}
     return new d.TableCell({borders:brd,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
-      children:[new d.Paragraph({alignment:h||o.c==="grp"?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp",color:o.c==="bad"?"A42020":undefined})]})]});};
+      children:[new d.Paragraph({alignment:h||o.c==="grp"?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp"||!!(o.c&&o.c.includes("selc")),color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
     ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[320,1780,1621,1621,1621,1621,1622]}:{}),
     rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
