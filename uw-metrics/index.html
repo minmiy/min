@@ -162,6 +162,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:-8px}
 .tabs button{border:none;border-bottom:2.5px solid transparent;border-radius:0;background:none;padding:10px 14px;font-weight:600;color:var(--ink-3)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab-badge{font-size:11px;font-weight:600;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+.tab-badge.crit{background:var(--crit-bg);color:var(--crit)} .tab-badge.warn{background:var(--warn-bg);color:var(--warn)} .tab-badge.good{background:var(--good-bg);color:var(--good)}
 .view{display:flex;flex-direction:column;gap:22px}
 .calc-actions{justify-content:flex-end}
 .rp-bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
@@ -185,6 +187,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-lbl{font-size:8pt;font-weight:600;color:var(--ink-2);margin-top:.6mm}
 .rp-badge{font-size:8pt;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .rp-tbl td:first-child{background:var(--paper)}
+.rp-tbl td.grp{background:var(--paper);font-weight:700;text-align:center;vertical-align:middle}
+.rp-tbl td.sub{background:var(--sheet)!important;padding-left:2.5mm}
+.rp-tbl td.sub.sum{font-weight:700}
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
 .rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
 .rp-tbl th,.rp-tbl td{border:.5pt solid var(--line);padding:.45mm 1.5mm;white-space:nowrap}
@@ -251,6 +256,10 @@ td.zero{color:var(--ink-3)}
 .recon b{font-variant-numeric:tabular-nums}
 .recon.good{background:var(--good-bg);color:var(--good);border-color:transparent}
 .recon.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
+#tblSt td.grp{border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-weight:600;vertical-align:middle;background:var(--paper);width:1%}
+#tblSt td.sub{padding-left:12px}
+#tblSt td.sub.sum,#tblSt tr.grp-top td.n{font-weight:600}
+#tblSt tr.grp-end td{border-bottom:1px solid var(--line)}
 .grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
 
 .uploads.single{grid-template-columns:minmax(0,1fr) auto}
@@ -274,6 +283,7 @@ td.zero{color:var(--ink-3)}
   <nav class="tabs" role="tablist" aria-label="화면">
     <button type="button" role="tab" id="tabCalc" aria-selected="true" aria-controls="viewCalc">지표 산출</button>
     <button type="button" role="tab" id="tabReport" aria-selected="false" aria-controls="viewReport">월마감 보고서</button>
+    <button type="button" role="tab" id="tabChk" aria-selected="false" aria-controls="viewChk">점검 결과</button>
     <button type="button" role="tab" id="tabStd" aria-selected="false" aria-controls="viewStd">기준 관리</button>
   </nav>
 
@@ -320,15 +330,6 @@ td.zero{color:var(--ink-3)}
 
   <div class="actions calc-actions"><span class="note">심사지표·심사자별 현황을 확인한 뒤 '월마감 보고서' 탭에서 보고서를 작성합니다.</span><span style="flex:1"></span><button id="btnXlsx" type="button">결과표 엑셀 다운로드</button><button id="btnGoReport" class="primary" type="button">월마감 보고서 작성 →</button></div>
 
-  <details id="chkDetails">
-    <summary id="chkSummary">데이터 점검 결과</summary>
-    <div class="in">
-      <div class="note">전체 행 기준입니다. 오류 행은 지표에서 빠지고 경고는 포함합니다. 행별 상세는 엑셀의 데이터점검·원본_점검표시 시트에 있습니다.</div>
-      <div class="chk-sum" id="chkSum"></div>
-      <div class="recon" id="recon" hidden></div>
-      <div class="tbl"><table class="rules" id="tblRules"></table></div>
-    </div>
-  </details>
   </div>
 
   <div class="view" id="viewReport" hidden>
@@ -347,6 +348,16 @@ td.zero{color:var(--ink-3)}
     </div>
     <article class="report" id="report"></article>
   </div>
+  <div class="view" id="viewChk" hidden>
+    <section class="blk">
+      <div class="blk-h"><h2>데이터 점검 결과</h2><span class="hint">전체 행 기준. 오류 행은 지표 산출에서 빠지고, 경고는 지표에 포함한 채 표시만 합니다. 규칙은 '기준 관리' 탭에서 바꿉니다.</span></div>
+      <div class="chk-sum" id="chkSum"></div>
+      <div class="recon" id="recon" hidden></div>
+      <div class="tbl"><table class="rules" id="tblRules"></table></div>
+      <div class="actions"><span class="note">행별 상세(증번·규칙·내용)는 결과표 엑셀의 '데이터점검'·'원본_점검표시' 시트에 있습니다.</span><span style="flex:1"></span><button id="btnXlsx3" type="button">결과표 엑셀 다운로드</button></div>
+    </section>
+  </div>
+
   <div class="view" id="viewStd" hidden>
     <div class="rp-bar">
       <div class="rp-bar-l"><b>지표 정의 · 점검 규칙 관리</b><span class="note">고친 기준은 '기준 적용'을 눌러야 산출·보고서·엑셀에 반영됩니다. 이 브라우저에 저장되고, 파일로 내보내 팀과 같은 기준을 쓸 수 있습니다.</span></div>
@@ -701,7 +712,7 @@ function render(){
   renderCheck();if(SEL)renderMetrics();}
 function renderCheck(){
   const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>!isErr(i.id)).length;
-  $("chkSummary").textContent=`데이터 점검 결과 · 전체 ${nf(n)}행 중 오류로 제외 ${nf(exc)}행 · 경고 ${nf(wN)}건`;
+  $("tabChk").innerHTML=`점검 결과 <span class="tab-badge ${exc?"crit":wN?"warn":"good"}" title="오류로 제외 ${exc}행 · 경고 ${wN}건">${exc?`제외 ${nf(exc)}`:wN?`경고 ${nf(wN)}`:"이상 없음"}</span>`;
   $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(n)}</span></div>
   <div><span class="k">오류로 제외된 행</span><span class="v ${exc?"crit":"good"}">${nf(exc)}</span></div>
   <div><span class="k">경고 건수</span><span class="v ${wN?"warn":"good"}">${nf(wN)}</span></div>
@@ -790,10 +801,13 @@ function renderMetrics(){
   const rrow=(label,k,share)=>{const v=m[k],pv=p?p[k]:null;const sh=share?rate(v,m.resTotal):null,psh=share&&p?rate(pv,p.resTotal):null;
     const big=psh!=null&&Math.abs((sh-psh)*100)>=S.momP;
     return`<tr><td>${label}</td><td class="n">${nf(v)}</td><td class="n">${share?pct(sh):""}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${big?"cell-warn":""}">${p?(share?ppTxt(sh,psh):dTxt(v,pv)):"-"}</td></tr>`;};
-  $("tblSt").innerHTML=`<thead><tr><th>구분</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
-    rrow("정상인수","normal",true)+rrow("ㄴ 표준인수","std",true)+rrow("ㄴ 조건부인수","cond",true)+rrow("반송","ret",true)+rrow("청철","wd",true)+
-    `<tr class="total"><td>합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr>`+
-    "</tbody>";
+  const cells=(k)=>{const v=m[k],pv=p?p[k]:null;const sh=rate(v,m.resTotal),psh=p?rate(pv,p.resTotal):null;const big=psh!=null&&Math.abs((sh-psh)*100)>=S.momP;
+    return`<td class="n">${nf(v)}</td><td class="n">${pct(sh)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${big?"cell-warn":""}">${p?ppTxt(sh,psh):"-"}</td>`;};
+  $("tblSt").innerHTML=`<thead><tr><th colspan="2">구분</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
+    `<tr class="grp-top"><td rowspan="3" class="grp">정상인수</td><td class="sub sum">계</td>${cells("normal")}</tr>`+
+    `<tr><td class="sub">표준인수</td>${cells("std")}</tr><tr class="grp-end"><td class="sub">조건부인수</td>${cells("cond")}</tr>`+
+    `<tr><td colspan="2">반송</td>${cells("ret")}</tr><tr><td colspan="2">청철</td>${cells("wd")}</tr>`+
+    `<tr class="total"><td colspan="2">합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr></tbody>`;
   // reviewers × months (trend, last 12 months up to the selected month)
   const rvs=rvList().filter(k=>k!=="(공란)"&&!isAutoName(k));const WIN=winMonths();
   $("rvHint").textContent=`실제심사자 기준(자동심사·공란 제외) · 미결 ${S.inclPending?"포함":"제외"}`;
@@ -866,8 +880,9 @@ function draftTopics(){
 const RP_META={dept:"계약심사부",author:"",title:""};
 const tdN=v=>/^[+\-−±]?[\d,.]+(%|%p|건|일)?$/.test(String(v).trim())||/^[+\-−±][\d,.]+/.test(String(v))?"n":"";
 const cv=c=>c!==null&&typeof c==="object"?c:{v:c};
+const spanA=o=>`${o.rs?` rowspan="${o.rs}"`:""}${o.cs?` colspan="${o.cs}"`:""}`;
 function rpTable(rows,{tot=false}={}){const [h,...b]=rows;
-  return`<table class="rp-tbl"><thead><tr>${h.map(x=>`<th>${esc(cv(x).v)}</th>`).join("")}</tr></thead><tbody>${b.map((r,ri)=>`<tr${tot&&ri===b.length-1?' class="tot"':""}>${r.map((c,ci)=>{const o=cv(c);return`<td class="${ci>0?tdN(o.v):""}${o.c?" "+o.c:""}">${esc(o.v)}</td>`;}).join("")}</tr>`).join("")}</tbody></table>`;}
+  return`<table class="rp-tbl"><thead><tr>${h.map(x=>{const o=cv(x);return`<th${spanA(o)}>${esc(o.v)}</th>`;}).join("")}</tr></thead><tbody>${b.map((r,ri)=>`<tr${tot&&ri===b.length-1?' class="tot"':""}>${r.map((c,ci)=>{const o=cv(c);if(o.skip)return"";return`<td${spanA(o)} class="${ci>0&&!o.lbl?tdN(o.v):""}${o.c?" "+o.c:""}">${esc(o.v)}</td>`;}).join("")}</tr>`).join("")}</tbody></table>`;}
 const RV_PEOPLE=()=>rvList().filter(k=>k!=="(공란)"&&!isAutoName(k));
 function rvAgg(people,mm){return agg(inMonth(mm).filter(r=>people.includes(r.r2)));}
 /* 보고서 문안: 소주제별 1~2문장 초안 */
@@ -932,8 +947,13 @@ function reportData(){
   const proc=[["채널","처리","구성비","전월","증감","증감률"]].concat(chs.map(c=>{const v=m.byCh[c]||0,pv=p?(p.byCh[c]||0):null;return[c,nf(v),pct(rate(v,m.proc)),p?nf(pv):"-",p?dTxt(v,pv):"-",p?chgTxt(v,pv):"-"];}),
     [["합계",nf(m.proc),"100.0%",p?nf(p.proc):"-",p?dTxt(m.proc,p.proc):"-",p?chgTxt(m.proc,p.proc):"-"]]);
   const rr=(l,k,isRet)=>{const sh=rate(m[k],m.resTotal);return[l,nf(m[k]),isRet?{v:pct(sh),c:sh>rm?"bad":""}:pct(sh),p?nf(p[k]):"-",p?pct(rate(p[k],p.resTotal)):"-",p?ppTxt(sh,rate(p[k],p.resTotal)):"-"];};
-  const result=[["구분","건수","구성비","전월","전월 구성비","증감"],rr("정상인수","normal"),rr("ㄴ 표준인수","std"),rr("ㄴ 조건부인수","cond"),rr("반송","ret",true),rr("청철","wd"),
-    ["합계(미결 제외)",nf(m.resTotal),"100.0%",p?nf(p.resTotal):"-","100.0%",p?chgTxt(m.resTotal,p.resTotal):"-"]];
+  const sub=(l,row,c="sub")=>{row[0]={v:l,lbl:true,c};return row;};
+  const result=[[{v:"구분",cs:2},"건수","구성비","전월","전월 구성비","증감"],
+    [{v:"정상인수",rs:3,c:"grp"}].concat(sub("계",rr("","normal"),"sub sum")),
+    [{skip:true}].concat(sub("표준인수",rr("","std"))),
+    [{skip:true}].concat(sub("조건부인수",rr("","cond"))),
+    [{v:"반송",cs:2}].concat(rr("","ret",true).slice(1)),[{v:"청철",cs:2}].concat(rr("","wd").slice(1)),
+    [{v:"합계(미결 제외)",cs:2},nf(m.resTotal),"100.0%",p?nf(p.resTotal):"-","100.0%",p?chgTxt(m.resTotal,p.resTotal):"-"]];
   const people=RV_PEOPLE();const WIN=winMonths();const sumP=mm=>people.reduce((n,k)=>n+(M[mm].byRv[k]||0),0);
   const rmonth=[["심사자"].concat(WIN.map(mm=>`${mm.slice(2,4)}.${mm.slice(4)}`),["합계"])].concat(people.map(k=>[k].concat(WIN.map(mm=>nf(M[mm].byRv[k]||0)),[nf(WIN.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0))])),
     [["합계"].concat(WIN.map(mm=>nf(sumP(mm))),[nf(WIN.reduce((n,mm)=>n+sumP(mm),0))])]);
@@ -1120,13 +1140,17 @@ function buildWorkbook(){
   topLists().forEach(l=>rv.push([l.title,{v:l.winners.map(x=>x.who).join(", ")||"-",s:{font:{bold:true}}},l.winners[0]?.txt||"-",l.winners.map(x=>x.cnt).join(", ")||"-",l.basis]));
   XLSX.utils.book_append_sheet(wb,sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11])),"심사자별");
   // 심사결과
-  const st=[H(["구분",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
-  [["정상인수","normal"],["ㄴ 표준인수","std"],["ㄴ 조건부인수","cond"],["반송","ret"],["청철","wd"]].forEach(([l,k])=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
-    st.push([l,m[k],R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
-  st.push([{v:"합계(미결 제외)",s:X.tot},{v:m.resTotal,s:X.tot},R(1,X.tot),{v:numOr(p?.resTotal),s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.resTotal,p.resTotal):"-",s:X.tot}]);
-  st.push(["(참고) 미결",m.pend,"",numOr(p?.pend),"",p?dTxt(m.pend,p.pend):"-"]);
-  st.push([]);st.push(["반송률",R(m.retRate,fl(m.retRate,rm,"<=")),"",R(p?.retRate)]);st.push(["조건부인수 비중(정상 대비)",R(m.condRate),"",R(p?.condRate)]);
-  XLSX.utils.book_append_sheet(wb,sheet(st,[24,10,9,10,11,10]),"심사결과");
+  const st=[H(["구분","",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
+  const GRP={font:{bold:true},alignment:{horizontal:"center",vertical:"center"},fill:{fgColor:{rgb:"EEF2F4"}}};
+  [["정상인수","계","normal"],["","표준인수","std"],["","조건부인수","cond"],["반송","","ret"],["청철","","wd"]].forEach(([g,l,k],ri)=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
+    st.push([{v:g,s:ri<3?GRP:undefined},{v:l,s:l==="계"?{font:{bold:true}}:undefined},m[k],R(sh),numOr(p?.[k]),R(ps),{v:d==null?"-":ppTxt(sh,ps),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
+  st.push([{v:"합계(미결 제외)",s:X.tot},{v:"",s:X.tot},{v:m.resTotal,s:X.tot},R(1,X.tot),{v:numOr(p?.resTotal),s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.resTotal,p.resTotal):"-",s:X.tot}]);
+  st.push(["(참고) 미결","",m.pend,"",numOr(p?.pend),"",p?dTxt(m.pend,p.pend):"-"]);
+  st.push([]);st.push(["반송률","",R(m.retRate,fl(m.retRate,rm,"<=")),"",R(p?.retRate)]);st.push(["조건부인수 비중(정상 대비)","",R(m.condRate),"",R(p?.condRate)]);
+  const wsSt=sheet(st,[12,12,10,9,10,11,10]);
+  wsSt["!merges"]=[{s:{r:0,c:0},e:{r:0,c:1}},{s:{r:1,c:0},e:{r:3,c:0}},{s:{r:4,c:0},e:{r:4,c:1}},{s:{r:5,c:0},e:{r:5,c:1}},{s:{r:6,c:0},e:{r:6,c:1}},{s:{r:7,c:0},e:{r:7,c:1}},{s:{r:9,c:0},e:{r:9,c:1}},{s:{r:10,c:0},e:{r:10,c:1}}];
+  XLSX.utils.book_append_sheet(wb,wsSt,"심사결과");
+
   // 데이터점검
   const per={};RULES.forEach(([id])=>per[id]=0);ROWS.forEach(r=>r.codes.forEach(c=>per[c]++));
   const ck=[SEC("규칙별 건수 (전체 행 기준)"),H(["규칙ID","구분","건수","처리","점검 규칙"])];
@@ -1168,11 +1192,11 @@ function buildDocx(){
   const d=window.docx;const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
   const FONT="Malgun Gothic";const B={style:d.BorderStyle.SINGLE,size:4,color:"999999"};const BR={top:B,bottom:B,left:B,right:B};
   const P=(text,o={})=>new d.Paragraph({pageBreakBefore:!!o.pb,spacing:{after:o.after??40,before:o.before??0,line:o.line??260},children:[new d.TextRun({text,font:FONT,size:o.size||18,bold:o.bold,color:o.color})]});
-  const cell=(c,{h=false,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&tdN(t)==="n";
-    return new d.TableCell({borders:BR,width:w?{size:w,type:d.WidthType.DXA}:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
+  const cell=(c,{h=false,first=false,sz=16,w}={})=>{const o=cv(c);const t=String(o.v);const num=!h&&!first&&!o.lbl&&tdN(t)==="n";
+    return new d.TableCell({borders:BR,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
       children:[new d.Paragraph({alignment:h?d.AlignmentType.CENTER:num?d.AlignmentType.RIGHT:d.AlignmentType.LEFT,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad",color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
-    rows:rows.map((r,ri)=>new d.TableRow({children:r.map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1),first:ci===0,sz}))}))});
+    rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:ci===0&&!cv(c).lbl,sz}))}))});
   const kids=[P(D.title,{size:30,bold:true,after:80}),
     new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
       new d.TableRow({children:[cell("보고 기간",{h:true,w:1300}),cell(D.period),cell("작성일",{h:true,w:1100}),cell(D.date)]}),
@@ -1186,10 +1210,10 @@ $("btnDocx").onclick=async()=>{if(!SEL)return;if(!window.docx){toast("Word 모�
   try{const blob=await window.docx.Packer.toBlob(buildDocx());await saveBlob(`${SEL}_신계약심사_월마감보고서.docx`,blob,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");}
   catch(e){toast("Word 파일을 만들지 못했습니다: "+(e.message||e));}};
 $("btnPrint").onclick=()=>window.print();
-function showTab(t){const rp=t==="report";["calc","report","std"].forEach(k=>{const on=k===t;$("view"+k[0].toUpperCase()+k.slice(1)).hidden=!on;$("tab"+k[0].toUpperCase()+k.slice(1)).setAttribute("aria-selected",String(on));});
+function showTab(t){const rp=t==="report";["calc","report","chk","std"].forEach(k=>{const on=k===t;$("view"+k[0].toUpperCase()+k.slice(1)).hidden=!on;$("tab"+k[0].toUpperCase()+k.slice(1)).setAttribute("aria-selected",String(on));});
   if(t==="std")fillSettings();
   try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);if(rp)requestAnimationFrame(fitCheck);}
-$("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("tabStd").onclick=()=>showTab("std");$("btnGoReport").onclick=()=>showTab("report");
+$("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("tabStd").onclick=()=>showTab("std");$("tabChk").onclick=()=>showTab("chk");$("btnXlsx3").onclick=()=>$("btnXlsx").click();$("btnGoReport").onclick=()=>showTab("report");
 $("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
 $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
   const rows=[H(FIELDS.map(f=>f[1]))].concat(sampleRows().map(r=>r.map((v,i)=>[1,7,8].includes(i)&&typeof v==="number"?{v,z:"yyyy-mm-dd"}:{v})));
@@ -1394,7 +1418,7 @@ fillSettings();buildHolidays();renderDefs();
 if(!window.XLSX){$("loadErr").hidden=false;$("loadErr").textContent="엑셀 처리 모듈을 불러오지 못했습니다. 네트워크를 확인한 뒤 새로고침해 주세요.";}
 else loadSample();
 initCaps();initDownloads();
-try{const t=location.hash.slice(1)||localStorage.getItem("uwm-tab");if(t==="report"||t==="std")showTab(t);}catch(e){}
+try{const t=location.hash.slice(1)||localStorage.getItem("uwm-tab");if(t==="report"||t==="std"||t==="chk")showTab(t);}catch(e){}
 })();
 </script>
 </body></html>
