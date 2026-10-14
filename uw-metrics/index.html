@@ -214,6 +214,16 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4;margin:15mm}
 }
+.std-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.std-card{border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.std-card h3{margin:0;color:var(--ink);font-size:14.5px}
+.std-def{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink-2)}
+.std-def textarea{min-height:56px;font-size:13px;padding:8px 10px}
+.std-add{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+#tblStdRules select,#tblStdRules input[type=text]{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink)}
+#tblStdRules td.txt{min-width:280px}
+#holi{width:100%}
+@media (max-width:900px){.std-grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <style>
@@ -264,6 +274,7 @@ td.zero{color:var(--ink-3)}
   <nav class="tabs" role="tablist" aria-label="화면">
     <button type="button" role="tab" id="tabCalc" aria-selected="true" aria-controls="viewCalc">지표 산출</button>
     <button type="button" role="tab" id="tabReport" aria-selected="false" aria-controls="viewReport">월마감 보고서</button>
+    <button type="button" role="tab" id="tabStd" aria-selected="false" aria-controls="viewStd">기준 관리</button>
   </nav>
 
   <div class="banner" id="banner" hidden></div>
@@ -309,37 +320,6 @@ td.zero{color:var(--ink-3)}
 
   <div class="actions calc-actions"><span class="note">심사지표·심사자별 현황을 확인한 뒤 '월마감 보고서' 탭에서 보고서를 작성합니다.</span><span style="flex:1"></span><button id="btnXlsx" type="button">결과표 엑셀 다운로드</button><button id="btnGoReport" class="primary" type="button">월마감 보고서 작성 →</button></div>
 
-  <details id="setDetails">
-    <summary>산출 기준 설정</summary>
-    <div class="in">
-      <div class="form">
-        <label>3일 기준 (경과일수 N일 이내)<input type="number" id="sDays" step="1" min="0" max="30"></label>
-        <label>일수 기준<select id="sMode"><option value="영업일">영업일 (주말·공휴일 제외)</option><option value="달력일">달력일</option></select></label>
-        <label class="ck"><input type="checkbox" id="sPend"> 처리 건수에 미결 포함</label>
-        <label>허용 채널 (쉼표로 구분)<input type="text" id="sCh"></label>
-        <label>허용 계약상태 (쉼표로 구분)<input type="text" id="sSt"></label>
-      </div>
-      <div class="form">
-        <label>터치율 목표 (% 이상)<input type="number" id="sTouch" step="0.5" min="0" max="100"></label>
-        <label>자동심사율 목표 (% 이상)<input type="number" id="sAuto" step="0.5" min="0" max="100"></label>
-        <label>반송률 상한 (% 이하)<input type="number" id="sRet" step="0.5" min="0" max="100"></label>
-        <label>전월 대비 변동 표시 (비율, %p)<input type="number" id="sMomP" step="0.5" min="0"></label>
-        <label>전월 대비 변동 표시 (건수, %)<input type="number" id="sMomC" step="1" min="0"></label>
-      </div>
-      <label class="form" style="display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink-2)">공휴일 (영업일 계산에서 제외, 한 줄에 하나 · YYYY-MM-DD 이름)
-        <textarea id="holi"></textarea>
-      </label>
-      <div class="actions"><button id="btnApply" class="primary" type="button">기준 적용</button><button id="btnReset" type="button">기본값으로</button><span class="note">목표값·변동 기준은 임시 기본값입니다. 부서 기준으로 바꿔 쓰세요.</span></div>
-    </div>
-  </details>
-
-  <details>
-    <summary>지표 정의 · 점검 규칙</summary>
-    <div class="in">
-      <dl class="defs" id="defs"></dl>
-    </div>
-  </details>
-
   <details id="chkDetails">
     <summary id="chkSummary">데이터 점검 결과</summary>
     <div class="in">
@@ -367,6 +347,77 @@ td.zero{color:var(--ink-3)}
     </div>
     <article class="report" id="report"></article>
   </div>
+  <div class="view" id="viewStd" hidden>
+    <div class="rp-bar">
+      <div class="rp-bar-l"><b>지표 정의 · 점검 규칙 관리</b><span class="note">고친 기준은 '기준 적용'을 눌러야 산출·보고서·엑셀에 반영됩니다. 이 브라우저에 저장되고, 파일로 내보내 팀과 같은 기준을 쓸 수 있습니다.</span></div>
+      <div class="actions">
+        <button id="btnApply" class="primary" type="button">기준 적용</button>
+        <button id="btnReset" type="button">기본값으로</button>
+        <button id="btnExport" type="button">기준 내보내기 (.json)</button>
+        <label class="btn" for="stdFile">기준 불러오기</label><input type="file" id="stdFile" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0">
+      </div>
+      <div class="note" id="stdDiff"></div>
+    </div>
+
+    <section class="blk">
+      <div class="blk-h"><h2>지표 정의</h2><span class="hint">계산 방식과 보고서에 쓰는 정의 문구를 함께 고칩니다. 정의 문구를 비워 두면 설정에서 자동으로 만듭니다.</span></div>
+      <div class="std-grid">
+        <div class="std-card"><h3>① 3일이내 터치율</h3><div class="form">
+          <label>3일 기준 (경과일수 N일 이내)<input type="number" id="sDays" step="1" min="0" max="30"></label>
+          <label>일수 기준<select id="sMode"><option value="영업일">영업일 (주말·공휴일 제외)</option><option value="달력일">달력일</option></select></label>
+          <label>분모<select id="sTBase"><option value="all">전체 심사건 (계약상태 무관)</option><option value="manual">인심사 건만</option></select></label>
+          <label>날짜 공란 건<select id="sTBlank"><option value="in">3일이내로 처리</option><option value="out">3일초과로 처리</option><option value="exclude">분모에서 제외</option></select></label>
+          <label>목표 (% 이상)<input type="number" id="sTouch" step="0.5" min="0" max="100"></label></div>
+          <label class="std-def">정의 문구<textarea id="dTouch" rows="2"></textarea></label></div>
+        <div class="std-card"><h3>② 자동심사율</h3><div class="form">
+          <label>자동심사로 볼 결과값 (쉼표)<input type="text" id="sAutoV"></label>
+          <label>인심사로 볼 결과값 (쉼표)<input type="text" id="sManV"></label>
+          <label>결과 공란 건<select id="sABlank"><option value="exclude">분모에서 제외</option><option value="manual">인심사로 셈</option></select></label>
+          <label>목표 (% 이상)<input type="number" id="sAuto" step="0.5" min="0" max="100"></label></div>
+          <label class="std-def">정의 문구<textarea id="dAuto" rows="2"></textarea></label></div>
+        <div class="std-card"><h3>③ 신계약 처리 건수</h3><div class="form">
+          <label class="ck"><input type="checkbox" id="sPend"> 처리 건수에 미결 포함</label>
+          <label>허용 채널 (쉼표, E4 기준)<input type="text" id="sCh"></label>
+          <label>전월 대비 변동 표시 (건수, %)<input type="number" id="sMomC" step="1" min="0"></label></div>
+          <label class="std-def">정의 문구<textarea id="dProc" rows="2"></textarea></label></div>
+        <div class="std-card"><h3>④ 심사결과 통계</h3><div class="form">
+          <label>정상으로 볼 상태값<input type="text" id="sStN"></label>
+          <label>반송으로 볼 상태값<input type="text" id="sStR"></label>
+          <label>청철로 볼 상태값<input type="text" id="sStW"></label>
+          <label>미결로 볼 상태값<input type="text" id="sStP"></label>
+          <label>허용 계약상태 (쉼표, E4 기준)<input type="text" id="sSt"></label>
+          <label>반송률 분모<select id="sRBase"><option value="result">정상+반송+청철 (미결 제외)</option><option value="all">미결 포함 전체</option></select></label>
+          <label>반송률 상한 (% 이하)<input type="number" id="sRet" step="0.5" min="0" max="100"></label>
+          <label>전월 대비 변동 표시 (비율, %p)<input type="number" id="sMomP" step="0.5" min="0"></label></div>
+          <label class="std-def">정의 문구<textarea id="dResult" rows="2"></textarea></label></div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="blk-h"><h2>점검 규칙</h2><span class="hint">오류는 지표 산출에서 빠지고, 경고는 포함한 채 목록에만 표시됩니다. 건수는 현재 데이터 기준입니다.</span></div>
+      <div class="tbl"><table id="tblStdRules"></table></div>
+      <h3>규칙 추가</h3>
+      <div class="form std-add">
+        <label>열<select id="cCol"></select></label>
+        <label>조건<select id="cOp"><option value="blank">값이 공란</option><option value="notin">값이 목록에 없음</option><option value="in">값이 목록에 있음</option></select></label>
+        <label>값 목록 (쉼표)<input type="text" id="cVals" placeholder="예: GA, 전속"></label>
+        <label>등급<select id="cSev"><option value="경고">경고 · 지표 포함</option><option value="오류">오류 · 지표 제외</option></select></label>
+        <label>설명<input type="text" id="cDesc" placeholder="비우면 자동으로 만듭니다"></label>
+        <div style="display:flex;align-items:flex-end"><button id="cAdd" type="button">규칙 추가</button></div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="blk-h"><h2>공휴일</h2><span class="hint">영업일 계산에서 뺄 날. 한 줄에 하나씩 YYYY-MM-DD 이름. 올린 파일의 '공휴일' 시트도 함께 반영됩니다.</span></div>
+      <textarea id="holi"></textarea>
+    </section>
+
+    <details>
+      <summary>현재 적용 중인 정의 · 규칙 전체 보기</summary>
+      <div class="in"><dl class="defs" id="defs"></dl></div>
+    </details>
+  </div>
+
 </div>
 <div class="toast" id="toast" hidden></div>
 <button id="chatFab" class="chat-fab" type="button" hidden aria-controls="chatPanel" aria-expanded="false">지표 챗봇</button>
@@ -429,8 +480,11 @@ const DEFAULT_HOLIDAYS=`2025-01-01 신정
 2026-10-09 한글날
 2026-12-25 성탄절`;
 const DEFAULTS={touchDays:3,dayMode:"영업일",inclPending:false,channels:"GA, 전속, 방카, TM",statuses:"정상, 반송, 청철, 미결",
-  touchTarget:90,autoTarget:50,returnMax:15,momP:3,momC:10,holidays:DEFAULT_HOLIDAYS};
-const S=Object.assign({},DEFAULTS);
+  touchTarget:90,autoTarget:50,returnMax:15,momP:3,momC:10,holidays:DEFAULT_HOLIDAYS,
+  touchBase:"all",touchBlank:"in",autoValues:"가입가능, 가입불가, 조건부인수",manualValues:"인심사",autoBlank:"exclude",
+  stNormal:"정상",stReturn:"반송",stWithdraw:"청철",stPending:"미결",retBase:"result",
+  defText:{touch:"",auto:"",proc:"",result:""},rules:{},custom:[]};
+const S=JSON.parse(JSON.stringify(DEFAULTS));
 const LS="uwm-settings-v2";
 try{const saved=JSON.parse(localStorage.getItem(LS)||"null");if(saved)Object.assign(S,saved);}catch(e){}
 let HSET=new Set();
@@ -463,8 +517,9 @@ const prevMonth=m=>{let y=+m.slice(0,4),mo=+m.slice(4)-1;if(mo===0){y--;mo=12;}r
 /* ---------- columns ---------- */
 const FIELDS=[["no","증번",["증번","증권번호","계약번호"]],["cdate","계약일자",["계약일자","계약일","청약일자","청약일"]],["ch","채널",["채널","판매채널"]],["r1","최초심사자",["최초심사자"]],["r2","실제심사자",["실제심사자"]],["st","계약상태",["계약상태","상태"]],["auto","자동심사결과",["자동심사결과","자동심사"]],["sdate","심사시작일",["심사시작일","심사시작일자"]],["fdate","최초심사일",["최초심사일","최초심사일자"]],["cond","특별조건부1",["특별조건부1","특별조건부","특별조건"]]];
 const CHECK_COLS={inc:["지표포함(1=포함)","지표포함"],ecode:["점검_오류코드","오류코드"],wcode:["점검_경고코드","경고코드"],biz:["차이일수(영업일)"],cal:["차이일수(달력일)"]};
-const AUTO_VALUES=["가입가능","가입불가","조건부인수"];
-function autoKind(v){const s=String(v||"").replace(/\s/g,"");if(!s)return null;if(s==="인심사")return"manual";if(AUTO_VALUES.includes(s))return"auto";return"bad";}
+const norm=v=>String(v||"").replace(/\s/g,"");
+function autoKind(v){const s=norm(v);if(!s)return null;if(listOf(S.manualValues).map(norm).includes(s))return"manual";if(listOf(S.autoValues).map(norm).includes(s))return"auto";return"bad";}
+function roleOf(v){for(const[role,k]of[["정상","stNormal"],["반송","stReturn"],["청철","stWithdraw"],["미결","stPending"]])if(listOf(S[k]).includes(v))return role;return v;}
 const isAutoName=v=>/^(자동심사|AUTO|자동|SYSTEM|시스템)$/i.test(String(v||"").trim());
 
 /* ---------- reading files ---------- */
@@ -508,13 +563,13 @@ function parseRows(aoa,fileName,startIdx){
   return rows;}
 function prepRows(rows){
   rows.forEach(r=>{const g=k=>String(r.raw[k]??"").trim();
-    r.no=g("no");r.ch=g("ch");r.r1=g("r1");r.r2=g("r2");r.st=g("st");r.autoRaw=g("auto").replace(/\s/g,"");r.ak=autoKind(r.autoRaw);r.cond=g("cond");
+    r.no=g("no");r.ch=g("ch");r.r1=g("r1");r.r2=g("r2");r.stRaw=g("st");r.st=roleOf(r.stRaw);r.autoRaw=g("auto").replace(/\s/g,"");r.ak=autoKind(r.autoRaw);r.cond=g("cond");
     r.pc=parseDate(r.raw.cdate);r.ps=parseDate(r.raw.sdate);r.pf=parseDate(r.raw.fdate);
     r.cd=r.pc.ok?r.pc.dn:null;r.sd=r.ps.ok?r.ps.dn:null;r.fd=r.pf.ok?r.pf.dn:null;r.month=r.cd!=null?monthOf(r.cd):null;});
   return rows;}
 
 /* ---------- data checks ---------- */
-const RULES=[
+const BASE_RULES=[
   ["E1","오류","계약일자 > 최초심사일 (분배가 계약보다 앞섬)"],
   ["E2","오류","최초심사일 > 심사시작일 (의견 등록이 분배보다 앞섬 → 경과일수 음수)"],
   ["E3","오류","증번 중복 (두 번째 이후 행을 오류로 봄)"],
@@ -531,11 +586,21 @@ const RULES=[
   ["W9","경고","자동 조건부인수·계약상태 정상인데 특별조건부1 공란"],
   ["W10","경고","자동심사결과가 정해진 값이 아님 (자동심사율에서 제외)"],
 ];
-const RULE=Object.fromEntries(RULES.map(r=>[r[0],{sev:r[1],desc:r[2]}]));
+let RULES=[],RULE={};
+const isErr=id=>(RULE[id]||{}).sev==="오류";
+function buildRules(){const ov=S.rules||{};
+  RULES=BASE_RULES.filter(([id])=>(ov[id]||{}).on!==false).map(([id,sev,desc])=>[id,(ov[id]||{}).sev||sev,(ov[id]||{}).desc||desc])
+    .concat((S.custom||[]).filter(c=>c.on!==false).map(c=>[c.id,c.sev,c.desc||customDesc(c)]));
+  RULE=Object.fromEntries(RULES.map(r=>[r[0],{sev:r[1],desc:r[2]}]));}
 function check(rows){
+  buildRules();
   const chSet=new Set(listOf(S.channels)),stSet=new Set(listOf(S.statuses));
+  const custom=(S.custom||[]).filter(c=>c.on!==false);
   const seen=new Map();const issues=[];
-  rows.forEach(r=>{r.codes=[];const add=(id,msg)=>{if(!r.codes.includes(id))r.codes.push(id);issues.push({row:r,id,msg});};
+  rows.forEach(r=>{r.codes=[];r.st=roleOf(r.stRaw);r.ak=autoKind(r.autoRaw);
+    const add=(id,msg)=>{if(!RULE[id])return;if(!r.codes.includes(id))r.codes.push(id);issues.push({row:r,id,msg});};
+    custom.forEach(c=>{const v=String(r.raw[c.col]??"").trim(),L=listOf(c.vals);
+      if(c.op==="blank"?!v:c.op==="notin"?(v&&!L.includes(v)):L.includes(v))add(c.id,`${COL_LABEL[c.col]||c.col} '${v||"(공란)"}' · ${c.desc||customDesc(c)}`);});
     if(!r.no)add("E5","증번 공란");
     else if(seen.has(r.no))add("E3",`${seen.get(r.no)}행과 증번 중복`);
     else seen.set(r.no,r.line);
@@ -544,7 +609,7 @@ function check(rows){
     if(r.cd!=null&&r.fd!=null&&r.cd>r.fd)add("E1",`계약일자 ${fmt(r.cd)} > 최초심사일 ${fmt(r.fd)}`);
     if(r.fd!=null&&r.sd!=null&&r.fd>r.sd)add("E2",`최초심사일 ${fmt(r.fd)} > 심사시작일 ${fmt(r.sd)}`);
     if(!chSet.has(r.ch))add("E4",`채널 '${r.ch||"(공란)"}'은 허용값이 아님`);
-    if(!stSet.has(r.st))add("E4",`계약상태 '${r.st||"(공란)"}'은 허용값이 아님`);
+    if(!stSet.has(r.stRaw))add("E4",`계약상태 '${r.stRaw||"(공란)"}'은 허용값이 아님`);
     if(r.pf.empty)add("W1","최초심사일 공란");
     if((r.ak==="manual"||r.ak===null)&&r.ps.empty)add("W2",`자동심사결과 '${r.autoRaw||"(공란)"}'인데 심사시작일 공란`);
     if(r.ak===null)add("W3","자동심사결과 공란");
@@ -556,7 +621,7 @@ function check(rows){
     if(r.ak==="manual"&&isAutoName(r.r2))add("W8","인심사 건인데 실제심사자 '자동심사'");
     if(r.autoRaw==="조건부인수"&&r.st==="정상"&&!r.cond)add("W9","조건부인수·정상인데 특별조건부1 공란");
     r.codes.sort((a,b)=>a[0]===b[0]?(+a.slice(1))-(+b.slice(1)):a<b?-1:1);
-    r.ecodes=r.codes.filter(c=>c[0]==="E");r.wcodes=r.codes.filter(c=>c[0]==="W");r.include=r.ecodes.length===0;
+    r.ecodes=r.codes.filter(c=>isErr(c));r.wcodes=r.codes.filter(c=>!isErr(c));r.include=r.ecodes.length===0;
   });
   return issues;}
 
@@ -564,16 +629,17 @@ function check(rows){
 const rate=(a,b)=>b?a/b:null;
 function setLags(rows){rows.forEach(r=>{
   r.lagCal=r.fd!=null&&r.sd!=null?r.sd-r.fd:null;r.lagBiz=r.fd!=null&&r.sd!=null?bizDiff(r.fd,r.sd):null;
-  r.lag=S.dayMode==="달력일"?r.lagCal:r.lagBiz;r.within=r.lag==null||r.lag<=S.touchDays;});}
+  r.lag=S.dayMode==="달력일"?r.lagCal:r.lagBiz;r.within=r.lag==null?S.touchBlank!=="out":r.lag<=S.touchDays;
+  r.tBase=(S.touchBase!=="manual"||r.ak==="manual")&&!(S.touchBlank==="exclude"&&r.lag==null);});}
 function agg(list){
-  const o={n:list.length};
-  o.tIn=list.filter(r=>r.within).length;o.tOut=o.n-o.tIn;o.touch=rate(o.tIn,o.n);o.blankDates=list.filter(r=>r.lag==null).length;
-  const lags=list.filter(r=>r.lag!=null).map(r=>r.lag);o.avgLag=lags.length?lags.reduce((a,b)=>a+b,0)/lags.length:null;
-  o.auto=list.filter(r=>r.ak==="auto").length;o.manual=list.filter(r=>r.ak==="manual").length;o.autoBlank=o.n-o.auto-o.manual;o.autoRate=rate(o.auto,o.auto+o.manual);
+  const tl=list.filter(r=>r.tBase);const o={all:list.length,n:tl.length};
+  o.tIn=tl.filter(r=>r.within).length;o.tOut=o.n-o.tIn;o.touch=rate(o.tIn,o.n);o.blankDates=tl.filter(r=>r.lag==null).length;
+  const lags=tl.filter(r=>r.lag!=null).map(r=>r.lag);o.avgLag=lags.length?lags.reduce((a,b)=>a+b,0)/lags.length:null;
+  o.auto=list.filter(r=>r.ak==="auto").length;o.manual=list.filter(r=>r.ak==="manual"||(S.autoBlank==="manual"&&r.ak===null)).length;o.autoBlank=o.all-o.auto-o.manual;o.autoRate=rate(o.auto,o.auto+o.manual);
   const proc=list.filter(r=>S.inclPending||r.st!=="미결");o.proc=proc.length;
   const cnt=f=>list.filter(f).length;
   o.normal=cnt(r=>r.st==="정상");o.cond=cnt(r=>r.st==="정상"&&r.cond);o.std=o.normal-o.cond;o.ret=cnt(r=>r.st==="반송");o.wd=cnt(r=>r.st==="청철");o.pend=cnt(r=>r.st==="미결");
-  o.resTotal=o.normal+o.ret+o.wd;o.retRate=rate(o.ret,o.resTotal);o.condRate=rate(o.cond,o.normal);
+  o.resTotal=o.normal+o.ret+o.wd;o.retRate=rate(o.ret,S.retBase==="all"?o.resTotal+o.pend:o.resTotal);o.condRate=rate(o.cond,o.normal);
   o.byCh={};proc.forEach(r=>{o.byCh[r.ch]=(o.byCh[r.ch]||0)+1;});
   o.byRv={};proc.forEach(r=>{const k=r.r2||"(공란)";o.byRv[k]=(o.byRv[k]||0)+1;});
   o.comp={same:cnt(r=>r.r1&&r.r2&&r.r1===r.r2),diff:cnt(r=>r.r1&&r.r2&&r.r1!==r.r2),first:cnt(r=>r.r1&&!r.r2),actual:cnt(r=>!r.r1&&r.r2),none:cnt(r=>!r.r1&&!r.r2)};
@@ -629,12 +695,12 @@ function chStats(ch,mm){return agg(inMonth(mm).filter(r=>r.ch===ch));}
 function render(){
   if(!SEL){["cards","tblCh","tblSt","tblRv","tblMonths","meta","rvHint"].forEach(id=>$(id).innerHTML="");}
   const pk=PREV();
-  $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].n)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
+  $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].all)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
   $("banner").hidden=!isSample;
   $("banner").textContent="예시 데이터(모두 가상)를 보여주고 있습니다. 2026년 8·9월은 제공해 주신 더미 워크북 1,200건 그대로이고, 추이를 보여주려고 2025년 10월~2026년 7월 10개월치를 같은 분포로 지어 앞에 붙였습니다(증번 G로 시작). 실제 파일을 올리면 바로 바뀝니다.";
   renderCheck();if(SEL)renderMetrics();}
 function renderCheck(){
-  const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
+  const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>!isErr(i.id)).length;
   $("chkSummary").textContent=`데이터 점검 결과 · 전체 ${nf(n)}행 중 오류로 제외 ${nf(exc)}행 · 경고 ${nf(wN)}건`;
   $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(n)}</span></div>
   <div><span class="k">오류로 제외된 행</span><span class="v ${exc?"crit":"good"}">${nf(exc)}</span></div>
@@ -793,7 +859,7 @@ function draftTopics(){
   const big=ms.filter(x=>x.big);
   T.push({key:"mom",title:"전월 대비 변동",cls:!p?"":big.length?"warn":"good",chip:big.length?`변동 큼 ${big.length}`:"",
     text:!p?`데이터에 ${mLabel(prevMonth(SEL))} 자료가 없어 증감을 계산하지 않음.`:big.length?`${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}로 변동 폭이 커 원인 확인 필요.`:`주요 지표 모두 변동 기준 이내(비율 ${S.momP}%p, 건수 ${S.momC}% 미만).`});
-  {const per={};ROWS.forEach(rw=>rw.codes.forEach(c=>per[c]=(per[c]||0)+1));const exc=ROWS.filter(rw=>!rw.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
+  {const per={};ROWS.forEach(rw=>rw.codes.forEach(c=>per[c]=(per[c]||0)+1));const exc=ROWS.filter(rw=>!rw.include).length,wN=ISSUES.filter(i=>!isErr(i.id)).length;
    const eTxt=RULES.filter(([id,sev])=>sev==="오류"&&per[id]).map(([id,,d])=>`${id} ${d.replace(/\s*\(.*\)$/,"")} ${per[id]}건`).join(", ");
    T.push({key:"note",title:"특이사항 및 향후 조치",cls:"",chip:"",text:`- 데이터 점검: 전체 ${nf(ROWS.length)}행 중 오류 ${nf(exc)}행${eTxt?`(${eTxt})`:""}은 지표 산출에서 제외하였고, 경고 ${nf(wN)}건은 원천 데이터 확인이 필요함.\n- 향후 조치: (작성)`});}
   return T;}
@@ -887,9 +953,9 @@ function reportData(){
     badges:{touch:badge(by("touch")),auto:badge(by("auto")),proc:badge(by("proc")),result:`반송률 ${badge(by("ret"))}`},
     winTxt:`${mLabel(WIN[0])}~${mLabel(WIN[WIN.length-1])}`,
     period:`${y}.${mm2}.01 ~ ${y}.${mm2}.${last} (계약일자 기준)`,
-    target:`${nf(m.n)}건 (점검 오류 ${nf(ROWS.filter(r=>!r.include&&r.month===SEL).length)}건 제외)`,
+    target:`${nf(m.all)}건 (점검 오류 ${nf(ROWS.filter(r=>!r.include&&r.month===SEL).length)}건 제외)`,
     date:`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,"0")}.${String(now.getDate()).padStart(2,"0")}`,
-    basis:`산출 기준: 경과일수 = 심사시작일 − 최초심사일(${S.dayMode}, ${S.touchDays}일 이내·날짜 공란은 3일이내) · 자동심사율 = 자동 ÷ (자동+인심사), 결과 공란 제외 · 처리 건수 미결 ${S.inclPending?"포함":"제외"} · 심사자는 실제심사자 기준(자동심사·공란 제외) · 반송률 = 반송 ÷ (정상+반송+청철) · 조건부인수 = 정상 중 특별조건부1 값 있음 · 점검 오류 행 제외`,
+    basis:"산출 기준: "+["touch","auto","proc","result"].map(k=>({touch:"터치율",auto:"자동심사율",proc:"처리 건수",result:"심사결과"})[k]+" — "+defOf(k)).join(" / ")+" / 심사자는 실제심사자 기준(자동심사·공란 제외), 점검 오류 행 제외",
     title:RP_META.title||`${y}년 ${mo}월 신계약 심사 결과 보고`};}
 /* 쪽 → 대주제 → 소주제([코멘트 키들], 제목, 표, 배지). 표가 없는 소주제는 코멘트만 */
 const RP=[
@@ -1068,14 +1134,14 @@ function buildWorkbook(){
   ck.push([{v:"제외 행 수",s:X.tot},{v:"-",s:X.tot},{v:exc,s:X.tot},{v:"E 1개 이상",s:X.tot},{v:"오류 코드가 1개 이상 있어 지표에서 빠지는 행",s:X.tot}]);
   ck.push([{v:"통과 행 수",s:X.tot},{v:"-",s:X.tot},{v:ROWS.length-exc,s:X.tot},{v:"지표 대상",s:X.tot},{v:"지표 집계 대상 행",s:X.tot}]);
   ck.push([]);ck.push(SEC("상세"));ck.push(H(["행","증번","마감월","규칙","내용"]));
-  ISSUES.forEach(i=>ck.push([i.row.line,i.row.no||"(공란)",i.row.month||"-",{v:i.id,s:i.id[0]==="E"?X.crit:X.warn},i.msg]));
+  ISSUES.forEach(i=>ck.push([i.row.line,i.row.no||"(공란)",i.row.month||"-",{v:i.id,s:isErr(i.id)?X.crit:X.warn},i.msg]));
   XLSX.utils.book_append_sheet(wb,sheet(ck,[10,12,9,12,60]),"데이터점검");
   // 원본 + 계산열 (파일의 K~P와 같은 형식)
   const fieldIdx={E1:[1,8],E2:[7,8],E3:[0],E4:[2,5],E5:[0,1],W1:[8],W2:[7],W3:[6],W4:[4],W5:[9],W6:[6,5],W7:[4],W8:[4],W9:[9],W10:[6]};
   const raw=[H(FIELDS.map(f=>f[1]).concat(["마감월","차이일수(달력일)","차이일수(영업일)","점검_오류코드","지표포함(1=포함)","점검_경고코드"]))];
   ROWS.forEach(r=>{const cells=FIELDS.map(([k])=>{const pd=k==="cdate"?r.pc:k==="sdate"?r.ps:k==="fdate"?r.pf:null;
       if(pd)return{v:pd.ok?fmt(pd.dn):String(r.raw[k]??"")};return{v:String(r.raw[k]??"")};});
-    r.codes.forEach(c=>(fieldIdx[c]||[]).forEach(ci=>{const sv=c[0]==="E"?X.crit:X.warn;if(cells[ci].s!==X.crit)cells[ci].s=sv;}));
+    r.codes.forEach(c=>(fieldIdx[c]||[]).forEach(ci=>{const sv=isErr(c)?X.crit:X.warn;if(cells[ci].s!==X.crit)cells[ci].s=sv;}));
     cells.push({v:r.month||""},{v:r.lagCal==null?"":r.lagCal},{v:r.lagBiz==null?"":r.lagBiz},{v:r.ecodes.join(" "),s:r.ecodes.length?X.crit:undefined},{v:r.include?1:0,s:r.include?undefined:X.crit},{v:r.wcodes.join(" "),s:r.wcodes.length?X.warn:undefined});
     raw.push(cells);});
   const ws6=sheet(raw,[11,11,8,10,10,9,11,11,11,13,9,10,10,12,10,14]);ws6["!autofilter"]={ref:ws6["!ref"]};
@@ -1120,9 +1186,10 @@ $("btnDocx").onclick=async()=>{if(!SEL)return;if(!window.docx){toast("Word 모�
   try{const blob=await window.docx.Packer.toBlob(buildDocx());await saveBlob(`${SEL}_신계약심사_월마감보고서.docx`,blob,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");}
   catch(e){toast("Word 파일을 만들지 못했습니다: "+(e.message||e));}};
 $("btnPrint").onclick=()=>window.print();
-function showTab(t){const rp=t==="report";$("viewCalc").hidden=rp;$("viewReport").hidden=!rp;$("tabCalc").setAttribute("aria-selected",String(!rp));$("tabReport").setAttribute("aria-selected",String(rp));
+function showTab(t){const rp=t==="report";["calc","report","std"].forEach(k=>{const on=k===t;$("view"+k[0].toUpperCase()+k.slice(1)).hidden=!on;$("tab"+k[0].toUpperCase()+k.slice(1)).setAttribute("aria-selected",String(on));});
+  if(t==="std")fillSettings();
   try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);if(rp)requestAnimationFrame(fitCheck);}
-$("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("btnGoReport").onclick=()=>showTab("report");
+$("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("tabStd").onclick=()=>showTab("std");$("btnGoReport").onclick=()=>showTab("report");
 $("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
 $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
   const rows=[H(FIELDS.map(f=>f[1]))].concat(sampleRows().map(r=>r.map((v,i)=>[1,7,8].includes(i)&&typeof v==="number"?{v,z:"yyyy-mm-dd"}:{v})));
@@ -1133,16 +1200,19 @@ $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
 function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,4200);}
 
 /* ---------- definitions ---------- */
+function autoDef(k){const L=x=>listOf(x).join("·");return{
+  touch:`3일이내 건수 ÷ ${S.touchBase==="manual"?"인심사 건수":"총 심사건수 (계약상태 무관, 증번별)"}. 경과일수 = 심사시작일 − 최초심사일이 ${S.touchDays}일 이하이면 3일이내(${S.dayMode} 기준${S.dayMode==="영업일"?", 최초심사일 다음날부터 주말·공휴일 제외":""}). 날짜 공란 건은 ${S.touchBlank==="in"?"3일이내로":S.touchBlank==="out"?"3일초과로":"분모에서 빼고"} 처리.`,
+  auto:`자동심사 건수 ÷ (자동심사 + 인심사). 자동심사 = 자동심사결과 ${L(S.autoValues)}, 인심사 = ${L(S.manualValues)}. 결과 공란은 ${S.autoBlank==="manual"?"인심사로 셈":"제외"}.`,
+  proc:`월별×채널별, 월별×실제심사자별 건수. 미결 ${S.inclPending?"포함":"제외"}. 실제심사자 공란은 '(공란)'으로 따로 집계.`,
+  result:`미결 제외. 정상인수 = 계약상태 ${L(S.stNormal)}, 그중 특별조건부1 값이 있으면 조건부인수, 없으면 표준인수. 반송 = ${L(S.stReturn)}, 청철 = ${L(S.stWithdraw)}, 미결 = ${L(S.stPending)}. 반송률 = 반송 ÷ ${S.retBase==="all"?"(정상+반송+청철+미결)":"(정상+반송+청철)"}.`}[k];}
+const defOf=k=>(S.defText&&S.defText[k])||autoDef(k);
 function DEFS(){return[
   ["마감월","계약일자의 연월(YYYYMM). 최초심사일·심사시작일이 다음 달로 넘어가도 계약월에 집계."],
-  ["① 3일이내 터치율",`3일이내 건수 ÷ 총 심사건수 (계약상태 무관, 증번별). 경과일수 = <code>심사시작일 − 최초심사일</code>(분배 후 의견 등록까지)이 <code>${S.touchDays}일 이하</code>이거나 두 날짜 중 하나라도 공란이면 3일이내. 현재 ${S.dayMode} 기준${S.dayMode==="영업일"?": 최초심사일 다음날부터 심사시작일까지 중 주말·공휴일을 뺀 일수":""}.`],
-  ["② 자동심사율",`자동심사 건수 ÷ (자동심사 + 인심사). 자동심사 = 자동심사결과 <code>가입가능·가입불가·조건부인수</code>, 인심사 = <code>인심사</code>, 공란은 제외.`],
-  ["③ 신계약 처리 건수",`월별×채널별, 월별×실제심사자별 건수. 미결 ${S.inclPending?"포함":"제외"}. 실제심사자 공란은 '(공란)'으로 따로 집계.`],
-  ["④ 심사결과 통계",`미결 제외. 정상인수 = 계약상태 <code>정상</code>, 그중 특별조건부1 값이 있으면 조건부인수, 없으면 표준인수. 반송·청철의 특별조건부1 값은 집계하지 않음. 반송률 = 반송 ÷ (정상+반송+청철).`],
+  ["① 3일이내 터치율",esc(defOf("touch"))],["② 자동심사율",esc(defOf("auto"))],["③ 신계약 처리 건수",esc(defOf("proc"))],["④ 심사결과 통계",esc(defOf("result"))],
   ["전월 대비",`고른 마감월의 바로 전 달과 비교. 비율 지표는 %p 차이, 건수는 증감률. 비율 ${S.momP}%p, 건수 ${S.momC}% 이상 변하면 '변동 큼'.`],
-  ["목표값",`터치율 ${S.touchTarget}% 이상, 자동심사율 ${S.autoTarget}% 이상, 반송률 ${S.returnMax}% 이하. 임시 기본값이며 '산출 기준 설정'에서 바꿈.`],
-  ["허용값",`채널: ${listOf(S.channels).join(", ")} · 계약상태: ${listOf(S.statuses).join(", ")} (E4 기준)`],
-].concat(RULES.map(([id,sev,desc])=>[`${id} (${sev})`,desc+(sev==="오류"?" → 지표 제외":" → 지표 포함")]));}
+  ["목표값",`터치율 ${S.touchTarget}% 이상, 자동심사율 ${S.autoTarget}% 이상, 반송률 ${S.returnMax}% 이하.`],
+  ["허용값",`채널: ${esc(listOf(S.channels).join(", "))} · 계약상태: ${esc(listOf(S.statuses).join(", "))} (E4 기준)`],
+].concat(RULES.map(([id,sev,desc])=>[`${id} (${sev})`,esc(desc)+(sev==="오류"?" → 지표 제외":" → 지표 포함")]));}
 function renderDefs(){$("defs").innerHTML=DEFS().map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("");}
 
 /* ---------- sample data: 사용자가 제공한 가상 더미 워크북 (신계약마감 A~J열, 공휴일, 기준표) ---------- */
@@ -1201,15 +1271,68 @@ drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
 drop.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files.length)handleFiles([...e.dataTransfer.files]);});
 $("btnSample").onclick=()=>{$("loadErr").hidden=true;loadSample();toast("예시 데이터를 불러왔습니다.");};
 
-/* ---------- settings form ---------- */
-function fillSettings(){$("sDays").value=S.touchDays;$("sMode").value=S.dayMode;$("sPend").checked=S.inclPending;$("sCh").value=S.channels;$("sSt").value=S.statuses;
-  $("sTouch").value=S.touchTarget;$("sAuto").value=S.autoTarget;$("sRet").value=S.returnMax;$("sMomP").value=S.momP;$("sMomC").value=S.momC;$("holi").value=S.holidays;}
-$("btnApply").onclick=()=>{const g=(id,def)=>{const v=parseFloat($(id).value);return isFinite(v)?v:def;};
-  S.touchDays=Math.round(g("sDays",3));S.dayMode=$("sMode").value;S.inclPending=$("sPend").checked;S.channels=$("sCh").value;S.statuses=$("sSt").value;
-  S.touchTarget=g("sTouch",90);S.autoTarget=g("sAuto",50);S.returnMax=g("sRet",15);S.momP=g("sMomP",3);S.momC=g("sMomC",10);S.holidays=$("holi").value;
-  try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
-  if(ROWS.length)recompute(true);toast("산출 기준을 적용했습니다.");};
-$("btnReset").onclick=()=>{Object.assign(S,DEFAULTS);try{localStorage.removeItem(LS);}catch(e){}fillSettings();if(ROWS.length)recompute(true);toast("기본값으로 되돌렸습니다.");};
+/* ---------- 기준 관리 (지표 정의 · 점검 규칙) ---------- */
+let CUSTOM_DRAFT=[],RULE_DRAFT={};
+const COL_LABEL=Object.fromEntries(FIELDS.map(([k,l])=>[k,l]));
+const customDesc=c=>`${COL_LABEL[c.col]||c.col} ${c.op==="blank"?"공란":c.op==="notin"?`값이 [${listOf(c.vals).join(", ")}]에 없음`:`값이 [${listOf(c.vals).join(", ")}]임`}`;
+function fillSettings(){
+  const v=(id,x)=>{const el=$(id);if(!el)return;if(el.type==="checkbox")el.checked=!!x;else el.value=x??"";};
+  v("sDays",S.touchDays);v("sMode",S.dayMode);v("sTBase",S.touchBase);v("sTBlank",S.touchBlank);v("sTouch",S.touchTarget);
+  v("sAutoV",S.autoValues);v("sManV",S.manualValues);v("sABlank",S.autoBlank);v("sAuto",S.autoTarget);
+  v("sPend",S.inclPending);v("sCh",S.channels);v("sMomC",S.momC);
+  v("sStN",S.stNormal);v("sStR",S.stReturn);v("sStW",S.stWithdraw);v("sStP",S.stPending);v("sSt",S.statuses);v("sRBase",S.retBase);v("sRet",S.returnMax);v("sMomP",S.momP);
+  v("dTouch",S.defText.touch);v("dAuto",S.defText.auto);v("dProc",S.defText.proc);v("dResult",S.defText.result);v("holi",S.holidays);
+  ["dTouch","dAuto","dProc","dResult"].forEach((id,i)=>{const el=$(id);if(el)el.placeholder=autoDef(["touch","auto","proc","result"][i]);});
+  CUSTOM_DRAFT=JSON.parse(JSON.stringify(S.custom||[]));RULE_DRAFT=JSON.parse(JSON.stringify(S.rules||{}));
+  if($("cCol")&&!$("cCol").options.length)$("cCol").innerHTML=FIELDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+  renderStdRules();renderStdDiff();}
+function renderStdRules(){
+  const el=$("tblStdRules");if(!el)return;
+  const per={};ROWS.forEach(r=>(r.codes||[]).forEach(c=>per[c]=(per[c]||0)+1));
+  const row=(id,base,ov,isCustom)=>{const on=ov.on!==false,sev=ov.sev||base.sev,desc=ov.desc||"";
+    return`<tr><td><input type="checkbox" id="rOn-${id}" ${on?"checked":""} aria-label="${id} 사용"></td><td class="mono">${id}</td>
+      <td><select id="rSev-${id}"><option value="오류"${sev==="오류"?" selected":""}>오류 · 제외</option><option value="경고"${sev==="경고"?" selected":""}>경고 · 포함</option></select></td>
+      <td class="txt"><input type="text" id="rDesc-${id}" value="${esc(desc)}" placeholder="${esc(base.desc)}" style="width:100%"></td>
+      <td class="n">${on?nf(per[id]||0):"-"}</td><td>${isCustom?`<button type="button" class="chip" data-del="${id}">삭제</button>`:""}</td></tr>`;};
+  el.innerHTML=`<thead><tr><th>사용</th><th>규칙</th><th>등급</th><th>설명 (비우면 기본 문구)</th><th class="n">건수</th><th></th></tr></thead><tbody>`+
+    BASE_RULES.map(([id,sev,desc])=>row(id,{sev,desc},RULE_DRAFT[id]||{},false)).join("")+
+    CUSTOM_DRAFT.map(c=>row(c.id,{sev:c.sev,desc:customDesc(c)},{on:c.on,sev:c.sev,desc:c.desc},true)).join("")+"</tbody>";
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{readRuleInputs();CUSTOM_DRAFT=CUSTOM_DRAFT.filter(c=>c.id!==b.dataset.del);renderStdRules();});}
+function readRuleInputs(){
+  const rules={};BASE_RULES.forEach(([id,sev])=>{const on=$("rOn-"+id)?.checked!==false,sv=$("rSev-"+id)?.value||sev,ds=($("rDesc-"+id)?.value||"").trim();
+    if(!on||sv!==sev||ds)rules[id]={on,sev:sv,desc:ds};});
+  RULE_DRAFT=rules;
+  CUSTOM_DRAFT.forEach(c=>{c.on=$("rOn-"+c.id)?.checked!==false;c.sev=$("rSev-"+c.id)?.value||c.sev;c.desc=($("rDesc-"+c.id)?.value||"").trim();});
+  return rules;}
+$("cAdd").onclick=()=>{readRuleInputs();
+  const c={id:"C"+(Math.max(0,...CUSTOM_DRAFT.map(x=>+x.id.slice(1)||0))+1),col:$("cCol").value,op:$("cOp").value,vals:$("cVals").value.trim(),sev:$("cSev").value,desc:$("cDesc").value.trim(),on:true};
+  if(c.op!=="blank"&&!listOf(c.vals).length){toast("값 목록을 입력해 주세요.");return;}
+  CUSTOM_DRAFT.push(c);$("cVals").value="";$("cDesc").value="";
+  renderStdRules();toast(`${c.id} 규칙을 추가했습니다. '기준 적용'을 눌러 반영하세요.`);};
+const STD_LABEL={touchDays:"3일 기준",dayMode:"일수 기준",touchBase:"터치율 분모",touchBlank:"날짜 공란 처리",touchTarget:"터치율 목표",autoValues:"자동심사 결과값",manualValues:"인심사 결과값",autoBlank:"자동심사결과 공란",autoTarget:"자동심사율 목표",
+  inclPending:"미결 포함",channels:"허용 채널",statuses:"허용 계약상태",stNormal:"정상 상태값",stReturn:"반송 상태값",stWithdraw:"청철 상태값",stPending:"미결 상태값",retBase:"반송률 분모",returnMax:"반송률 상한",momP:"변동 표시(%p)",momC:"변동 표시(%)"};
+function renderStdDiff(){const el=$("stdDiff");if(!el)return;const d=[];
+  Object.entries(STD_LABEL).forEach(([k,l])=>{if(JSON.stringify(S[k])!==JSON.stringify(DEFAULTS[k]))d.push(`${l} ${DEFAULTS[k]===true?"포함":DEFAULTS[k]===false?"제외":DEFAULTS[k]} → ${S[k]===true?"포함":S[k]===false?"제외":S[k]}`);});
+  const nr=Object.keys(S.rules||{}).length,nc=(S.custom||[]).length,nd=Object.values(S.defText||{}).filter(Boolean).length;
+  if(nr)d.push(`기본 점검 규칙 변경 ${nr}개`);if(nc)d.push(`추가 규칙 ${nc}개`);if(nd)d.push(`정의 문구 수정 ${nd}개`);if(S.holidays!==DEFAULTS.holidays)d.push("공휴일 목록 수정");
+  el.textContent=d.length?`기본값과 다른 기준 ${d.length}개: ${d.join(" · ")}`:"모든 기준이 기본값입니다.";}
+function readSettings(){const g=(id,def)=>{const v=parseFloat($(id).value);return isFinite(v)?v:def;};const t=id=>$(id).value.trim();
+  S.touchDays=Math.round(g("sDays",3));S.dayMode=$("sMode").value;S.touchBase=$("sTBase").value;S.touchBlank=$("sTBlank").value;S.touchTarget=g("sTouch",90);
+  S.autoValues=t("sAutoV")||DEFAULTS.autoValues;S.manualValues=t("sManV")||DEFAULTS.manualValues;S.autoBlank=$("sABlank").value;S.autoTarget=g("sAuto",50);
+  S.inclPending=$("sPend").checked;S.channels=t("sCh");S.momC=g("sMomC",10);
+  S.stNormal=t("sStN")||"정상";S.stReturn=t("sStR")||"반송";S.stWithdraw=t("sStW")||"청철";S.stPending=t("sStP")||"미결";S.statuses=t("sSt");S.retBase=$("sRBase").value;S.returnMax=g("sRet",15);S.momP=g("sMomP",3);
+  S.defText={touch:t("dTouch"),auto:t("dAuto"),proc:t("dProc"),result:t("dResult")};S.holidays=$("holi").value;
+  S.rules=readRuleInputs();S.custom=JSON.parse(JSON.stringify(CUSTOM_DRAFT));}
+function saveSettings(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}}
+$("btnApply").onclick=()=>{readSettings();saveSettings();if(ROWS.length)recompute(true);fillSettings();toast("기준을 적용했습니다. 산출·보고서·엑셀에 반영됩니다.");};
+$("btnReset").onclick=()=>{Object.assign(S,JSON.parse(JSON.stringify(DEFAULTS)));try{localStorage.removeItem(LS);}catch(e){}if(ROWS.length)recompute(true);fillSettings();toast("모든 기준을 기본값으로 되돌렸습니다.");};
+$("btnExport").onclick=()=>{readSettings();const data={kind:"uw-metrics-criteria",version:1,savedAt:new Date().toISOString(),criteria:S};
+  saveBlob(`심사지표_기준_${new Date().toISOString().slice(0,10)}.json`,new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),"application/json");};
+$("stdFile").onchange=async()=>{const f=$("stdFile").files[0];$("stdFile").value="";if(!f)return;
+  try{const j=JSON.parse(await f.text());const c=j&&j.criteria?j.criteria:j;if(!c||typeof c!=="object")throw new Error("형식이 맞지 않습니다.");
+    const next=JSON.parse(JSON.stringify(DEFAULTS));Object.keys(DEFAULTS).forEach(k=>{if(c[k]!==undefined&&typeof c[k]===typeof DEFAULTS[k])next[k]=c[k];});
+    if(!Array.isArray(next.custom))next.custom=[];Object.assign(S,next);saveSettings();if(ROWS.length)recompute(true);fillSettings();toast(`${f.name} 기준을 불러와 적용했습니다.`);}
+  catch(e){toast("기준 파일을 읽지 못했습니다: "+(e.message||e));}};
 
 /* ---------- chatbot ---------- */
 const CHAT_SYSTEM=`당신은 보험사 계약심사부의 '신계약 심사지표 산출기' 도우미입니다. 한국어로 짧고 정확하게 답합니다. 숫자는 아래 [현재 화면 데이터]에 있는 값만 쓰고, 없으면 "화면 데이터에 없음"이라고 말합니다. 간단한 계산을 했다면 계산했다고 밝힙니다. 보고서에 옮길 문장은 보고서체(~임, ~함)로 씁니다.`;
@@ -1232,7 +1355,7 @@ function chatContext(){
   L.push(`\n[월별 요약] 마감월 | 총심사 | 터치율 | 자동심사율 | 처리 | 정상 | 반송 | 청철 | 미결`);
   MONTHS.forEach(mm=>{const a=M[mm];L.push(`${mLabel(mm)} | ${a.n} | ${pct(a.touch)} | ${pct(a.autoRate)} | ${a.proc} | ${a.normal} | ${a.ret} | ${a.wd} | ${a.pend}`);});
   const per={};ROWS.forEach(r=>r.codes.forEach(c=>per[c]=(per[c]||0)+1));
-  L.push(`\n[데이터 점검] 전체 ${ROWS.length}행, 오류로 제외 ${ROWS.filter(r=>!r.include).length}행, 경고 ${ISSUES.filter(i=>i.id[0]==="W").length}건. `+RULES.map(([id,sev,d])=>`${id}(${sev}) ${d}: ${per[id]||0}건`).join("; "));
+  L.push(`\n[데이터 점검] 전체 ${ROWS.length}행, 오류로 제외 ${ROWS.filter(r=>!r.include).length}행, 경고 ${ISSUES.filter(i=>!isErr(i.id)).length}건. `+RULES.map(([id,sev,d])=>`${id}(${sev}) ${d}: ${per[id]||0}건`).join("; "));
   L.push(`\n[지표 정의]\n`+DEFS().slice(0,8).map(([a,b])=>`${a}: ${b.replace(/<[^>]+>/g,"")}`).join("\n"));
   return L.join("\n");}
 function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/^#{1,4}\s*(.+)$/gm,"<b>$1</b>").replace(/\n/g,"<br>");}
@@ -1271,7 +1394,7 @@ fillSettings();buildHolidays();renderDefs();
 if(!window.XLSX){$("loadErr").hidden=false;$("loadErr").textContent="엑셀 처리 모듈을 불러오지 못했습니다. 네트워크를 확인한 뒤 새로고침해 주세요.";}
 else loadSample();
 initCaps();initDownloads();
-try{if(location.hash==="#report"||localStorage.getItem("uwm-tab")==="report")showTab("report");}catch(e){}
+try{const t=location.hash.slice(1)||localStorage.getItem("uwm-tab");if(t==="report"||t==="std")showTab(t);}catch(e){}
 })();
 </script>
 </body></html>
