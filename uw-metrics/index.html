@@ -1,0 +1,765 @@
+<title>신계약 심사지표 산출기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one working column — 업로드 → ① 데이터 점검 → ② 심사지표 → ③ 요약·다운로드, read top to bottom in the order the monthly job runs. */
+:root{
+  --paper:#f5f7f8; --sheet:#ffffff; --ink:#17232b; --ink-2:#4a5a64; --ink-3:#7b8a93;
+  --line:#d9e0e4; --line-2:#e9eef0;
+  --accent:#1d5b73; --accent-soft:#e2eef2; --accent-2:#6c8fa0;
+  --good:#1e6b3a; --good-bg:#e3f1e7; --warn:#8a5a00; --warn-bg:#fbf0d6; --crit:#a42020; --crit-bg:#fbe4e1;
+  --st-ok:#1d5b73; --st-cond:#79a6b8; --st-rej:#c2453b; --st-delay:#d39a2c; --st-wd:#9aa7ae; --st-pend:#d5dde1;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f171c; --sheet:#152129; --ink:#e3eaee; --ink-2:#a9b8c0; --ink-3:#7d8e97;
+  --line:#2a3a44; --line-2:#1e2c34;
+  --accent:#7cc0d8; --accent-soft:#1b3440; --accent-2:#4f7f93;
+  --good:#7fd19b; --good-bg:#16301f; --warn:#f0c46a; --warn-bg:#352a12; --crit:#ff9a8f; --crit-bg:#3a1a18;
+  --st-ok:#5aa8c4; --st-cond:#3f7286; --st-rej:#e0675c; --st-delay:#d9a440; --st-wd:#62737c; --st-pend:#33454f;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f171c; --sheet:#152129; --ink:#e3eaee; --ink-2:#a9b8c0; --ink-3:#7d8e97;
+  --line:#2a3a44; --line-2:#1e2c34;
+  --accent:#7cc0d8; --accent-soft:#1b3440; --accent-2:#4f7f93;
+  --good:#7fd19b; --good-bg:#16301f; --warn:#f0c46a; --warn-bg:#352a12; --crit:#ff9a8f; --crit-bg:#3a1a18;
+  --st-ok:#5aa8c4; --st-cond:#3f7286; --st-rej:#e0675c; --st-delay:#d9a440; --st-wd:#62737c; --st-pend:#33454f;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:20px 64px;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{margin:0;text-wrap:balance}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono)}
+button,.btn{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);padding:8px 14px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
+button:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.top .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
+.top h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
+.meta b{color:var(--ink);font-weight:600}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:10px 14px;font-size:13px}
+
+/* upload */
+.uploads{display:grid;grid-template-columns:1fr 1fr auto;gap:12px}
+.drop{border:1.5px dashed var(--line);border-radius:8px;background:var(--sheet);padding:14px 16px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-width:0}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .lbl{font-weight:600}
+.drop .sub{font-size:12.5px;color:var(--ink-3);overflow-wrap:anywhere}
+.drop .fn{font-size:13px;color:var(--accent);font-weight:500;overflow-wrap:anywhere}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.side-actions{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.err{color:var(--crit);background:var(--crit-bg);border-radius:6px;padding:10px 14px;font-size:13px}
+
+/* sections */
+section.blk{background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.blk-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.blk-h h2{font-size:18px;font-weight:700;display:flex;gap:10px;align-items:baseline}
+.blk-h h2 .step{font-family:var(--f-mono);font-size:13px;color:var(--accent);font-weight:500}
+.blk-h .hint{font-size:12.5px;color:var(--ink-3)}
+h3{font-size:14px;font-weight:600;color:var(--ink-2)}
+
+/* check summary */
+.chk-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.chk-sum>div{background:var(--sheet);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.chk-sum .k{font-size:12px;color:var(--ink-3);letter-spacing:.02em}
+.chk-sum .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.chk-sum .v.crit{color:var(--crit)} .chk-sum .v.warn{color:var(--warn)} .chk-sum .v.good{color:var(--good)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;border-radius:999px;padding:3px 10px;border:1px solid var(--line);background:var(--sheet);color:var(--ink-2);display:inline-flex;gap:6px;align-items:center}
+.chip b{font-variant-numeric:tabular-nums}
+.chip.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
+.chip.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.chip.good{background:var(--good-bg);color:var(--good);border-color:transparent}
+button.chip{cursor:pointer;padding:3px 10px;font-weight:400}
+button.chip[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;max-width:100%}
+.tbl.scroll{max-height:320px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line-2);white-space:nowrap}
+th{background:var(--paper);color:var(--ink-2);font-weight:600;font-size:12px;position:sticky;top:0;z-index:1}
+td.n,th.n{text-align:right}
+td.txt{white-space:normal;min-width:240px}
+td.cell-crit{background:var(--crit-bg);color:var(--crit);font-weight:600}
+td.cell-warn{background:var(--warn-bg);color:var(--warn);font-weight:600}
+tr.total td{font-weight:600;border-top:1.5px solid var(--line)}
+.sev{font-size:11.5px;font-weight:600;border-radius:4px;padding:1px 6px}
+.sev.e{background:var(--crit-bg);color:var(--crit)} .sev.w{background:var(--warn-bg);color:var(--warn)}
+
+/* metric cards */
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;min-width:0}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+.card.good::before{background:var(--good)} .card.crit::before{background:var(--crit)}
+.card.crit{background:var(--crit-bg)}
+.card .nm{font-size:13px;color:var(--ink-2);font-weight:600}
+.card .big{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
+.card .big small{font-size:15px;font-weight:500;color:var(--ink-2);margin-left:2px}
+.card .fx{font-size:12px;color:var(--ink-3);font-family:var(--f-mono)}
+.card .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}
+.delta{font-variant-numeric:tabular-nums;font-weight:600}
+.delta.up{color:var(--good)} .delta.down{color:var(--crit)} .delta.flat{color:var(--ink-3)}
+.delta.neutral{color:var(--ink-2)}
+.bar{display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--line-2)}
+.bar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
+.grid2>div{display:flex;flex-direction:column;gap:8px;min-width:0}
+
+/* comment */
+textarea{width:100%;min-height:200px;font:inherit;font-size:14px;line-height:1.7;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.note{font-size:12.5px;color:var(--ink-3)}
+
+/* settings & definitions */
+details{border:1px solid var(--line);border-radius:8px;background:var(--sheet)}
+details>summary{cursor:pointer;padding:12px 16px;font-weight:600}
+details .in{padding:4px 16px 16px;display:flex;flex-direction:column;gap:14px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink-2)}
+.form input[type=number]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font-variant-numeric:tabular-nums}
+.form .ck{flex-direction:row;align-items:center;gap:8px}
+#holi{min-height:90px;font-family:var(--f-mono);font-size:12.5px}
+dl.defs{display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr);gap:10px 16px;margin:0;font-size:13px}
+dl.defs dt{font-weight:600}
+dl.defs dd{margin:0;color:var(--ink-2)}
+dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);padding:1px 5px;border-radius:4px;color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:6px;font-size:13px;z-index:10;max-width:calc(100% - 32px)}
+
+@media (max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.uploads{grid-template-columns:1fr 1fr}.side-actions{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}
+@media (max-width:560px){.wrap{padding-inline:16px}.cards,.uploads{grid-template-columns:1fr}.chk-sum{grid-template-columns:repeat(2,minmax(0,1fr))}section.blk{padding:16px}.top h1{font-size:22px}dl.defs{grid-template-columns:1fr;gap:2px 0}dl.defs dd{margin-bottom:8px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">계약심사부 · 월 마감</div>
+      <h1>신계약 심사지표 산출기</h1>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="uploads">
+    <label class="drop" id="dropCur" for="fileCur">
+      <span class="lbl">당월 마감 데이터</span>
+      <span class="sub">.xlsx · .xls · .csv — 증번, 계약일자, 채널, 최초·실제심사자, 계약상태, 자동심사결과, 심사시작일, 최초심사일, 특별조건부1</span>
+      <span class="fn" id="fnCur"></span>
+      <input type="file" id="fileCur" accept=".xlsx,.xls,.csv">
+    </label>
+    <label class="drop" id="dropPrev" for="filePrev">
+      <span class="lbl">전월 마감 데이터 <span style="font-weight:400;color:var(--ink-3)">(선택)</span></span>
+      <span class="sub">같은 양식. 넣으면 전월 대비 증감을 함께 계산합니다.</span>
+      <span class="fn" id="fnPrev"></span>
+      <input type="file" id="filePrev" accept=".xlsx,.xls,.csv">
+    </label>
+    <div class="side-actions">
+      <button id="btnSample" type="button">예시 데이터 불러오기</button>
+      <button id="btnTemplate" type="button">업로드 양식 받기</button>
+    </div>
+  </div>
+  <div class="err" id="loadErr" hidden></div>
+
+  <section class="blk" id="secCheck">
+    <div class="blk-h">
+      <h2><span class="step">①</span>데이터 점검</h2>
+      <span class="hint">산출 전에 공란, 날짜 순서, 상태 불일치를 행 단위로 확인합니다.</span>
+    </div>
+    <div class="chk-sum" id="chkSum"></div>
+    <div class="chips" id="chkTypes"></div>
+    <div class="tbl scroll"><table id="tblIssues"></table></div>
+  </section>
+
+  <section class="blk" id="secMetric">
+    <div class="blk-h">
+      <h2><span class="step">②</span>심사지표</h2>
+      <span class="hint" id="metricHint"></span>
+    </div>
+    <div class="cards" id="cards"></div>
+    <div class="grid2">
+      <div><h3>채널별</h3><div class="tbl"><table id="tblCh"></table></div></div>
+      <div><h3>심사결과 통계</h3><div class="tbl"><table id="tblSt"></table></div></div>
+    </div>
+    <div><h3 style="margin-bottom:8px">심사자별</h3><div class="tbl"><table id="tblRv"></table></div></div>
+  </section>
+
+  <section class="blk" id="secSum">
+    <div class="blk-h">
+      <h2><span class="step">③</span>요약 코멘트 · 결과표</h2>
+      <span class="hint">코멘트는 직접 고칠 수 있고, 고친 내용이 엑셀에 그대로 들어갑니다.</span>
+    </div>
+    <textarea id="comment" aria-label="요약 코멘트"></textarea>
+    <div class="actions">
+      <button id="btnRedraft" type="button">기준 문안 다시 만들기</button>
+      <button id="btnAI" type="button" hidden>AI로 보고 문안 다듬기</button>
+      <button id="btnStop" type="button" hidden>중지</button>
+      <span style="flex:1"></span>
+      <button id="btnXlsx" class="primary" type="button">결과표 엑셀 다운로드</button>
+    </div>
+    <div class="note" id="sumNote"></div>
+  </section>
+
+  <details id="setDetails">
+    <summary>산출 기준 설정</summary>
+    <div class="in">
+      <div class="form">
+        <label>3일이내 터치율 목표 (% 이상)<input type="number" id="sTouch" step="0.5" min="0" max="100"></label>
+        <label>터치 기준 영업일 (일 이내)<input type="number" id="sDays" step="1" min="0" max="30"></label>
+        <label>자동심사율 목표 (% 이상)<input type="number" id="sAuto" step="0.5" min="0" max="100"></label>
+        <label>거절률 상한 (% 이하)<input type="number" id="sRej" step="0.5" min="0" max="100"></label>
+        <label>전월 대비 변동 표시 (비율, %p)<input type="number" id="sMomP" step="0.5" min="0"></label>
+        <label>전월 대비 변동 표시 (건수, %)<input type="number" id="sMomC" step="1" min="0"></label>
+        <label class="ck"><input type="checkbox" id="sExcl"> 오류 행은 지표 산출에서 제외</label>
+      </div>
+      <label class="form" style="display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink-2)">공휴일 (영업일 계산에서 제외, 한 줄에 하나 · YYYY-MM-DD 이름)
+        <textarea id="holi"></textarea>
+      </label>
+      <div class="actions"><button id="btnApply" class="primary" type="button">기준 적용</button><span class="note">주말과 위 공휴일을 뺀 날을 영업일로 셉니다.</span></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>지표 정의</summary>
+    <div class="in">
+      <dl class="defs" id="defs"></dl>
+    </div>
+  </details>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- settings ---------- */
+const DEFAULT_HOLIDAYS=`2025-01-01 신정
+2025-01-27 임시공휴일
+2025-01-28 설날
+2025-01-29 설날
+2025-01-30 설날
+2025-03-03 삼일절 대체
+2025-05-05 어린이날·부처님오신날
+2025-05-06 대체공휴일
+2025-06-03 대통령선거
+2025-06-06 현충일
+2025-08-15 광복절
+2025-10-03 개천절
+2025-10-06 추석
+2025-10-07 추석
+2025-10-08 추석 대체
+2025-10-09 한글날
+2025-12-25 성탄절
+2026-01-01 신정
+2026-02-16 설날
+2026-02-17 설날
+2026-02-18 설날
+2026-03-02 삼일절 대체
+2026-05-05 어린이날
+2026-05-25 부처님오신날 대체
+2026-06-03 지방선거
+2026-06-06 현충일
+2026-08-17 광복절 대체
+2026-09-24 추석
+2026-09-25 추석
+2026-10-05 개천절 대체
+2026-10-09 한글날
+2026-12-25 성탄절`;
+const S={touchTarget:90,touchDays:3,autoTarget:45,rejectMax:5,momP:3,momC:10,excl:true,holidays:DEFAULT_HOLIDAYS};
+try{const saved=JSON.parse(localStorage.getItem("uwm-settings")||"null");if(saved)Object.assign(S,saved);}catch(e){}
+let HSET=new Set();
+function buildHolidays(){HSET=new Set();S.holidays.split(/\n/).forEach(l=>{const p=parseDate(l.trim().slice(0,10));if(p.ok)HSET.add(p.dn);});}
+
+/* ---------- dates & business days ---------- */
+function ymd(y,m,d){const t=Date.UTC(y,m-1,d);const dt=new Date(t);
+  if(y<2000||y>2100||dt.getUTCFullYear()!==y||dt.getUTCMonth()!==m-1||dt.getUTCDate()!==d)return{bad:true};return{ok:true,dn:t/864e5};}
+function parseDate(v){
+  if(v===null||v===undefined)return{empty:true};
+  if(v instanceof Date)return ymd(v.getFullYear(),v.getMonth()+1,v.getDate());
+  if(typeof v==="number"){
+    if(v>19000101&&v<21001231)return ymd(Math.floor(v/1e4),Math.floor(v/100)%100,v%100);
+    if(v>36000&&v<80000)return{ok:true,dn:Math.floor(v)-25569};
+    return{bad:true};}
+  const s=String(v).trim();if(!s)return{empty:true};
+  if(/^\d{5}(\.\d+)?$/.test(s))return parseDate(Number(s));
+  const m=s.match(/^(\d{4})\s*[-./년]?\s*(\d{1,2})\s*[-./월]?\s*(\d{1,2})/);
+  if(!m)return{bad:true};return ymd(+m[1],+m[2],+m[3]);}
+const fmt=dn=>{if(dn==null)return"";const d=new Date(dn*864e5);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");};
+const isBiz=d=>{const w=((d%7)+7+4)%7;return w!==0&&w!==6&&!HSET.has(d);};
+function bizDiff(a,b){if(b<a)return null;let c=0;for(let d=a+1;d<=b;d++)if(isBiz(d))c++;return c;}
+function addBiz(d,n){while(n>0){d++;if(isBiz(d))n--;}return d;}
+
+/* ---------- field mapping & normalising ---------- */
+const FIELDS=[["no","증번",["증번","증권번호","계약번호"]],["cdate","계약일자",["계약일자","계약일","청약일자","청약일"]],["ch","채널",["채널","판매채널"]],["r1","최초심사자",["최초심사자"]],["r2","실제심사자",["실제심사자","심사자"]],["st","계약상태",["계약상태","상태"]],["auto","자동심사결과",["자동심사결과","자동심사"]],["sdate","심사시작일",["심사시작일","심사시작일자"]],["fdate","최초심사일",["최초심사일","최초심사일자"]],["cond","특별조건부1",["특별조건부1","특별조건부","특별조건"]]];
+const STATUSES=["성립","조건부성립","거절","연기","청약철회","심사중"];
+const DONE=new Set(["성립","조건부성립","거절","연기","청약철회"]);
+function normStatus(v){const s=String(v||"").replace(/\s/g,"");if(!s)return"";
+  if(/조건/.test(s))return"조건부성립";if(/거절|사절/.test(s))return"거절";if(/연기/.test(s))return"연기";
+  if(/철회|취소/.test(s))return"청약철회";if(/심사중|미결|진행|보류/.test(s))return"심사중";if(/성립|정상|표준/.test(s))return"성립";return"?"+s;}
+function normAuto(v){const s=String(v||"").replace(/\s/g,"").toUpperCase();if(!s)return null;
+  if(/통과|승인|^Y$|PASS|적합$/.test(s)&&!/부적합/.test(s))return true;
+  if(/이관|부적합|수동|^N$|FAIL|미통과|거절/.test(s))return false;return undefined;}
+const isAutoName=v=>/^(AUTO|자동|SYSTEM|시스템)$/i.test(String(v||"").trim());
+
+/* ---------- parse workbook into rows ---------- */
+function aoaFromFile(file){
+  return file.arrayBuffer().then(buf=>{
+    let wb;
+    if(/\.csv$/i.test(file.name)){
+      let text=new TextDecoder("utf-8").decode(buf);
+      if(text.includes("\uFFFD")){try{text=new TextDecoder("euc-kr").decode(buf);}catch(e){}}
+      wb=XLSX.read(text,{type:"string",raw:true});
+    }else wb=XLSX.read(buf,{type:"array"});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});
+  });}
+
+function buildDataset(aoa,name){
+  const key=s=>String(s||"").replace(/\s/g,"");
+  let h=-1;for(let i=0;i<Math.min(aoa.length,15);i++){if(aoa[i].some(c=>["증번","증권번호","계약번호"].includes(key(c)))){h=i;break;}}
+  if(h<0)throw new Error("첫 행 근처에서 '증번' 열 제목을 찾지 못했습니다. 첫 시트의 열 제목을 확인해 주세요.");
+  const head=aoa[h].map(key);const col={};const missing=[];
+  FIELDS.forEach(([k,label,al])=>{const i=head.findIndex(x=>al.includes(x));if(i<0)missing.push(label);else col[k]=i;});
+  if(missing.length)throw new Error("필수 열이 없습니다: "+missing.join(", ")+". 열 제목을 양식과 같게 맞춘 뒤 다시 올려 주세요.");
+  const rows=[];
+  for(let i=h+1;i<aoa.length;i++){const a=aoa[i];if(!a||a.every(c=>String(c).trim()===""))continue;
+    const r={line:i+1,raw:{}};FIELDS.forEach(([k])=>{const v=a[col[k]];r.raw[k]=v;});rows.push(r);}
+  if(!rows.length)throw new Error("열 제목 아래에 데이터 행이 없습니다.");
+  rows.forEach(r=>{const g=k=>String(r.raw[k]??"").trim();
+    r.no=g("no");r.ch=g("ch");r.r1=g("r1");r.r2=g("r2");r.stRaw=g("st");r.st=normStatus(r.stRaw);
+    r.autoRaw=g("auto");r.auto=normAuto(r.autoRaw);r.cond=g("cond");
+    r.pc=parseDate(r.raw.cdate);r.ps=parseDate(r.raw.sdate);r.pf=parseDate(r.raw.fdate);
+    r.cd=r.pc.ok?r.pc.dn:null;r.sd=r.ps.ok?r.ps.dn:null;r.fd=r.pf.ok?r.pf.dn:null;});
+  // closing month = most common contract month
+  const cnt={};rows.forEach(r=>{if(r.cd!=null){const d=new Date(r.cd*864e5);const k=d.getUTCFullYear()*100+d.getUTCMonth()+1;cnt[k]=(cnt[k]||0)+1;}});
+  const best=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  if(!best)throw new Error("계약일자를 날짜로 읽을 수 있는 행이 없습니다.");
+  const y=Math.floor(best/100),mo=best%100;
+  return{name,rows,y,mo,start:Date.UTC(y,mo-1,1)/864e5,end:Date.UTC(y,mo,0)/864e5};}
+
+/* ---------- data checks ---------- */
+function check(ds){
+  const issues=[];const add=(r,sev,type,field,msg)=>{issues.push({line:r.line,no:r.no,sev,type,field,msg});if(sev==="오류")r.err=true;else r.warn=true;};
+  const seen=new Map();
+  ds.rows.forEach(r=>{r.err=false;r.warn=false;
+    if(!r.no)add(r,"오류","공란","증번","증번이 비어 있음");
+    else if(seen.has(r.no))add(r,"오류","중복","증번",`${seen.get(r.no)}행과 증번 중복`);
+    else seen.set(r.no,r.line);
+    [["pc","계약일자"],["ps","심사시작일"],["pf","최초심사일"]].forEach(([k,lab])=>{if(r[k].bad)add(r,"오류","날짜형식",lab,`날짜로 읽을 수 없음: "${r.raw[k==="pc"?"cdate":k==="ps"?"sdate":"fdate"]}"`);});
+    if(r.pc.empty)add(r,"오류","공란","계약일자","계약일자가 비어 있음");
+    if(!r.stRaw)add(r,"오류","공란","계약상태","계약상태가 비어 있음");
+    else if(r.st.startsWith("?"))add(r,"경고","상태불일치","계약상태",`정의되지 않은 상태값 "${r.stRaw}"`);
+    if(r.auto===null)add(r,"오류","공란","자동심사결과","자동심사결과가 비어 있음");
+    else if(r.auto===undefined)add(r,"경고","상태불일치","자동심사결과",`해석할 수 없는 값 "${r.autoRaw}"`);
+    if(!r.ch)add(r,"경고","공란","채널","채널이 비어 있음 (채널별 집계에서 '미입력'으로 분류)");
+    if(r.cd!=null&&(r.cd<ds.start||r.cd>ds.end))add(r,"경고","날짜순서","계약일자",`마감월(${ds.y}.${String(ds.mo).padStart(2,"0")}) 밖의 계약일자 ${fmt(r.cd)}`);
+    if(r.cd!=null&&r.sd!=null&&r.sd<r.cd)add(r,"오류","날짜순서","심사시작일",`심사시작일(${fmt(r.sd)})이 계약일자(${fmt(r.cd)})보다 빠름`);
+    if(r.sd!=null&&r.fd!=null&&r.fd<r.sd)add(r,"오류","날짜순서","최초심사일",`최초심사일(${fmt(r.fd)})이 심사시작일(${fmt(r.sd)})보다 빠름`);
+    if(r.fd!=null&&r.fd>ds.end)add(r,"경고","날짜순서","최초심사일",`최초심사일(${fmt(r.fd)})이 마감일 이후`);
+    if(r.auto===false){
+      if(r.ps.empty)add(r,"오류","공란","심사시작일","수동심사 건인데 심사시작일이 비어 있음");
+      if(!r.r1)add(r,"경고","공란","최초심사자","수동심사 건인데 최초심사자가 비어 있음");
+      if(DONE.has(r.st)&&r.pf.empty)add(r,"오류","상태불일치","최초심사일",`계약상태 '${r.st}'인데 최초심사일이 비어 있음`);
+      if(DONE.has(r.st)&&r.st!=="청약철회"&&!r.r2)add(r,"경고","공란","실제심사자",`계약상태 '${r.st}'인데 실제심사자가 비어 있음`);
+    }
+    if(r.auto===true&&["거절","연기","조건부성립"].includes(r.st))add(r,"경고","상태불일치","자동심사결과",`자동심사 통과 건인데 계약상태가 '${r.st}'`);
+    if(r.cond&&r.st&&r.st!=="조건부성립"&&r.st!=="심사중")add(r,"경고","상태불일치","특별조건부1",`특별조건부1('${r.cond}')이 있는데 계약상태가 '${r.st}'`);
+    if(r.st==="조건부성립"&&!r.cond)add(r,"경고","공란","특별조건부1","조건부성립인데 특별조건부1이 비어 있음");
+  });
+  ds.issues=issues;return ds;}
+
+/* ---------- metrics ---------- */
+const rate=(a,b)=>b?a/b:null;
+function compute(ds){
+  const rows=ds.rows.filter(r=>!(S.excl&&r.err));
+  const D=S.touchDays;
+  rows.forEach(r=>{r.lag=null;r.touch=null;
+    if(r.auto!==false||r.sd==null)return;
+    if(r.fd!=null&&r.fd>=r.sd){r.lag=bizDiff(r.sd,r.fd);r.touch=r.lag<=D?"Y":"N";}
+    else if(r.fd==null){const el=bizDiff(r.sd,ds.end);r.touch=(el!=null&&el<=D)?"보류":"N";}
+  });
+  const agg=list=>{
+    const o={total:list.length};
+    o.autoBase=list.filter(r=>r.auto===true||r.auto===false).length;
+    o.autoPass=list.filter(r=>r.auto===true).length;o.auto=rate(o.autoPass,o.autoBase);
+    o.tBase=list.filter(r=>r.touch==="Y"||r.touch==="N").length;o.tIn=list.filter(r=>r.touch==="Y").length;o.touch=rate(o.tIn,o.tBase);
+    o.tPend=list.filter(r=>r.touch==="보류").length;
+    const lags=list.filter(r=>r.lag!=null).map(r=>r.lag);o.avgLag=lags.length?lags.reduce((a,b)=>a+b,0)/lags.length:null;
+    o.done=list.filter(r=>DONE.has(r.st)).length;o.manualDone=list.filter(r=>DONE.has(r.st)&&r.auto===false).length;
+    o.pending=list.filter(r=>r.st==="심사중").length;
+    o.st={};STATUSES.concat(["기타"]).forEach(s=>o.st[s]=0);list.forEach(r=>{o.st[STATUSES.includes(r.st)?r.st:"기타"]++;});
+    const decided=o.st["성립"]+o.st["조건부성립"]+o.st["거절"]+o.st["연기"];o.decided=decided;
+    o.reject=rate(o.st["거절"],decided);o.condRate=rate(o.st["조건부성립"],decided);
+    return o;};
+  const m=agg(rows);m.used=rows.length;
+  const chOrder=["설계사","GA","TM","방카","CM"];const chs=[...new Set(rows.map(r=>r.ch||"미입력"))].sort((a,b)=>{const ia=chOrder.indexOf(a),ib=chOrder.indexOf(b);return(ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
+  m.byCh=chs.map(c=>({name:c,...agg(rows.filter(r=>(r.ch||"미입력")===c))}));
+  const names=[...new Set(rows.filter(r=>r.auto===false).flatMap(r=>[r.r1,r.r2]).filter(n=>n&&!isAutoName(n)))].sort((a,b)=>a.localeCompare(b,"ko"));
+  m.byRv=names.map(n=>{const first=rows.filter(r=>r.r1===n&&r.auto===false);const fin=rows.filter(r=>r.r2===n&&r.auto===false);const a=agg(first);
+    return{name:n,assigned:first.length,tBase:a.tBase,tIn:a.tIn,touch:a.touch,avgLag:a.avgLag,done:fin.filter(r=>DONE.has(r.st)).length,
+      reassigned:first.filter(r=>r.r2&&r.r2!==n).length,reject:rate(fin.filter(r=>r.st==="거절").length,fin.filter(r=>["성립","조건부성립","거절","연기"].includes(r.st)).length)};});
+  m.bizDays=0;for(let d=ds.start;d<=ds.end;d++)if(isBiz(d))m.bizDays++;
+  ds.m=m;return ds;}
+
+/* ---------- formatting ---------- */
+const nf=n=>n==null?"-":Number(n).toLocaleString("ko-KR");
+const pct=x=>x==null?"-":(x*100).toFixed(1)+"%";
+const ppTxt=(a,b)=>{if(a==null||b==null)return"-";const v=(a-b)*100;return(v>0?"+":v<0?"−":"±")+Math.abs(v).toFixed(1)+"%p";};
+const chgTxt=(a,b)=>{if(a==null||!b)return"-";const v=(a-b)/b*100;return(v>0?"+":v<0?"−":"±")+Math.abs(v).toFixed(1)+"%";};
+const ymTxt=ds=>`${ds.y}년 ${ds.mo}월`;
+
+/* ---------- state ---------- */
+let CUR=null,PREV=null,isSample=false;
+
+function metricList(){
+  const m=CUR.m,p=PREV?.m;
+  return[
+    {key:"touch",name:"3일이내 터치율",val:m.touch,prev:p?.touch,kind:"rate",good:"up",target:S.touchTarget/100,cmp:">=",
+      fx:`${nf(m.tIn)} / ${nf(m.tBase)}건`,targetTxt:`${S.touchTarget}% 이상`},
+    {key:"auto",name:"자동심사율",val:m.auto,prev:p?.auto,kind:"rate",good:"up",target:S.autoTarget/100,cmp:">=",
+      fx:`${nf(m.autoPass)} / ${nf(m.autoBase)}건`,targetTxt:`${S.autoTarget}% 이상`},
+    {key:"done",name:"신계약 처리건수",val:m.done,prev:p?.done,kind:"count",good:"none",
+      fx:`접수 ${nf(m.total)} · 수동처리 ${nf(m.manualDone)} · 심사중 ${nf(m.pending)}`,targetTxt:"—"},
+    {key:"reject",name:"거절률",val:m.reject,prev:p?.reject,kind:"rate",good:"down",target:S.rejectMax/100,cmp:"<=",
+      fx:`거절 ${nf(m.st["거절"])} / 심사결정 ${nf(m.decided)}건`,targetTxt:`${S.rejectMax}% 이하`},
+  ].map(x=>{
+    x.ok=x.target==null||x.val==null?null:(x.cmp===">="?x.val>=x.target:x.val<=x.target);
+    if(x.prev!=null&&x.val!=null){
+      if(x.kind==="rate"){x.d=(x.val-x.prev)*100;x.dTxt=ppTxt(x.val,x.prev);x.big=Math.abs(x.d)>=S.momP;}
+      else{x.d=x.prev?(x.val-x.prev)/x.prev*100:null;x.dTxt=chgTxt(x.val,x.prev);x.big=x.d!=null&&Math.abs(x.d)>=S.momC;}
+    }
+    return x;});}
+
+/* ---------- rendering ---------- */
+function render(){
+  if(!CUR)return;
+  const m=CUR.m;
+  $("meta").innerHTML=`<span>마감월 <b>${CUR.y}.${String(CUR.mo).padStart(2,"0")}</b></span><span>영업일 <b>${m.bizDays}일</b></span><span>당월 <b>${esc(CUR.name)}</b></span><span>전월 <b>${PREV?esc(PREV.name)+` (${PREV.y}.${String(PREV.mo).padStart(2,"0")})`:"없음"}</b></span>`;
+  $("banner").hidden=!isSample;
+  $("banner").textContent="예시 데이터(가상)를 보여주고 있습니다. 2026년 9월·8월 신계약 마감 데이터를 지어낸 것으로, 점검 기능을 보여주려고 공란·날짜 역전·상태 불일치 같은 이상 데이터를 일부러 섞어 두었습니다. 실제 파일을 올리면 바로 바뀝니다.";
+  renderCheck();renderMetrics();
+}
+let issueFilter="all";
+function renderCheck(){
+  const iss=CUR.issues;const errRows=CUR.rows.filter(r=>r.err).length;const warnN=iss.filter(i=>i.sev==="경고").length;const errN=iss.length-warnN;
+  $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(CUR.rows.length)}</span></div>
+  <div><span class="k">오류 ${nf(errN)}건 · 행</span><span class="v ${errRows?"crit":"good"}">${nf(errRows)}</span></div>
+  <div><span class="k">경고</span><span class="v ${warnN?"warn":"good"}">${nf(warnN)}</span></div>
+  <div><span class="k">지표 산출 반영 행</span><span class="v">${nf(CUR.m.used)}</span></div>`;
+  const types={};iss.forEach(i=>{const k=i.sev+"|"+i.type+"|"+i.field;types[k]=(types[k]||0)+1;});
+  const chips=[`<button type="button" class="chip" data-f="all" aria-pressed="${issueFilter==="all"}">전체 <b>${nf(iss.length)}</b></button>`,
+    `<button type="button" class="chip crit" data-f="오류" aria-pressed="${issueFilter==="오류"}">오류 <b>${nf(errN)}</b></button>`,
+    `<button type="button" class="chip warn" data-f="경고" aria-pressed="${issueFilter==="경고"}">경고 <b>${nf(warnN)}</b></button>`];
+  Object.entries(types).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const[s,t,f]=k.split("|");chips.push(`<span class="chip ${s==="오류"?"crit":"warn"}">${esc(t)} · ${esc(f)} <b>${v}</b></span>`);});
+  $("chkTypes").innerHTML=chips.join("");
+  $("chkTypes").querySelectorAll("button[data-f]").forEach(b=>b.onclick=()=>{issueFilter=b.dataset.f;renderCheck();});
+  const list=iss.filter(i=>issueFilter==="all"||i.sev===issueFilter).sort((a,b)=>a.line-b.line);
+  $("tblIssues").innerHTML=list.length?`<thead><tr><th class="n">행</th><th>증번</th><th>등급</th><th>유형</th><th>항목</th><th>내용</th></tr></thead><tbody>`+
+    list.map(i=>`<tr><td class="n">${i.line}</td><td class="mono">${esc(i.no||"(공란)")}</td><td><span class="sev ${i.sev==="오류"?"e":"w"}">${i.sev}</span></td><td>${esc(i.type)}</td><td>${esc(i.field)}</td><td class="txt">${esc(i.msg)}</td></tr>`).join("")+"</tbody>"
+    :`<tbody><tr><td style="padding:16px;color:var(--good)">발견된 이상이 없습니다. 모든 행을 지표 산출에 반영합니다.</td></tr></tbody>`;
+}
+function deltaHtml(x){
+  if(x.dTxt==null)return`<span class="delta flat">전월 자료 없음</span>`;
+  let cls="flat";if(x.d>0.0001)cls=x.good==="up"?"up":x.good==="down"?"down":"neutral";else if(x.d<-0.0001)cls=x.good==="up"?"down":x.good==="down"?"up":"neutral";
+  const arrow=x.d>0.0001?"▲":x.d<-0.0001?"▼":"–";
+  return`<span class="delta ${cls}">${arrow} ${x.dTxt}</span><span style="color:var(--ink-3)">전월 ${x.kind==="rate"?pct(x.prev):nf(x.prev)}</span>${x.big?`<span class="chip warn">변동 큼</span>`:""}`;}
+const ST_COLORS={"성립":"--st-ok","조건부성립":"--st-cond","거절":"--st-rej","연기":"--st-delay","청약철회":"--st-wd","심사중":"--st-pend","기타":"--ink-3"};
+function renderMetrics(){
+  const m=CUR.m,p=PREV?.m;const ms=metricList();CUR.ms=ms;
+  $("metricHint").textContent=`${S.excl?"오류 행 제외":"오류 행 포함"} · 터치는 심사시작일 다음 영업일부터 최초심사일까지 ${S.touchDays}영업일 이내`;
+  $("cards").innerHTML=ms.map(x=>{
+    const cls=x.ok===null?"":x.ok?"good":"crit";
+    const chip=x.ok===null?"":`<span class="chip ${x.ok?"good":"crit"}">${x.ok?"기준 충족":x.cmp==="<="?"기준 초과":"기준 미달"} · ${x.targetTxt}</span>`;
+    let extra="";
+    if(x.key==="reject"){const tot=STATUSES.reduce((a,s)=>a+m.st[s],0)+m.st["기타"]||1;
+      extra=`<div class="bar" role="img" aria-label="심사결과 구성">${STATUSES.concat(["기타"]).filter(s=>m.st[s]).map(s=>`<span style="width:${m.st[s]/tot*100}%;background:var(${ST_COLORS[s]})" title="${s} ${m.st[s]}건"></span>`).join("")}</div>
+      <div class="legend">${STATUSES.filter(s=>m.st[s]).map(s=>`<span><i style="background:var(${ST_COLORS[s]})"></i>${s} ${pct(m.st[s]/tot)}</span>`).join("")}</div>`;}
+    return`<div class="card ${cls}"><span class="nm">${x.name}</span>
+      <span class="big">${x.kind==="rate"?(x.val==null?"-":(x.val*100).toFixed(1)+"<small>%</small>"):nf(x.val)+"<small>건</small>"}</span>
+      <span class="fx">${x.fx}</span><div class="row">${deltaHtml(x)}</div>${chip?`<div class="row">${chip}</div>`:""}${extra}</div>`;}).join("");
+  // channel table
+  const pCh=p?Object.fromEntries(p.byCh.map(c=>[c.name,c])):{};
+  const tt=S.touchTarget/100,at=S.autoTarget/100,rj=S.rejectMax/100;
+  const cTouch=v=>v==null?"":v<tt?"cell-crit":"";const cAuto=v=>v==null?"":v<at?"cell-crit":"";const cRej=v=>v==null?"":v>rj?"cell-crit":"";
+  $("tblCh").innerHTML=`<thead><tr><th>채널</th><th class="n">접수</th><th class="n">처리</th><th class="n">자동심사율</th><th class="n">터치율</th><th class="n">전월比</th><th class="n">거절률</th></tr></thead><tbody>`+
+    m.byCh.map(c=>{const pc=pCh[c.name];return`<tr><td>${esc(c.name)}</td><td class="n">${nf(c.total)}</td><td class="n">${nf(c.done)}</td><td class="n ${cAuto(c.auto)}">${pct(c.auto)}</td><td class="n ${cTouch(c.touch)}">${pct(c.touch)}</td><td class="n">${pc?ppTxt(c.touch,pc.touch):"-"}</td><td class="n ${cRej(c.reject)}">${pct(c.reject)}</td></tr>`;}).join("")+
+    `<tr class="total"><td>합계</td><td class="n">${nf(m.total)}</td><td class="n">${nf(m.done)}</td><td class="n ${cAuto(m.auto)}">${pct(m.auto)}</td><td class="n ${cTouch(m.touch)}">${pct(m.touch)}</td><td class="n">${p?ppTxt(m.touch,p.touch):"-"}</td><td class="n ${cRej(m.reject)}">${pct(m.reject)}</td></tr></tbody>`;
+  // status table
+  const decided=m.decided;
+  $("tblSt").innerHTML=`<thead><tr><th>계약상태</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
+    STATUSES.concat(m.st["기타"]?["기타"]:[]).map(s=>{const v=m.st[s],pv=p?.st[s];const share=rate(v,m.total);const pshare=p?rate(pv,p.total):null;
+      const big=pshare!=null&&Math.abs((share-pshare)*100)>=S.momP;
+      return`<tr><td><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(${ST_COLORS[s]});margin-right:6px"></i>${s}</td><td class="n">${nf(v)}</td><td class="n">${pct(share)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${big?"cell-warn":""}">${p?ppTxt(share,pshare):"-"}</td></tr>`;}).join("")+
+    `<tr class="total"><td>합계</td><td class="n">${nf(m.total)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.total):"-"}</td><td class="n">${p?chgTxt(m.total,p.total):"-"}</td></tr></tbody>`;
+  // reviewer table
+  $("tblRv").innerHTML=m.byRv.length?`<thead><tr><th>심사자</th><th class="n">최초배정</th><th class="n">터치대상</th><th class="n">3일내</th><th class="n">터치율</th><th class="n">평균 경과(영업일)</th><th class="n">재배정</th><th class="n">처리(실제)</th><th class="n">거절률</th></tr></thead><tbody>`+
+    m.byRv.map(r=>`<tr><td>${esc(r.name)}</td><td class="n">${nf(r.assigned)}</td><td class="n">${nf(r.tBase)}</td><td class="n">${nf(r.tIn)}</td><td class="n ${cTouch(r.touch)}">${pct(r.touch)}</td><td class="n">${r.avgLag==null?"-":r.avgLag.toFixed(2)}</td><td class="n">${nf(r.reassigned)}</td><td class="n">${nf(r.done)}</td><td class="n ${cRej(r.reject)}">${pct(r.reject)}</td></tr>`).join("")+"</tbody>"
+    :`<tbody><tr><td style="padding:14px;color:var(--ink-3)">수동심사 건의 심사자 정보가 없습니다.</td></tr></tbody>`;
+}
+
+/* ---------- summary comment (rule-based draft) ---------- */
+function draftComment(){
+  const m=CUR.m,p=PREV?.m,ms=CUR.ms;const L=[];const by=k=>ms.find(x=>x.key===k);
+  L.push(`■ ${ymTxt(CUR)} 신계약 심사지표 요약`);
+  L.push(`- 접수 ${nf(m.total)}건${p?`(전월 대비 ${chgTxt(m.total,p.total)})`:""} 중 처리완료 ${nf(m.done)}건, 심사중 ${nf(m.pending)}건임.`);
+  const t=by("touch");let s=`- 3일이내 터치율 ${pct(m.touch)}로 목표(${t.targetTxt}) ${t.ok?"충족":"미달"}`+(p?`, 전월 대비 ${t.dTxt}`:"")+".";
+  const lowCh=m.byCh.filter(c=>c.tBase>=10&&c.touch!=null&&c.touch<S.touchTarget/100).sort((a,b)=>a.touch-b.touch);
+  if(lowCh.length)s+=` 목표 미달 채널은 ${lowCh.map(c=>`${c.name}(${pct(c.touch)})`).join(", ")}임.`;
+  if(m.tPend)s+=` 마감일 기준 ${S.touchDays}영업일이 지나지 않은 미터치 ${nf(m.tPend)}건은 판단 보류로 분모에서 제외함.`;
+  L.push(s);
+  const a=by("auto");L.push(`- 자동심사율 ${pct(m.auto)}로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, 전월 대비 ${a.dTxt}`:"")+".");
+  const r=by("reject");L.push(`- 심사결과는 성립 ${pct(rate(m.st["성립"],m.total))}, 조건부성립 ${pct(rate(m.st["조건부성립"],m.total))}, 거절 ${pct(rate(m.st["거절"],m.total))}, 연기 ${pct(rate(m.st["연기"],m.total))}이며, 거절률(심사결정 대비) ${pct(m.reject)}로 기준(${r.targetTxt}) ${r.ok?"이내":"초과"}`+(p?`, 전월 대비 ${r.dTxt}`:"")+".");
+  const lowRv=m.byRv.filter(x=>x.tBase>=10&&x.touch!=null&&x.touch<S.touchTarget/100).sort((a,b)=>a.touch-b.touch);
+  if(lowRv.length)L.push(`- 터치율 목표 미달 심사자: ${lowRv.map(x=>`${x.name} ${pct(x.touch)}`).join(", ")}.`);
+  const big=ms.filter(x=>x.big);if(big.length)L.push(`- 전월 대비 변동 큼: ${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}. 원인 확인 필요.`);
+  const iss=CUR.issues;const eN=iss.filter(i=>i.sev==="오류").length,wN=iss.length-eN;
+  if(iss.length){const types={};iss.forEach(i=>{const k=`${i.field} ${i.type}`;types[k]=(types[k]||0)+1;});
+    const top=Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k} ${v}건`).join(", ");
+    L.push(`- 데이터 점검: 오류 ${nf(eN)}건(${nf(CUR.rows.filter(x=>x.err).length)}개 행${S.excl?", 산출 제외":""}), 경고 ${nf(wN)}건. 주요 유형은 ${top}이며 원천 데이터 보정 필요.`);}
+  else L.push(`- 데이터 점검: 이상 없음.`);
+  return L.join("\n");}
+
+/* ---------- AI polish (sample capability) ---------- */
+let sampleFn=null,ctl=null;
+async function initCaps(){
+  try{sampleFn=await window.claude?.use?.("sample");}catch(e){sampleFn=null;}
+  if(sampleFn)$("btnAI").hidden=false;
+}
+$("btnAI").onclick=async()=>{
+  if(!sampleFn||!CUR)return;
+  const m=CUR.m,p=PREV?.m;
+  const facts={마감월:ymTxt(CUR),기준:{터치율목표:S.touchTarget+"%",터치영업일:S.touchDays,자동심사율목표:S.autoTarget+"%",거절률상한:S.rejectMax+"%"},
+    지표:CUR.ms.map(x=>({지표:x.name,당월:x.kind==="rate"?pct(x.val):x.val,전월:x.prev==null?null:(x.kind==="rate"?pct(x.prev):x.prev),증감:x.dTxt||null,기준충족:x.ok})),
+    접수:m.total,처리완료:m.done,심사중:m.pending,상태별건수:m.st,
+    채널별:m.byCh.map(c=>({채널:c.name,접수:c.total,터치율:pct(c.touch),자동심사율:pct(c.auto),거절률:pct(c.reject)})),
+    심사자별:m.byRv.map(r=>({심사자:r.name,터치율:pct(r.touch),처리:r.done})),
+    데이터점검:{오류:CUR.issues.filter(i=>i.sev==="오류").length,경고:CUR.issues.filter(i=>i.sev==="경고").length}};
+  const prompt=`당신은 보험사 계약심사부 지표 담당자입니다. 아래 월간 신계약 심사지표 산출 결과로 부서장 보고용 요약 코멘트를 작성하세요.
+규칙:
+- 첫 줄은 "■ ${ymTxt(CUR)} 신계약 심사지표 요약", 이후 "- "로 시작하는 4~7개 항목.
+- 보고서체(~임, ~함)로, 문장은 짧게.
+- 숫자는 아래 데이터에 있는 값만 그대로 사용하고 새로 계산하거나 지어내지 말 것.
+- 기준 미달·초과 항목과 전월 대비 변동이 큰 항목을 먼저, 원인 확인이 필요한 채널·심사자를 짚을 것.
+- 데이터 점검 결과(오류·경고 건수)를 마지막 항목으로.
+- 코멘트 본문만 출력.
+
+참고용 기준 문안:
+${$("comment").value}
+
+데이터(JSON):
+${JSON.stringify(facts)}`;
+  ctl=new AbortController();const box=$("comment");const before=box.value;
+  $("btnAI").disabled=true;$("btnStop").hidden=false;$("sumNote").textContent="AI가 문안을 작성하는 중입니다…";
+  try{
+    await sampleFn(prompt,{signal:ctl.signal,onText:({text})=>{box.value=text;}});
+    $("sumNote").textContent="AI 문안으로 바꿨습니다. 숫자는 위 지표와 대조한 뒤 사용하세요.";
+  }catch(e){
+    box.value=e.text||before;
+    const msg={not_granted:"AI 사용이 허용되지 않아 기준 문안을 유지합니다.",rate_limited:"요청이 많습니다. 잠시 뒤 다시 눌러 주세요.",cancelled:"중지했습니다."}[e.code]||"AI 문안을 만들지 못했습니다. 기준 문안을 유지합니다.";
+    $("sumNote").textContent=msg;if(e.code==="not_granted")$("btnAI").hidden=true;
+  }finally{$("btnAI").disabled=false;$("btnStop").hidden=true;}
+};
+$("btnStop").onclick=()=>ctl?.abort();
+$("btnRedraft").onclick=()=>{$("comment").value=draftComment();$("sumNote").textContent="현재 지표로 기준 문안을 다시 만들었습니다.";};
+
+/* ---------- Excel export ---------- */
+const X={hdr:{fill:{fgColor:{rgb:"1D5B73"}},font:{bold:true,color:{rgb:"FFFFFF"}},alignment:{horizontal:"center",vertical:"center",wrapText:true}},
+  good:{fill:{fgColor:{rgb:"E3F1E7"}},font:{color:{rgb:"1E6B3A"},bold:true}},crit:{fill:{fgColor:{rgb:"FBE4E1"}},font:{color:{rgb:"A42020"},bold:true}},
+  warn:{fill:{fgColor:{rgb:"FBF0D6"}},font:{color:{rgb:"8A5A00"},bold:true}},tot:{font:{bold:true},fill:{fgColor:{rgb:"EEF2F4"}}},
+  title:{font:{bold:true,sz:14}},sub:{font:{color:{rgb:"5A6A74"}}}};
+const BORDER={top:{style:"thin",color:{rgb:"D9E0E4"}},bottom:{style:"thin",color:{rgb:"D9E0E4"}},left:{style:"thin",color:{rgb:"D9E0E4"}},right:{style:"thin",color:{rgb:"D9E0E4"}}};
+function sheet(rows,widths,{border=true,from=0}={}){
+  const ws={};let maxC=0;
+  rows.forEach((row,r)=>{row.forEach((c,ci)=>{maxC=Math.max(maxC,ci+1);
+    const o=(c!==null&&typeof c==="object"&&!(c instanceof Date))?c:{v:c};
+    if(o.v===undefined||o.v===null)o.v="";
+    const cell=typeof o.v==="number"&&isFinite(o.v)?{t:"n",v:o.v}:{t:"s",v:String(o.v)};
+    if(o.z)cell.z=o.z;
+    let s=Object.assign({},o.s||{});if(border&&r>=from&&!o.nob)s.border=BORDER;
+    if(typeof o.v==="number")s.alignment=Object.assign({horizontal:"right"},s.alignment||{});
+    cell.s=s;ws[XLSX.utils.encode_cell({r,c:ci})]=cell;});});
+  ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length-1,0),c:Math.max(maxC-1,0)}});
+  ws["!cols"]=widths.map(w=>({wch:w}));return ws;}
+const H=arr=>arr.map(v=>({v,s:X.hdr}));
+const R=(v,s)=>({v:v==null?"-":v,z:"0.0%",s});
+const numOr=v=>v==null?"-":v;
+function buildWorkbook(){
+  const m=CUR.m,p=PREV?.m,ms=metricList();const wb=XLSX.utils.book_new();
+  const tt=S.touchTarget/100,at=S.autoTarget/100,rj=S.rejectMax/100;
+  const fl=(v,t,cmp)=>v==null?undefined:((cmp===">="?v>=t:v<=t)?undefined:X.crit);
+  // 1. 요약
+  const sum=[[{v:`${ymTxt(CUR)} 신계약 심사지표`,s:X.title,nob:true}],[{v:`당월 ${CUR.name} · 전월 ${PREV?PREV.name:"없음"} · 영업일 ${m.bizDays}일 · ${S.excl?"오류 행 제외":"오류 행 포함"} 산출`,s:X.sub,nob:true}],[],
+    H(["지표","당월","전월","증감","기준","판정","산출식"])];
+  ms.forEach(x=>{const isR=x.kind==="rate";
+    sum.push([x.name,isR?R(x.val):x.val,isR?R(x.prev):numOr(x.prev),{v:x.dTxt||"-",s:x.big?X.warn:undefined},x.targetTxt,
+      {v:x.ok===null?"-":x.ok?"충족":x.cmp==="<="?"초과":"미달",s:x.ok===null?undefined:x.ok?X.good:X.crit},x.fx]);});
+  sum.push([]);sum.push([{v:"요약 코멘트",s:{font:{bold:true}},nob:true}]);
+  $("comment").value.split("\n").forEach(l=>sum.push([{v:l,nob:true}]));
+  const ws1=sheet(sum,[22,12,12,12,12,9,44],{from:3});
+  XLSX.utils.book_append_sheet(wb,ws1,"요약");
+  // 2. 채널별
+  const pCh=p?Object.fromEntries(p.byCh.map(c=>[c.name,c])):{};
+  const ch=[H(["채널","접수","처리완료","심사중","자동심사율","터치대상","3일내","터치율","전월 터치율","증감(%p)","거절률"])];
+  m.byCh.concat([{...m,name:"합계",tot:true}]).forEach(c=>{const pc=c.tot?p:pCh[c.name];const ts=c.tot?X.tot:undefined;
+    ch.push([{v:c.name,s:ts},{v:c.total,s:ts},{v:c.done,s:ts},{v:c.pending,s:ts},R(c.auto,fl(c.auto,at,">=")||ts),{v:c.tBase,s:ts},{v:c.tIn,s:ts},R(c.touch,fl(c.touch,tt,">=")||ts),R(pc?.touch,ts),
+      {v:pc&&c.touch!=null&&pc.touch!=null?+((c.touch-pc.touch)*100).toFixed(1):"-",s:pc&&c.touch!=null&&pc.touch!=null&&Math.abs((c.touch-pc.touch)*100)>=S.momP?X.warn:ts},R(c.reject,fl(c.reject,rj,"<=")||ts)]);});
+  XLSX.utils.book_append_sheet(wb,sheet(ch,[10,8,9,8,11,9,8,9,11,10,9]),"채널별");
+  // 3. 심사결과
+  const st=[H(["계약상태","당월 건수","구성비","전월 건수","전월 구성비","증감(%p)"])];
+  STATUSES.concat(m.st["기타"]?["기타"]:[]).forEach(s=>{const sh=rate(m.st[s],m.total),ps=p?rate(p.st[s],p.total):null;const d=ps==null||sh==null?null:(sh-ps)*100;
+    st.push([s,m.st[s],R(sh),p?p.st[s]:"-",R(ps),{v:d==null?"-":+d.toFixed(1),s:d!=null&&Math.abs(d)>=S.momP?X.warn:undefined}]);});
+  st.push([{v:"합계",s:X.tot},{v:m.total,s:X.tot},R(1,X.tot),{v:p?p.total:"-",s:X.tot},R(p?1:null,X.tot),{v:p?chgTxt(m.total,p.total):"-",s:X.tot}]);
+  st.push([]);st.push(["거절률(심사결정 대비)",R(m.reject,fl(m.reject,rj,"<=")),"",R(p?.reject)]);
+  st.push(["조건부성립률(심사결정 대비)",R(m.condRate),"",R(p?.condRate)]);
+  XLSX.utils.book_append_sheet(wb,sheet(st,[26,10,9,10,11,10]),"심사결과");
+  // 4. 심사자별
+  const rv=[H(["심사자","최초배정","터치대상","3일내","터치율","평균경과(영업일)","재배정","처리(실제)","거절률"])];
+  m.byRv.forEach(r=>rv.push([r.name,r.assigned,r.tBase,r.tIn,R(r.touch,fl(r.touch,tt,">=")),r.avgLag==null?"-":{v:+r.avgLag.toFixed(2),z:"0.00"},r.reassigned,r.done,R(r.reject,fl(r.reject,rj,"<="))]));
+  XLSX.utils.book_append_sheet(wb,sheet(rv,[10,9,9,8,9,15,8,10,9]),"심사자별");
+  // 5. 데이터점검
+  const ck=[H(["행","증번","등급","유형","항목","내용"])];
+  CUR.issues.slice().sort((a,b)=>a.line-b.line).forEach(i=>ck.push([i.line,i.no||"(공란)",{v:i.sev,s:i.sev==="오류"?X.crit:X.warn},i.type,i.field,i.msg]));
+  if(CUR.issues.length===0)ck.push(["-","-","-","-","-","발견된 이상 없음"]);
+  XLSX.utils.book_append_sheet(wb,sheet(ck,[6,18,7,11,13,60]),"데이터점검");
+  // 6. 원본 + 점검표시
+  const iByLine={};CUR.issues.forEach(i=>{(iByLine[i.line]=iByLine[i.line]||[]).push(i);});
+  const fieldIdx={"증번":0,"계약일자":1,"채널":2,"최초심사자":3,"실제심사자":4,"계약상태":5,"자동심사결과":6,"심사시작일":7,"최초심사일":8,"특별조건부1":9};
+  const raw=[H(FIELDS.map(f=>f[1]).concat(["경과 영업일","3일내 터치","산출 반영","점검 결과"]))];
+  CUR.rows.forEach(r=>{const li=iByLine[r.line]||[];const cells=FIELDS.map(([k])=>{const v=r.raw[k];
+      if(["cdate","sdate","fdate"].includes(k)){const pd=k==="cdate"?r.pc:k==="sdate"?r.ps:r.pf;return pd.ok?fmt(pd.dn):String(v??"");}return String(v??"");}).map(v=>({v}));
+    li.forEach(i=>{const c=fieldIdx[i.field];if(c!=null){const sev=i.sev==="오류"?X.crit:X.warn;if(cells[c].s!==X.crit)cells[c].s=sev;}});
+    const used=!(S.excl&&r.err);
+    cells.push({v:r.lag==null?"":r.lag},{v:used?(r.touch==null?"":r.touch):""},{v:used?"Y":"N",s:used?undefined:X.crit},{v:li.map(i=>`[${i.sev}] ${i.msg}`).join(" / "),s:li.some(i=>i.sev==="오류")?X.crit:li.length?X.warn:undefined});
+    raw.push(cells);});
+  const ws6=sheet(raw,[16,11,8,10,10,11,11,11,11,14,10,10,9,60]);ws6["!autofilter"]={ref:ws6["!ref"]};ws6["!freeze"]={xSplit:0,ySplit:1};
+  XLSX.utils.book_append_sheet(wb,ws6,"원본_점검표시");
+  // 7. 산출기준
+  const df=[H(["항목","정의"])].concat(DEFS().map(([a,b])=>[a,b.replace(/<[^>]+>/g,"")]));
+  df.push(["공휴일",S.holidays.split("\n").filter(Boolean).join(", ")]);
+  const ws7=sheet(df,[22,100]);
+  XLSX.utils.book_append_sheet(wb,ws7,"산출기준");
+  return wb;}
+let dl=null;
+async function initDownloads(){try{dl=await window.claude?.use?.("downloads");}catch(e){dl=null;}}
+async function saveFile(name,wb){
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  if(!dl){toast("이 화면에서는 파일 저장을 쓸 수 없습니다. claude.ai에서 아티팩트를 열어 다시 시도해 주세요.");return;}
+  try{await dl.save({filename:name,data:new Blob([buf])});toast("저장했습니다: "+name);}
+  catch(e){toast({declined:"저장을 취소했습니다.",rate_limited:"이미 저장 확인 창이 열려 있습니다. 잠시 뒤 다시 시도해 주세요."}[e.code]||"파일을 저장하지 못했습니다 ("+(e.code||"오류")+").");}}
+$("btnXlsx").onclick=()=>{if(!CUR)return;try{saveFile(`신계약심사지표_${CUR.y}${String(CUR.mo).padStart(2,"0")}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
+$("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();const aoa=genSample(2026,9,640,20260901,true);
+  const ws=sheet([H(aoa[0])].concat(aoa.slice(1)),[16,11,8,10,10,11,11,11,11,14],{border:false});
+  XLSX.utils.book_append_sheet(wb,ws,"신계약마감");saveFile("신계약마감_양식_예시_202609.xlsx",wb);};
+
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,4200);}
+
+/* ---------- definitions ---------- */
+function DEFS(){return[
+  ["3일이내 터치율",`수동심사 건(자동심사결과 '이관') 중 심사시작일 다음 영업일부터 최초심사일까지 <code>${S.touchDays}영업일 이내</code>인 건 ÷ 판단 대상 건. 최초심사일이 없고 마감일까지 ${S.touchDays}영업일이 지나지 않은 건은 판단 보류로 분모에서 뺌. 지났으면 미달로 셈.`],
+  ["자동심사율",`자동심사결과 <code>통과</code> 건 ÷ 자동심사결과가 입력된 건. 통과·승인·Y·PASS는 통과, 이관·부적합·N은 수동으로 읽음.`],
+  ["신계약 처리건수",`계약상태가 <code>성립·조건부성립·거절·연기·청약철회</code>인 건. 심사중은 미처리로 따로 셈.`],
+  ["심사결과 통계",`계약상태별 건수와 접수 대비 구성비. 거절률·조건부성립률은 <code>성립+조건부성립+거절+연기</code>(심사결정 건) 대비.`],
+  ["영업일",`토·일요일과 설정한 공휴일을 뺀 날. 심사시작일 당일은 0일.`],
+  ["전월 대비",`비율 지표는 %p 차이, 건수는 증감률. 비율 ${S.momP}%p 이상, 건수 ${S.momC}% 이상 변하면 '변동 큼'으로 표시.`],
+  ["데이터 점검 · 오류",`증번 공란·중복, 날짜 형식 오류, 계약일자·계약상태·자동심사결과 공란, 심사시작일 < 계약일자, 최초심사일 < 심사시작일, 수동심사 건의 심사시작일 공란, 처리완료 수동심사 건의 최초심사일 공란. ${S.excl?"오류 행은 산출에서 제외.":"오류 행도 산출에 포함."}`],
+  ["데이터 점검 · 경고",`채널·최초심사자·실제심사자 공란, 마감월 밖 계약일자, 마감일 이후 최초심사일, 정의되지 않은 상태값, 자동심사 통과인데 거절·연기·조건부, 특별조건부1과 계약상태 불일치. 산출에는 포함.`],
+];}
+function renderDefs(){$("defs").innerHTML=DEFS().map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("");}
+
+/* ---------- sample data (fictional) ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function genSample(y,mo,n,seed,anomalies){
+  const rnd=mulberry32(seed);const pick=a=>a[Math.floor(rnd()*a.length)];
+  const wpick=(a,w)=>{const s=w.reduce((x,y)=>x+y,0);let r=rnd()*s;for(let i=0;i<a.length;i++){r-=w[i];if(r<0)return a[i];}return a[a.length-1];};
+  const start=Date.UTC(y,mo-1,1)/864e5,end=Date.UTC(y,mo,0)/864e5;const days=[];for(let d=start;d<=end;d++)if(isBiz(d))days.push(d);
+  const CH=["설계사","GA","TM","방카","CM"],REV=["김도윤","이서연","박지호","최민준","정하은","한유진"],CONDS=["부담보(위)","부담보(척추)","할증 25%","할증 50%","보험금 감액","부담보(갑상선)"];
+  const late=mo===9;const out=[FIELDS.map(f=>f[1])];
+  for(let i=0;i<n;i++){
+    const cd=days[Math.floor(rnd()*days.length)];const ch=wpick(CH,[40,30,12,10,8]);
+    const pAuto=(late?0.475:0.455)*(ch==="CM"?1.25:ch==="GA"?0.85:ch==="방카"?1.1:1);
+    const pass=rnd()<pAuto;const no=`L${y}${String(mo).padStart(2,"0")}${String(10000+i*7+Math.floor(rnd()*7)).padStart(5,"0")}`;
+    let r1,r2,st,sd,fd,cond="";
+    if(pass){r1="AUTO";r2="AUTO";sd=cd;fd=cd;st=rnd()<0.03?"청약철회":"성립";}
+    else{sd=addBiz(cd,rnd()<0.7?0:1);
+      const reviewer=pick(REV);
+      const w=ch==="GA"?(late?[18,24,20,13,10,8,7]:[22,26,22,12,8,6,4]):(reviewer==="한유진"&&late?[16,24,24,14,10,7,5]:[36,32,20,7,3,1,1]);
+      const lag=wpick([0,1,2,3,4,5,6],w);fd=addBiz(sd,lag);r1=reviewer;r2=rnd()<0.08?pick(REV):r1;
+      st=wpick(["성립","조건부성립","거절","연기","청약철회"],[58,20,late?11:8,5,4]);if(st==="조건부성립")cond=pick(CONDS);
+      if(fd>end){fd=null;st="심사중";cond="";}else if(bizDiff(sd,end)<=2&&rnd()<0.5){st="심사중";cond="";}
+    }
+    out.push([no,fmt(cd),ch,r1,r2,st,pass?"통과":"이관",fmt(sd),fd==null?"":fmt(fd),cond]);
+  }
+  if(anomalies){const used=new Set();const find=fn=>{for(let i=1;i<out.length;i++){if(!used.has(i)&&fn(out[i])){used.add(i);return out[i];}}return null;};
+    const man=r=>r[6]==="이관"&&r[5]!=="심사중"&&r[5]!=="청약철회"&&r[8];const cd=v=>parseDate(v).dn;
+    find(r=>r[0].endsWith("3")&&r[2])[2]="";find(r=>r[2]==="TM")[2]="";
+    find(man)[3]="";find(man)[3]="";
+    let r=find(r=>man(r)&&cd(r[8])-cd(r[7])>=1);r[8]=fmt(cd(r[7])-2);r=find(r=>man(r));r[8]=fmt(cd(r[7])-1);
+    r=find(r=>man(r));r[7]=fmt(cd(r[1])-3);
+    find(r=>man(r)&&r[5]==="성립")[9]="부담보(위)";find(r=>man(r)&&r[5]==="성립")[9]="할증 25%";
+    find(r=>man(r)&&r[5]==="조건부성립")[9]="";
+    find(r=>r[6]==="통과"&&r[5]==="성립")[5]="거절";
+    const a=find(r=>true),b=find(r=>true);b[0]=a[0];
+    find(r=>true)[1]="2026-09-31";
+    find(r=>man(r)&&r[5]==="성립")[8]="";
+  }
+  return out;}
+function loadSample(){
+  CUR=check(buildDataset(genSample(2026,9,640,20260901,true),"예시_신계약마감_202609.xlsx"));
+  PREV=check(buildDataset(genSample(2026,8,612,20260801,false),"예시_신계약마감_202608.xlsx"));
+  isSample=true;$("fnCur").textContent="예시: "+CUR.name;$("fnPrev").textContent="예시: "+PREV.name;recompute(true);}
+
+/* ---------- pipeline ---------- */
+function render0(){["chkSum","chkTypes","tblIssues","cards","tblCh","tblSt","tblRv","meta"].forEach(id=>$(id).innerHTML="");$("comment").value="";$("banner").hidden=true;}
+function recompute(redraft){
+  buildHolidays();
+  [CUR,PREV].forEach(d=>{if(d){check(d);compute(d);}});
+  renderDefs();render();
+  if(redraft)$("comment").value=draftComment();
+  $("sumNote").textContent=redraft?"기준 문안을 지표에 맞춰 새로 만들었습니다.":"";
+}
+async function handleFile(file,which){
+  $("loadErr").hidden=true;
+  try{const aoa=await aoaFromFile(file);const ds=buildDataset(aoa,file.name);
+    if(which==="cur"){CUR=ds;if(isSample){PREV=null;$("fnPrev").textContent="";}isSample=false;$("fnCur").textContent=file.name;}
+    else{if(isSample){CUR=null;isSample=false;$("fnCur").textContent="";}
+      PREV=ds;$("fnPrev").textContent=file.name;
+      if(!CUR){render0();$("loadErr").hidden=false;$("loadErr").textContent="전월 파일을 받았습니다. 당월 마감 데이터를 올리면 산출합니다.";return;}}
+    recompute(true);toast(`${file.name} · ${nf(ds.rows.length)}행을 읽었습니다.`);
+  }catch(e){$("loadErr").hidden=false;$("loadErr").textContent=`${file.name}: ${e.message||"파일을 읽지 못했습니다."}`;}}
+[["dropCur","fileCur","cur"],["dropPrev","filePrev","prev"]].forEach(([d,f,w])=>{
+  const el=$(d),inp=$(f);
+  inp.onchange=()=>{if(inp.files[0])handleFile(inp.files[0],w);inp.value="";};
+  el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("over");});
+  el.addEventListener("dragleave",()=>el.classList.remove("over"));
+  el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("over");const fl=e.dataTransfer.files[0];if(fl)handleFile(fl,w);});});
+$("btnSample").onclick=()=>{$("loadErr").hidden=true;loadSample();toast("예시 데이터를 불러왔습니다.");};
+
+/* settings form */
+function fillSettings(){$("sTouch").value=S.touchTarget;$("sDays").value=S.touchDays;$("sAuto").value=S.autoTarget;$("sRej").value=S.rejectMax;$("sMomP").value=S.momP;$("sMomC").value=S.momC;$("sExcl").checked=S.excl;$("holi").value=S.holidays;}
+$("btnApply").onclick=()=>{const g=(id,def)=>{const v=parseFloat($(id).value);return isFinite(v)?v:def;};
+  S.touchTarget=g("sTouch",90);S.touchDays=Math.round(g("sDays",3));S.autoTarget=g("sAuto",45);S.rejectMax=g("sRej",5);S.momP=g("sMomP",3);S.momC=g("sMomC",10);S.excl=$("sExcl").checked;S.holidays=$("holi").value;
+  try{localStorage.setItem("uwm-settings",JSON.stringify(S));}catch(e){}
+  if(CUR)recompute(true);toast("산출 기준을 적용했습니다.");};
+
+/* boot */
+fillSettings();buildHolidays();
+if(!window.XLSX){$("loadErr").hidden=false;$("loadErr").textContent="엑셀 처리 모듈을 불러오지 못했습니다. 네트워크를 확인한 뒤 새로고침해 주세요.";}
+else loadSample();
+initCaps();initDownloads();
+})();
+</script>
