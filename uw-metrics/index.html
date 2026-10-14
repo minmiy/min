@@ -155,9 +155,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
 .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .monthpick select{font-weight:600}
-table.rules tbody tr{cursor:pointer}
-table.rules tbody tr:hover td{background:var(--accent-soft)}
-table.rules tbody tr[aria-selected="true"] td{background:var(--accent-soft);font-weight:600}
+th.sel{background:var(--accent-soft);color:var(--ink)}
+td.sel{background:var(--accent-soft);font-weight:600}
+td.sep,th.sep{border-left:1.5px solid var(--line)}
 td.zero{color:var(--ink-3)}
 .recon{font-size:13px;border-radius:6px;padding:9px 12px;background:var(--paper);border:1px solid var(--line-2)}
 .recon b{font-variant-numeric:tabular-nums}
@@ -208,25 +208,30 @@ td.zero{color:var(--ink-3)}
       <div><h3>채널별 처리 건수</h3><div class="tbl"><table id="tblCh"></table></div></div>
       <div><h3>심사결과 통계 <span style="font-weight:400;color:var(--ink-3)">(미결 제외)</span></h3><div class="tbl"><table id="tblSt"></table></div></div>
     </div>
-    <div><h3 style="margin-bottom:8px">실제심사자별 처리 건수</h3><div class="tbl"><table id="tblRv"></table></div></div>
     <div><h3 style="margin-bottom:8px">월별 요약</h3><div class="tbl"><table id="tblMonths"></table></div></div>
+  </section>
+
+  <section class="blk" id="secRv">
+    <div class="blk-h">
+      <h2><span class="step">②</span>심사자별 월별 처리 건수</h2>
+      <span class="hint" id="rvHint"></span>
+    </div>
+    <div class="tbl"><table id="tblRv"></table></div>
   </section>
 
   <section class="blk" id="secCheck">
     <div class="blk-h">
-      <h2><span class="step">②</span>데이터 점검</h2>
-      <span class="hint">전체 행 기준. 오류가 하나라도 있는 행은 위 지표에서 빠지고, 경고는 지표에 포함한 채 목록으로 보여줍니다.</span>
+      <h2><span class="step">③</span>데이터 점검</h2>
+      <span class="hint">전체 행 기준 요약. 오류 행은 지표에서 빠지고 경고는 포함합니다. 행별 상세는 엑셀의 데이터점검·원본_점검표시 시트에 있습니다.</span>
     </div>
     <div class="chk-sum" id="chkSum"></div>
     <div class="recon" id="recon" hidden></div>
     <div class="tbl"><table class="rules" id="tblRules"></table></div>
-    <div class="blk-h"><h3 id="detailTitle">점검 상세</h3><span class="hint">규칙 행을 누르면 해당 건만 봅니다.</span></div>
-    <div class="tbl scroll"><table id="tblIssues"></table></div>
   </section>
 
   <section class="blk" id="secSum">
     <div class="blk-h">
-      <h2><span class="step">③</span>요약 코멘트 · 결과표</h2>
+      <h2><span class="step">④</span>요약 코멘트 · 결과표</h2>
       <span class="hint">주제별 코멘트는 직접 고칠 수 있고, 고친 내용이 엑셀에 그대로 들어갑니다.</span>
     </div>
     <div class="cmts" id="comments"></div>
@@ -515,13 +520,12 @@ function chStats(ch,mm){return agg(inMonth(mm).filter(r=>r.ch===ch));}
 
 /* ---------- rendering ---------- */
 function render(){
-  if(!SEL){["cards","tblCh","tblSt","tblRv","tblMonths","meta"].forEach(id=>$(id).innerHTML="");}
+  if(!SEL){["cards","tblCh","tblSt","tblRv","tblMonths","meta","rvHint"].forEach(id=>$(id).innerHTML="");}
   const pk=PREV();
   $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].n)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
   $("banner").hidden=!isSample;
   $("banner").textContent="예시 데이터를 보여주고 있습니다. 제공해 주신 가상 더미 워크북(신계약마감 시트 1,200건, 2026년 8·9월)과 그 기준표·공휴일을 그대로 넣었습니다. 실제 파일을 올리면 바로 바뀝니다.";
   renderCheck();if(SEL)renderMetrics();}
-let ruleFilter=null;
 function renderCheck(){
   const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
   $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(n)}</span></div>
@@ -529,16 +533,11 @@ function renderCheck(){
   <div><span class="k">경고 건수</span><span class="v ${wN?"warn":"good"}">${nf(wN)}</span></div>
   <div><span class="k">지표 반영 행</span><span class="v">${nf(n-exc)}</span></div>`;
   const per={};RULES.forEach(([id])=>per[id]=0);ROWS.forEach(r=>r.codes.forEach(c=>per[c]++));
-  $("tblRules").innerHTML=`<thead><tr><th>규칙</th><th>구분</th><th>처리</th><th>점검 규칙</th><th class="n">건수</th></tr></thead><tbody>`+
-    RULES.map(([id,sev,desc])=>`<tr data-id="${id}" tabindex="0" aria-selected="${ruleFilter===id}"><td class="mono">${id}</td><td><span class="sev ${sev==="오류"?"e":"w"}">${sev}</span></td><td>${sev==="오류"?"지표 제외":"지표 포함"}</td><td class="txt">${esc(desc)}</td><td class="n ${per[id]?(sev==="오류"?"cell-crit":"cell-warn"):"zero"}">${nf(per[id])}</td></tr>`).join("")+
-    `<tr class="total"><td colspan="4">제외 행 수 (오류 코드 1개 이상)</td><td class="n">${nf(exc)}</td></tr></tbody>`;
-  $("tblRules").querySelectorAll("tr[data-id]").forEach(tr=>{const go=()=>{ruleFilter=ruleFilter===tr.dataset.id?null:tr.dataset.id;renderCheck();};tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
-  const list=ISSUES.filter(i=>!ruleFilter||i.id===ruleFilter);
-  $("detailTitle").textContent=ruleFilter?`점검 상세 · ${ruleFilter} (${nf(list.length)}건)`:`점검 상세 · 전체 (${nf(list.length)}건)`;
-  $("tblIssues").innerHTML=list.length?`<thead><tr><th class="n">행</th><th>증번</th><th>마감월</th><th>규칙</th><th>내용</th></tr></thead><tbody>`+
-    list.slice(0,800).map(i=>`<tr><td class="n">${i.row.line}</td><td class="mono">${esc(i.row.no||"(공란)")}</td><td>${mLabel(i.row.month)}</td><td><span class="sev ${i.id[0]==="E"?"e":"w"}">${i.id}</span></td><td class="txt">${esc(i.msg)}</td></tr>`).join("")+
-    (list.length>800?`<tr><td colspan="5" style="color:var(--ink-3)">앞의 800건만 보여줍니다. 전체 목록은 엑셀의 데이터점검 시트에 있습니다.</td></tr>`:"")+"</tbody>"
-    :`<tbody><tr><td style="padding:16px;color:var(--good)">해당하는 건이 없습니다.</td></tr></tbody>`;
+  const hit=RULES.filter(([id])=>per[id]),none=RULES.filter(([id])=>!per[id]).map(([id])=>id);
+  $("tblRules").innerHTML=`<thead><tr><th>규칙</th><th>구분</th><th>점검 규칙</th><th class="n">건수</th></tr></thead><tbody>`+
+    hit.map(([id,sev,desc])=>`<tr><td class="mono">${id}</td><td><span class="sev ${sev==="오류"?"e":"w"}">${sev==="오류"?"오류 · 제외":"경고 · 포함"}</span></td><td class="txt">${esc(desc)}</td><td class="n ${sev==="오류"?"cell-crit":"cell-warn"}">${nf(per[id])}</td></tr>`).join("")+
+    `<tr class="total"><td colspan="3">오류로 제외된 행 (오류 코드 1개 이상)</td><td class="n">${nf(exc)}</td></tr>`+
+    (none.length?`<tr><td colspan="4" style="color:var(--ink-3)">해당 없음: ${none.join(", ")}</td></tr>`:"")+`</tbody>`;
   renderRecon();}
 let RECON=null;
 function renderRecon(){
@@ -595,12 +594,14 @@ function renderMetrics(){
     rrow("정상인수","normal",true)+rrow("ㄴ 표준인수","std",true)+rrow("ㄴ 조건부인수","cond",true)+rrow("반송","ret",true)+rrow("청철","wd",true)+
     `<tr class="total"><td>합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr>`+
     rrow("(참고) 미결","pend",false)+"</tbody>";
-  // reviewers
-  const rvs=rvList();
-  $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th><th class="n">${mLabel(SEL)}</th><th class="n">전월</th><th class="n">증감</th><th class="n">터치율</th><th class="n">3일 초과</th><th class="n">평균 경과일</th></tr></thead><tbody>`+
+  // reviewers × months
+  const rvs=rvList();const pkI=MONTHS.indexOf(SEL);
+  $("rvHint").textContent=`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"} · 증감과 터치율은 ${mLabel(SEL)} 기준`;
+  const sumOf=k=>MONTHS.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0);
+  $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th>${MONTHS.map(mm=>`<th class="n${mm===SEL?" sel":""}">${mLabel(mm)}</th>`).join("")}<th class="n">합계</th><th class="n sep">증감 (전월 대비)</th><th class="n">구성비</th><th class="n">터치율</th><th class="n">3일 초과</th><th class="n">평균 경과일</th></tr></thead><tbody>`+
     rvs.map(k=>{const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;const s=rvStats(k,SEL);
-      return`<tr><td>${esc(k)}</td><td class="n">${nf(v)}</td><td class="n">${p?nf(pv):"-"}</td><td class="n ${p?bigC(v,pv):""}">${p?chgTxt(v,pv):"-"}</td><td class="n ${s.n>=10?cT(s.touch):""}">${pct(s.touch)}</td><td class="n">${nf(s.tOut)}</td><td class="n">${s.avgLag==null?"-":s.avgLag.toFixed(2)}</td></tr>`;}).join("")+
-    `<tr class="total"><td>합계</td><td class="n">${nf(m.proc)}</td><td class="n">${p?nf(p.proc):"-"}</td><td class="n">${p?chgTxt(m.proc,p.proc):"-"}</td><td class="n">${pct(m.touch)}</td><td class="n">${nf(m.tOut)}</td><td class="n">${m.avgLag==null?"-":m.avgLag.toFixed(2)}</td></tr></tbody>`;
+      return`<tr><td>${esc(k)}</td>${MONTHS.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(M[mm].byRv[k]||0)}</td>`).join("")}<td class="n">${nf(sumOf(k))}</td><td class="n sep ${p?bigC(v,pv):""}">${p?`${dTxt(v,pv)} (${chgTxt(v,pv)})`:"-"}</td><td class="n">${pct(rate(v,m.proc))}</td><td class="n ${s.n>=10?cT(s.touch):""}">${pct(s.touch)}</td><td class="n">${nf(s.tOut)}</td><td class="n">${s.avgLag==null?"-":s.avgLag.toFixed(2)}</td></tr>`;}).join("")+
+    `<tr class="total"><td>합계</td>${MONTHS.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(M[mm].proc)}</td>`).join("")}<td class="n">${nf(MONTHS.reduce((n,mm)=>n+M[mm].proc,0))}</td><td class="n sep">${p?`${dTxt(m.proc,p.proc)} (${chgTxt(m.proc,p.proc)})`:"-"}</td><td class="n">100.0%</td><td class="n">${pct(m.touch)}</td><td class="n">${nf(m.tOut)}</td><td class="n">${m.avgLag==null?"-":m.avgLag.toFixed(2)}</td></tr></tbody>`;
   // months
   $("tblMonths").innerHTML=`<thead><tr><th>마감월</th><th class="n">총 심사건수</th><th class="n">3일이내</th><th class="n">3일초과</th><th class="n">터치율</th><th class="n">자동심사</th><th class="n">인심사</th><th class="n">공란(제외)</th><th class="n">자동심사율</th><th class="n">처리 건수</th><th class="n">정상인수</th><th class="n">표준</th><th class="n">조건부</th><th class="n">반송</th><th class="n">청철</th><th class="n">미결</th><th class="n">재분배</th></tr></thead><tbody>`+
     MONTHS.map(mm=>{const a=M[mm];return`<tr${mm===SEL?' style="font-weight:600"':""}><td>${mLabel(mm)}</td><td class="n">${nf(a.n)}</td><td class="n">${nf(a.tIn)}</td><td class="n">${nf(a.tOut)}</td><td class="n ${cT(a.touch)}">${pct(a.touch)}</td><td class="n">${nf(a.auto)}</td><td class="n">${nf(a.manual)}</td><td class="n">${nf(a.autoBlank)}</td><td class="n ${cA(a.autoRate)}">${pct(a.autoRate)}</td><td class="n">${nf(a.proc)}</td><td class="n">${nf(a.normal)}</td><td class="n">${nf(a.std)}</td><td class="n">${nf(a.cond)}</td><td class="n">${nf(a.ret)}</td><td class="n">${nf(a.wd)}</td><td class="n">${nf(a.pend)}</td><td class="n">${nf(a.comp.diff)}</td></tr>`;}).join("")+"</tbody>";
@@ -630,7 +631,9 @@ function draftTopics(){
   const autoN=Object.entries(m.byRv).filter(([k])=>isAutoName(k)).reduce((n,[,v])=>n+v,0);
   T.push({key:"reviewer",title:"심사자별",cls:lowRv.length||m.byRv["(공란)"]?"warn":"good",chip:lowRv.length?`확인 ${lowRv.length}명`:m.byRv["(공란)"]?`공란 ${m.byRv["(공란)"]}건`:"",
     text:`실제심사자 기준 처리는 ${top.map(k=>`${k} ${nf(m.byRv[k])}건`).join(", ")} 순이고, 자동심사 ${nf(autoN)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`+
-      (lowRv.length?` 터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}임.`:" 심사자별 터치율은 모두 목표 충족.")+` 최초심사자와 실제심사자가 다른 재분배 ${nf(m.comp.diff)}건.`});
+      (lowRv.length?` 터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}임.`:" 심사자별 터치율은 모두 목표 충족.")+` 최초심사자와 실제심사자가 다른 재분배 ${nf(m.comp.diff)}건.`+
+      (p?(()=>{const ch=people.map(k=>({k,d:(m.byRv[k]||0)-(p.byRv[k]||0)})).filter(x=>x.d).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,3);
+        return ch.length?` 전월 대비 처리 건수 변동이 큰 심사자는 ${ch.map(x=>`${x.k}(${x.d>0?"+":"−"}${Math.abs(x.d)}건)`).join(", ")}.`:"";})():"")});
   const big=ms.filter(x=>x.big);
   T.push({key:"mom",title:"전월 대비 변동",cls:!p?"":big.length?"warn":"good",chip:big.length?`변동 큼 ${big.length}`:"",
     text:!p?`데이터에 ${mLabel(prevMonth(SEL))} 자료가 없어 증감을 계산하지 않음.`:big.length?`${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}로 변동 폭이 커 원인 확인 필요.`:`주요 지표 모두 변동 기준 이내(비율 ${S.momP}%p, 건수 ${S.momC}% 미만).`});
@@ -757,10 +760,12 @@ function buildWorkbook(){
   chs.forEach(c=>{const s=chStats(c,SEL);const v=m.byCh[c]||0,pv=p?(p.byCh[c]||0):null;
     cr.push([c,v,numOr(pv),{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(s.touch,fl(s.touch,tt,">=")),R(s.autoRate,fl(s.autoRate,at,">=")),s.n,s.tOut]);});
   cr.push([{v:"합계",s:X.tot},{v:m.proc,s:X.tot},{v:numOr(p?.proc),s:X.tot},{v:p?chgTxt(m.proc,p.proc):"-",s:X.tot},R(m.touch,X.tot),R(m.autoRate,X.tot),{v:m.n,s:X.tot},{v:m.tOut,s:X.tot}]);
-  cr.push([]);cr.push(SEC(`${mLabel(SEL)} 실제심사자별`));cr.push(H(["실제심사자",`처리 ${mLabel(SEL)}`,"전월","증감","터치율","3일 초과","평균 경과일"]));
+  XLSX.utils.book_append_sheet(wb,sheet(cr,[14,12,10,10,10,11,11,10]),"채널별");
+  const rv=[SEC(`실제심사자별 월별 처리 건수 (미결 ${S.inclPending?"포함":"제외"})`),H(["실제심사자"].concat(MONTHS.map(mLabel),["합계",`증감(${mLabel(SEL)} 전월 대비)`,"증감률",`구성비(${mLabel(SEL)})`,"터치율","3일 초과","평균 경과일"]))];
   rvs.forEach(k=>{const s=rvStats(k,SEL);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;
-    cr.push([k,v,numOr(pv),{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(s.touch,s.n>=10?fl(s.touch,tt,">="):undefined),s.tOut,s.avgLag==null?"-":{v:+s.avgLag.toFixed(2),z:"0.00"}]);});
-  XLSX.utils.book_append_sheet(wb,sheet(cr,[14,12,10,10,10,11,11,10]),"채널·심사자별");
+    rv.push([k].concat(MONTHS.map(mm=>({v:M[mm].byRv[k]||0,s:mm===SEL?{font:{bold:true}}:undefined})),[MONTHS.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0),p?v-pv:"-",{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(rate(v,m.proc)),R(s.touch,s.n>=10?fl(s.touch,tt,">="):undefined),s.tOut,s.avgLag==null?"-":{v:+s.avgLag.toFixed(2),z:"0.00"}]));});
+  rv.push([{v:"합계",s:X.tot}].concat(MONTHS.map(mm=>({v:M[mm].proc,s:X.tot})),[{v:MONTHS.reduce((n,mm)=>n+M[mm].proc,0),s:X.tot},{v:p?m.proc-p.proc:"-",s:X.tot},{v:p?chgTxt(m.proc,p.proc):"-",s:X.tot},R(1,X.tot),R(m.touch,X.tot),{v:m.tOut,s:X.tot},{v:m.avgLag==null?"-":+m.avgLag.toFixed(2),s:X.tot}]));
+  XLSX.utils.book_append_sheet(wb,sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11])),"심사자별");
   // 심사결과
   const st=[H(["구분",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
   [["정상인수","normal"],["ㄴ 표준인수","std"],["ㄴ 조건부인수","cond"],["반송","ret"],["청철","wd"]].forEach(([l,k])=>{const sh=rate(m[k],m.resTotal),ps=p?rate(p[k],p.resTotal):null;const d=ps==null?null:(sh-ps)*100;
@@ -834,7 +839,7 @@ function applyCriteria(c){if(!c)return false;Object.assign(S,c);fillSettings();r
 function loadSample(){
   ROWS=prepRows(SAMPLE.map((a,i)=>{const r={line:i+2,file:"예시",raw:{}};FIELDS.forEach(([k],ci)=>r.raw[k]=a[ci]);return r;}));
   EXTRA_HOL=SAMPLE_HOL.slice();applyCriteria(SAMPLE_CRITERIA);
-  SOURCE="예시_더미데이터.xlsx (신계약마감)";isSample=true;SEL=null;ruleFilter=null;$("fnIn").textContent="예시: 가상 더미 1,200건";recompute(true);}
+  SOURCE="예시_더미데이터.xlsx (신계약마감)";isSample=true;SEL=null;$("fnIn").textContent="예시: 가상 더미 1,200건";recompute(true);}
 
 /* ---------- uploads ---------- */
 async function handleFiles(files){
@@ -842,7 +847,7 @@ async function handleFiles(files){
   try{for(const f of files){const r=await readFile(f);all.push(...parseRows(r.aoa,f.name));names.push(`${f.name} (${r.sheet})`);hol.push(...r.holidays);if(r.criteria)crit=Object.assign(crit||{},r.criteria);}
     if(!all.length)throw new Error("열 제목 아래에 데이터 행이 없습니다.");
     ROWS=prepRows(all);EXTRA_HOL=hol;const usedCrit=applyCriteria(crit);
-    SOURCE=names.join(", ");isSample=false;SEL=null;ruleFilter=null;$("fnIn").textContent=SOURCE;recompute(true);
+    SOURCE=names.join(", ");isSample=false;SEL=null;$("fnIn").textContent=SOURCE;recompute(true);
     if(!MONTHS.length)throw new Error("계약일자를 날짜로 읽을 수 있는 행이 없어 마감월을 나누지 못했습니다.");
     toast(`${nf(all.length)}행을 읽었습니다.`+(hol.length?` 공휴일 ${hol.length}일`:"")+(usedCrit?" · 기준표 반영":""));
   }catch(e){$("loadErr").hidden=false;$("loadErr").textContent=e.message||"파일을 읽지 못했습니다.";}}
