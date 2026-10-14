@@ -238,7 +238,7 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 #tblStdRules select,#tblStdRules input[type=text]{font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink)}
 #tblStdRules td.txt{min-width:280px}
 #holi{width:100%}
-@media (max-width:900px){.std-grid{grid-template-columns:1fr}}
+@media (max-width:900px){.std-grid{grid-template-columns:1fr}.grid2.even{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <style>
@@ -275,6 +275,34 @@ td.zero{color:var(--ink-3)}
 #tblSt tr.grp-top+tr td:not(.gap){border-top:1px solid var(--line-2)}
 #tblSt tr.grp-top td.n{font-weight:600}
 #tblSt tr.grp-end td{border-bottom:1px solid var(--line)}
+.alerts{border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.alerts .ah{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.alerts .ah b{font-size:14px}
+.alerts .lg{display:flex;gap:10px;font-size:12px;color:var(--ink-2);margin-left:auto}
+.alerts .lg i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-2px}
+.alerts ul{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.alerts li{font-size:12.5px;border-radius:6px;padding:3px 9px}
+.alerts li.crit{background:var(--crit-bg);color:var(--crit)} .alerts li.warn{background:var(--warn-bg);color:var(--warn)}
+.alerts.ok{border-color:transparent;background:var(--good-bg);color:var(--good)}
+.chart{border:1px solid var(--line);border-radius:8px;padding:8px 10px 4px;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .gr{stroke:var(--line-2);stroke-width:1}
+.chart .ax{font-size:10px;fill:var(--ink-3);font-family:var(--f-mono)}
+.chart .lbl{font-size:10.5px;fill:var(--ink);font-weight:600;font-family:var(--f-mono)}
+.chart .bar{fill:var(--accent-2);opacity:.55}
+.chart .bar.sel{fill:var(--accent);opacity:1}
+.chart .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .hit rect.h{fill:transparent}
+.chart .hv{opacity:0;pointer-events:none}
+.chart .hit:hover .hv,.chart .hit:focus .hv{opacity:1}
+.chart .hv .tip{fill:var(--sheet);stroke:var(--line)}
+.chart .hv text{font-size:10.5px;fill:var(--ink);font-family:var(--f-mono)}
+.chart .hv line{stroke:var(--ink-3);stroke-dasharray:2 2}
+.chart .legend{display:flex;gap:12px;font-size:12px;color:var(--ink-2);padding:2px 2px 4px}
+.chart .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:3px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chart{--s1:#3987e5;--s2:#d95926;--s3:#199e70}}
+:root[data-theme="dark"] .chart{--s1:#3987e5;--s2:#d95926;--s3:#199e70}
+#tblSelf td.pass{color:var(--good);font-weight:700} #tblSelf td.fail{color:var(--crit);font-weight:700}
 .grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
 
 .uploads.single{grid-template-columns:minmax(0,1fr) auto}
@@ -324,7 +352,12 @@ td.zero{color:var(--ink-3)}
       <h2><span class="step">①</span>심사지표</h2>
       <span class="hint" id="metricHint"></span>
     </div>
+    <div class="alerts" id="alerts"></div>
     <div class="cards" id="cards"></div>
+    <div class="grid2 even">
+      <div><h3 id="chProcT">월별 처리 건수</h3><div class="chart" id="chProc"></div></div>
+      <div><h3 id="chRateT">월별 지표 추이</h3><div class="chart" id="chRate"></div></div>
+    </div>
     <div class="grid2 even">
       <div><h3>채널별 처리 건수</h3><div class="tbl"><table id="tblCh"></table></div></div>
       <div><h3>심사결과 통계 <span style="font-weight:400;color:var(--ink-3)">(미결 제외)</span></h3><div class="tbl"><table id="tblSt"></table></div></div>
@@ -372,6 +405,11 @@ td.zero{color:var(--ink-3)}
       <div class="recon" id="recon" hidden></div>
       <div class="tbl"><table class="rules" id="tblRules"></table></div>
       <div class="actions"><span class="note">행별 상세(증번·규칙·내용)는 결과표 엑셀의 '데이터점검'·'원본_점검표시' 시트에 있습니다.</span><span style="flex:1"></span><button id="btnXlsx3" type="button">결과표 엑셀 다운로드</button></div>
+    </section>
+    <section class="blk">
+      <div class="blk-h"><h2>기능 자가진단</h2><span class="hint">파일 업로드 → 이상 점검 → 지표 산출 → 색상 경고 · 그래프 → 엑셀 출력 흐름을 이 화면에서 실제로 돌려 보고 결과를 보여줍니다.</span></div>
+      <div class="tbl"><table id="tblSelf"></table></div>
+      <div class="actions"><span class="note" id="selfNote"></span><span style="flex:1"></span><button id="btnSelf" type="button">자가진단 다시 실행</button></div>
     </section>
   </div>
 
@@ -794,6 +832,7 @@ function renderTops(){
 let CUR_TOPS=[];
 const ST_COLORS=[["표준인수","--st-ok","std"],["조건부인수","--st-cond","cond"],["반송","--st-rej","ret"],["청철","--st-wd","wd"]];
 function renderMetrics(){
+  try{renderAlerts();renderCharts();}catch(e){console.error(e);}
   const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;const ms=metricList();
   $("metricHint").textContent=`${mLabel(SEL)} · 오류 행 제외 · 경과일수 = 심사시작일 − 최초심사일 (${S.dayMode}, ${S.touchDays}일 이내, 날짜 공란은 3일이내)`;
   $("cards").innerHTML=ms.map(x=>{
@@ -850,6 +889,90 @@ function renderMetrics(){
     (p?`<tr class="total"><td>전월 대비</td>${mcols.map(c=>{const v=mval(m,c),pv=mval(p,c);const big=c[2]==="r"?Math.abs((v-pv)*100)>=S.momP:(pv&&Math.abs((v-pv)/pv*100)>=S.momC);
       return`<td class="n ${big?"cell-warn":""}">${c[2]==="r"?ppTxt(v,pv):`${dTxt(v,pv)}<br><small style="font-weight:400;color:var(--ink-3)">${chgTxt(v,pv)}</small>`}</td>`;}).join("")}</tr>`:"")+"</tbody>";
 }
+
+/* ---------- 기준 경고 · 추이 그래프 ---------- */
+function renderAlerts(){
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null,ms=metricList(),items=[];
+  ms.filter(x=>x.ok===false).forEach(x=>items.push(["crit",`${x.name} ${x.kind==="rate"?pct(x.val):nf(x.val)} — 기준 ${x.targetTxt} ${x.cmp==="<="?"초과":"미달"}`]));
+  chList().forEach(c=>{const s2=chStats(c,SEL);if(s2.n>=20&&s2.touch!=null&&s2.touch<S.touchTarget/100)items.push(["crit",`${c} 채널 터치율 ${pct(s2.touch)} — 목표 ${S.touchTarget}% 미달`]);
+    if(s2.auto+s2.manual>=20&&s2.autoRate!=null&&s2.autoRate<S.autoTarget/100)items.push(["crit",`${c} 채널 자동심사율 ${pct(s2.autoRate)} — 목표 ${S.autoTarget}% 미달`]);});
+  const people=RV_PEOPLE();const lowT=people.filter(k=>{const a=rvStats(k,SEL);return a.n>=10&&a.touch<S.touchTarget/100;}),hiR=people.filter(k=>{const a=rvStats(k,SEL);return a.resTotal>=10&&rate(a.ret,a.resTotal)>S.returnMax/100;});
+  if(lowT.length)items.push(["crit",`터치율 목표 미달 심사자 ${lowT.length}명 (${lowT.join(", ")})`]);
+  if(hiR.length)items.push(["crit",`반송률 기준 초과 심사자 ${hiR.length}명 (${hiR.join(", ")})`]);
+  ms.filter(x=>x.big).forEach(x=>items.push(["warn",`${x.name} 전월 대비 ${x.dTxt} — 변동 큼`]));
+  const nC=items.filter(i=>i[0]==="crit").length,nW=items.length-nC;
+  $("alerts").className="alerts"+(items.length?"":" ok");
+  $("alerts").innerHTML=items.length?`<div class="ah"><b>기준 경고 ${items.length}건</b><span class="chip crit">기준 미달·초과 ${nC}</span><span class="chip warn">변동 큼 ${nW}</span>
+    <span class="lg"><span><i style="background:var(--crit-bg);border:1px solid var(--crit)"></i>빨강 = 목표 미달·기준 초과</span><span><i style="background:var(--warn-bg);border:1px solid var(--warn)"></i>노랑 = 전월 대비 변동 큼</span></span></div>
+    <ul>${items.map(([l,t])=>`<li class="${l}">${esc(t)}</li>`).join("")}</ul>`:`<div class="ah"><b>기준 경고 없음</b><span>모든 지표가 목표·기준 이내이고 전월 대비 큰 변동이 없습니다.</span></div>`;
+  return items;}
+function renderCharts(){
+  const W=winMonths(),n=W.length;const lab=mm=>`${mm.slice(2,4)}.${mm.slice(4)}`;
+  $("chProcT").textContent=`월별 처리 건수 · ${mLabel(W[0])}~${mLabel(W[n-1])}`;$("chRateT").textContent=`월별 지표 추이 · ${mLabel(W[0])}~${mLabel(W[n-1])}`;
+  const VW=460,VH=190,L=36,R=48,T=14,B=22,iw=VW-L-R,ih=VH-T-B;
+  // 1) 처리 건수 막대
+  const vals=W.map(mm=>M[mm].proc),mx=Math.max(1,...vals),step=mx<=200?50:mx<=1000?200:500,top=Math.ceil(mx*1.1/step)*step;
+  const bw=iw/n,y=v=>T+ih-v/top*ih;const ticks=[0,top/2,top];
+  $("chProc").innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="월별 처리 건수: ${W.map((mm,i)=>`${mLabel(mm)} ${vals[i]}건`).join(", ")}">
+    ${ticks.map(t=>`<line class="gr" x1="${L}" x2="${VW-R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L-5}" y="${y(t)+3}" text-anchor="end">${nf(t)}</text>`).join("")}
+    ${W.map((mm,i)=>{const x=L+i*bw+bw*.18,w=bw*.64,h=Math.max(1,ih-(y(vals[i])-T)),sel=mm===SEL;
+      return`<g class="hit" tabindex="0"><title>${mLabel(mm)} 처리 ${nf(vals[i])}건</title><path class="bar${sel?" sel":""}" d="M${x},${y(0)} V${y(vals[i])+3} q0,-3 3,-3 h${w-6} q3,0 3,3 V${y(0)} Z"/>
+        ${sel||vals[i]===mx?`<text class="lbl" x="${x+w/2}" y="${y(vals[i])-4}" text-anchor="middle">${nf(vals[i])}</text>`:""}
+        ${n<=8||i%2===(n-1)%2?`<text class="ax" x="${x+w/2}" y="${VH-6}" text-anchor="middle">${lab(mm)}</text>`:""}
+        <rect class="h" x="${L+i*bw}" y="${T}" width="${bw}" height="${ih}"/>
+        <g class="hv"><rect class="tip" x="${Math.min(VW-R-70,Math.max(L,x+w/2-35))}" y="${Math.max(0,y(vals[i])-26)}" width="70" height="16" rx="3"/><text x="${Math.min(VW-R-35,Math.max(L+35,x+w/2))}" y="${Math.max(0,y(vals[i])-26)+12}" text-anchor="middle">${lab(mm)} ${nf(vals[i])}건</text></g></g>`;}).join("")}
+  </svg>`;
+  // 2) 지표 추이 (터치율·자동심사율·반송률, 같은 % 축)
+  const S3=[["touch","터치율","--s1"],["autoRate","자동심사율","--s2"],["retRate","반송률","--s3"]];
+  const yr=v=>T+ih-v*ih,x2=i=>L+(n===1?iw/2:i*iw/(n-1));
+  $("chRate").innerHTML=`<div class="legend">${S3.map(([,l,c])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join("")}</div>
+  <svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="월별 지표 추이: ${S3.map(([k,l])=>`${l} ${W.map(mm=>pct(M[mm][k])).join("·")}`).join(" / ")}">
+    ${[0,.5,1].map(t=>`<line class="gr" x1="${L}" x2="${VW-R}" y1="${yr(t)}" y2="${yr(t)}"/><text class="ax" x="${L-5}" y="${yr(t)+3}" text-anchor="end">${t*100}%</text>`).join("")}
+    ${W.map((mm,i)=>i%Math.ceil(n/6)===0||i===n-1?`<text class="ax" x="${x2(i)}" y="${VH-6}" text-anchor="middle">${lab(mm)}</text>`:"").join("")}
+    ${S3.map(([k,l,c])=>{const pts=W.map((mm,i)=>M[mm][k]==null?null:`${x2(i).toFixed(1)},${yr(M[mm][k]).toFixed(1)}`).filter(Boolean).join(" ");const last=M[W[n-1]][k];
+      return`<polyline class="ln" style="stroke:var(${c})" points="${pts}"/>${last!=null?`<circle cx="${x2(n-1)}" cy="${yr(last)}" r="3.5" style="fill:var(${c});stroke:var(--sheet);stroke-width:2"/><text class="lbl" x="${x2(n-1)+7}" y="${yr(last)+3.5}">${pct(last)}</text>`:""}`;}).join("")}
+    ${W.map((mm,i)=>{const cx=x2(i),bw2=iw/Math.max(1,n-1),tx=Math.min(VW-R-58,Math.max(L,cx-58));
+      return`<g class="hit" tabindex="0"><title>${mLabel(mm)} ${S3.map(([k,l])=>`${l} ${pct(M[mm][k])}`).join(", ")}</title><rect class="h" x="${cx-bw2/2}" y="${T}" width="${bw2}" height="${ih}"/>
+        <g class="hv"><line x1="${cx}" x2="${cx}" y1="${T}" y2="${yr(0)}"/><rect class="tip" x="${tx}" y="${T}" width="116" height="52" rx="3"/>
+        <text x="${tx+6}" y="${T+13}">${mLabel(mm)}</text>${S3.map(([k,l],j)=>`<text x="${tx+6}" y="${T+26+j*12}">${l} ${pct(M[mm][k])}</text>`).join("")}</g></g>`;}).join("")}
+  </svg>`;}
+
+/* ---------- 기능 자가진단: 업로드 · 엑셀 · 색상 경고 · 그래프를 실제로 돌려 본다 ---------- */
+async function selfTest(){
+  if(!SEL||!window.XLSX){$("tblSelf").innerHTML="";return;}
+  const res=[];const add=(name,ok,ev)=>res.push([name,ok,ev]);
+  // 1. 파일 업로드: 현재 데이터 일부로 실제 .xlsx를 만들고 업로드와 같은 경로로 다시 읽는다
+  try{const src=ROWS.slice(0,300);const aoa=[FIELDS.map(f=>f[1])].concat(src.map(r=>FIELDS.map(([k])=>r.raw[k]??"")));
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),"신계약마감");
+    const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});const file=new File([buf],"자가진단.xlsx");
+    const rd=await readFile(file);const rows=prepRows(parseRows(rd.aoa,file.name));
+    const same=rows.length===src.length&&rows.every((r,i)=>r.no===src[i].no&&r.cd===src[i].cd&&r.ch===src[i].ch);
+    const months=[...new Set(rows.map(r=>r.month).filter(Boolean))].sort();
+    add("파일 업로드 (xlsx 읽기·열 매핑·마감월 분리)",same&&months.length>0,`${(buf.byteLength/1024).toFixed(0)}KB 파일 → ${nf(rows.length)}행 읽음, 증번·계약일자·채널 ${same?"원본과 일치":"불일치"}, 마감월 ${months.map(mLabel).join("·")}`);}
+  catch(e){add("파일 업로드 (xlsx 읽기·열 매핑·마감월 분리)",false,e.message||String(e));}
+  // 2. 이상 점검
+  {const exc=ROWS.filter(r=>!r.include).length;add("데이터 이상 점검 (공란·날짜 순서·상태 불일치)",RULES.length>0&&ISSUES.length>=0,`규칙 ${RULES.length}개 적용, 오류 ${nf(exc)}행 산출 제외, 경고 ${nf(ISSUES.filter(i=>!isErr(i.id)).length)}건`);}
+  // 3. 엑셀 출력: 결과표를 만들고 다시 읽어 시트·내용 확인
+  try{const wb=buildWorkbook();const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});const back=XLSX.read(buf,{type:"array"});
+    const need=["요약","월별요약","채널별","심사자별","심사결과","데이터점검","원본_점검표시","산출기준"];const miss=need.filter(n=>!back.SheetNames.includes(n));
+    const sum=XLSX.utils.sheet_to_json(back.Sheets["요약"],{header:1});const hasTouch=sum.some(r=>String(r[0]).includes("터치율"));
+    add("엑셀 결과표 생성 (.xlsx)",!miss.length&&hasTouch,`${(buf.byteLength/1024).toFixed(0)}KB, 시트 ${back.SheetNames.length}개(${back.SheetNames.join(", ")})${miss.length?`, 누락: ${miss.join(", ")}`:""}, 요약 시트 ${sum.length}행`);}
+  catch(e){add("엑셀 결과표 생성 (.xlsx)",false,e.message||String(e));}
+  // 4. 색상 경고: 기준 미달 값에 빨강, 변동 큼에 노랑이 붙는지
+  {const tt=S.touchTarget/100;const probe=document.createElement("table");probe.innerHTML=`<tr><td class="n cell-crit">x</td><td class="n cell-warn">y</td></tr>`;document.body.appendChild(probe);
+    const cs=[...probe.querySelectorAll("td")].map(td=>getComputedStyle(td).backgroundColor);probe.remove();
+    const red=document.querySelectorAll("#viewCalc .cell-crit, #viewCalc .card.crit, #report td.bad").length,yel=document.querySelectorAll("#viewCalc .cell-warn, #viewCalc .chip.warn").length;
+    const alerts=renderAlerts().length;const logic=metricList().every(x=>x.ok===null||x.ok===(x.cmp===">="?x.val>=x.target:x.val<=x.target));
+    add("기준 초과 색상 경고",cs[0]!==cs[1]&&cs[0]!=="rgba(0, 0, 0, 0)"&&logic,`빨강 표시 ${red}칸 · 노랑 표시 ${yel}칸 · 기준 경고 목록 ${alerts}건 (빨강 ${cs[0]}, 노랑 ${cs[1]})`);}
+  // 5. 그래프
+  {const bars=document.querySelectorAll("#chProc path.bar").length,lines=document.querySelectorAll("#chRate polyline.ln").length,heat=document.querySelectorAll("#tblRv td[style*=background]").length,W=winMonths().length;
+    add("그래프 · 시각화",bars===W&&lines===3,`월별 처리 건수 막대 ${bars}개(${W}개월), 지표 추이 선 ${lines}개, 심사자 히트맵 ${heat}칸, 심사결과 구성 막대`);}
+  // 6. 전월 비교 · 보고서
+  {const ms=metricList();add("전월 대비 증감 계산",PREV()?ms.every(x=>x.dTxt):true,PREV()?ms.map(x=>`${x.name} ${x.dTxt}`).join(", "):"비교할 전월 없음");
+   add("요약 코멘트 · 월마감 보고서",COMMENTS.length>0&&!!$("rpPage1"),`보고서 ${RP.length}쪽, 코멘트 ${COMMENTS.length}개, 상태 ${RPS.final?"최종 확인":"초안"}`);}
+  $("tblSelf").innerHTML=`<thead><tr><th>항목</th><th>결과</th><th>근거 (이 화면에서 실제 실행)</th></tr></thead><tbody>`+res.map(([n,ok,ev])=>`<tr><td>${esc(n)}</td><td class="${ok?"pass":"fail"}">${ok?"통과":"실패"}</td><td class="txt">${esc(ev)}</td></tr>`).join("")+"</tbody>";
+  const pass=res.filter(r=>r[1]).length;$("selfNote").textContent=`${pass}/${res.length} 통과 · ${new Date().toLocaleString("ko-KR")}`;
+  return res;}
 
 /* ---------- summary comment, one block per topic ---------- */
 let COMMENTS=[];
@@ -1272,9 +1395,9 @@ async function savePdf(){
   finally{$("report").classList.remove("capturing");if(prevTheme==null)root.removeAttribute("data-theme");else root.setAttribute("data-theme",prevTheme);btn.disabled=false;btn.textContent=old;}}
 $("btnPrint").onclick=()=>{if(!SEL)return;if(window.claude)savePdf();else window.print();};
 function showTab(t){const rp=t==="report";["calc","report","chk","std"].forEach(k=>{const on=k===t;$("view"+k[0].toUpperCase()+k.slice(1)).hidden=!on;$("tab"+k[0].toUpperCase()+k.slice(1)).setAttribute("aria-selected",String(on));});
-  if(t==="std")fillSettings();
+  if(t==="std")fillSettings();if(t==="chk")setTimeout(()=>selfTest(),0);
   try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);if(rp)requestAnimationFrame(fitCheck);}
-$("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("tabStd").onclick=()=>showTab("std");$("tabChk").onclick=()=>showTab("chk");$("btnXlsx3").onclick=()=>$("btnXlsx").click();$("btnGoReport").onclick=()=>showTab("report");
+$("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("tabStd").onclick=()=>showTab("std");$("tabChk").onclick=()=>showTab("chk");$("btnSelf").onclick=()=>selfTest().then(()=>toast("자가진단을 다시 실행했습니다."));$("btnXlsx3").onclick=()=>$("btnXlsx").click();$("btnGoReport").onclick=()=>showTab("report");
 $("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
 $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
   const rows=[H(FIELDS.map(f=>f[1]))].concat(sampleRows().map(r=>r.map((v,i)=>[1,7,8].includes(i)&&typeof v==="number"?{v,z:"yyyy-mm-dd"}:{v})));
