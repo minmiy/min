@@ -177,8 +177,6 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .subtabs button:hover{background:var(--accent-soft)}
 .subtabs button[aria-selected="true"]{background:var(--accent);color:var(--sheet)}
 .subtabs button[aria-selected="true"] small{color:var(--sheet);opacity:.85}
-.tab-badge{font-size:11px;font-weight:600;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
-.tab-badge.crit{background:var(--crit-bg);color:var(--crit)} .tab-badge.warn{background:var(--warn-bg);color:var(--warn)} .tab-badge.good{background:var(--good-bg);color:var(--good)}
 .view{display:flex;flex-direction:column;gap:22px}
 .calc-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .rp-bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
@@ -827,7 +825,6 @@ function render(){
   renderCheck();if(SEL)renderMetrics();}
 function renderCheck(){
   const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>!isErr(i.id)).length;
-  $("tabChk").innerHTML=`점검 결과 <span class="tab-badge ${exc?"crit":wN?"warn":"good"}" title="오류로 제외 ${exc}행 · 경고 ${wN}건">${exc?`제외 ${nf(exc)}`:wN?`경고 ${nf(wN)}`:"이상 없음"}</span>`;
   $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(n)}</span></div>
   <div><span class="k">오류로 제외된 행</span><span class="v ${exc?"crit":"good"}">${nf(exc)}</span></div>
   <div><span class="k">경고 건수</span><span class="v ${wN?"warn":"good"}">${nf(wN)}</span></div>
