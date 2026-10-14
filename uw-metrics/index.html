@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one working column — 업로드 → ① 데이터 점검 → ② 심사지표 → ③ 요약·다운로드, read top to bottom in the order the monthly job runs. */
+/* Layout: one working column — 업로드 → ① 심사지표 → ② 데이터 점검 → ③ 주제별 요약·다운로드, read top to bottom in the order the monthly job runs. */
 :root{
   --paper:#f5f7f8; --sheet:#ffffff; --ink:#17232b; --ink-2:#4a5a64; --ink-3:#7b8a93;
   --line:#d9e0e4; --line-2:#e9eef0;
@@ -119,7 +119,16 @@ tr.total td{font-weight:600;border-top:1.5px solid var(--line)}
 .grid2>div{display:flex;flex-direction:column;gap:8px;min-width:0}
 
 /* comment */
-textarea{width:100%;min-height:200px;font:inherit;font-size:14px;line-height:1.7;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical}
+textarea{width:100%;min-height:80px;font:inherit;font-size:14px;line-height:1.7;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical}
+.cmts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cmt{border:1px solid var(--line);border-radius:8px;padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;position:relative;overflow:hidden}
+.cmt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line)}
+.cmt.crit::before{background:var(--crit)} .cmt.warn::before{background:var(--warn)} .cmt.good::before{background:var(--good)}
+.cmt.wide{grid-column:1/-1}
+.cmt-h{min-height:26px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.cmt-h label{font-weight:600;font-size:13.5px}
+.cmt textarea{min-height:64px;padding:8px 10px;font-size:13.5px;line-height:1.65;resize:vertical}
+.cmt.busy textarea{opacity:.55}
 .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .note{font-size:12.5px;color:var(--ink-3)}
 
@@ -138,7 +147,7 @@ dl.defs dd{margin:0;color:var(--ink-2)}
 dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);padding:1px 5px;border-radius:4px;color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:6px;font-size:13px;z-index:10;max-width:calc(100% - 32px)}
 
-@media (max-width:900px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.uploads{grid-template-columns:1fr 1fr}.side-actions{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}
+@media (max-width:900px){.cmts{grid-template-columns:1fr}.cmt.wide{grid-column:auto}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.uploads{grid-template-columns:1fr 1fr}.side-actions{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}
 @media (max-width:560px){.wrap{padding-inline:16px}.cards,.uploads{grid-template-columns:1fr}.chk-sum{grid-template-columns:repeat(2,minmax(0,1fr))}section.blk{padding:16px}.top h1{font-size:22px}dl.defs{grid-template-columns:1fr;gap:2px 0}dl.defs dd{margin-bottom:8px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -174,19 +183,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
   </div>
   <div class="err" id="loadErr" hidden></div>
 
-  <section class="blk" id="secCheck">
-    <div class="blk-h">
-      <h2><span class="step">①</span>데이터 점검</h2>
-      <span class="hint">산출 전에 공란, 날짜 순서, 상태 불일치를 행 단위로 확인합니다.</span>
-    </div>
-    <div class="chk-sum" id="chkSum"></div>
-    <div class="chips" id="chkTypes"></div>
-    <div class="tbl scroll"><table id="tblIssues"></table></div>
-  </section>
-
   <section class="blk" id="secMetric">
     <div class="blk-h">
-      <h2><span class="step">②</span>심사지표</h2>
+      <h2><span class="step">①</span>심사지표</h2>
       <span class="hint" id="metricHint"></span>
     </div>
     <div class="cards" id="cards"></div>
@@ -197,16 +196,27 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
     <div><h3 style="margin-bottom:8px">심사자별</h3><div class="tbl"><table id="tblRv"></table></div></div>
   </section>
 
+  <section class="blk" id="secCheck">
+    <div class="blk-h">
+      <h2><span class="step">②</span>데이터 점검</h2>
+      <span class="hint">공란, 날짜 순서, 상태 불일치를 행 단위로 확인합니다. 오류 행은 위 지표 산출에서 빠집니다.</span>
+    </div>
+    <div class="chk-sum" id="chkSum"></div>
+    <div class="chips" id="chkTypes"></div>
+    <div class="tbl scroll"><table id="tblIssues"></table></div>
+  </section>
+
   <section class="blk" id="secSum">
     <div class="blk-h">
       <h2><span class="step">③</span>요약 코멘트 · 결과표</h2>
-      <span class="hint">코멘트는 직접 고칠 수 있고, 고친 내용이 엑셀에 그대로 들어갑니다.</span>
+      <span class="hint">주제별 코멘트는 직접 고칠 수 있고, 고친 내용이 엑셀에 그대로 들어갑니다.</span>
     </div>
-    <textarea id="comment" aria-label="요약 코멘트"></textarea>
+    <div class="cmts" id="comments"></div>
     <div class="actions">
       <button id="btnRedraft" type="button">기준 문안 다시 만들기</button>
       <button id="btnAI" type="button" hidden>AI로 보고 문안 다듬기</button>
       <button id="btnStop" type="button" hidden>중지</button>
+      <button id="btnCopy" type="button">전체 복사</button>
       <span style="flex:1"></span>
       <button id="btnXlsx" class="primary" type="button">결과표 엑셀 다운로드</button>
     </div>
@@ -513,27 +523,50 @@ function renderMetrics(){
     :`<tbody><tr><td style="padding:14px;color:var(--ink-3)">수동심사 건의 심사자 정보가 없습니다.</td></tr></tbody>`;
 }
 
-/* ---------- summary comment (rule-based draft) ---------- */
-function draftComment(){
-  const m=CUR.m,p=PREV?.m,ms=CUR.ms;const L=[];const by=k=>ms.find(x=>x.key===k);
-  L.push(`■ ${ymTxt(CUR)} 신계약 심사지표 요약`);
-  L.push(`- 접수 ${nf(m.total)}건${p?`(전월 대비 ${chgTxt(m.total,p.total)})`:""} 중 처리완료 ${nf(m.done)}건, 심사중 ${nf(m.pending)}건임.`);
-  const t=by("touch");let s=`- 3일이내 터치율 ${pct(m.touch)}로 목표(${t.targetTxt}) ${t.ok?"충족":"미달"}`+(p?`, 전월 대비 ${t.dTxt}`:"")+".";
+/* ---------- summary comment, one block per topic ---------- */
+let COMMENTS=[];
+function draftTopics(){
+  const m=CUR.m,p=PREV?.m,ms=CUR.ms;const by=k=>ms.find(x=>x.key===k);const T=[];
+  const tag=ok=>ok===null||ok===undefined?{cls:"",chip:""}:ok?{cls:"good",chip:"충족"}:{cls:"crit",chip:"미달"};
+  T.push({key:"overview",title:"접수·처리 현황",cls:"",chip:"",wide:false,
+    text:`접수 ${nf(m.total)}건${p?`(전월 대비 ${chgTxt(m.total,p.total)})`:""} 중 처리완료 ${nf(m.done)}건(수동심사 ${nf(m.manualDone)}건), 심사중 ${nf(m.pending)}건임.`});
+  const t=by("touch");let s=`3일이내 터치율 ${pct(m.touch)}로 목표(${t.targetTxt}) ${t.ok?"충족":"미달"}`+(p?`, 전월 대비 ${t.dTxt}`:"")+".";
   const lowCh=m.byCh.filter(c=>c.tBase>=10&&c.touch!=null&&c.touch<S.touchTarget/100).sort((a,b)=>a.touch-b.touch);
   if(lowCh.length)s+=` 목표 미달 채널은 ${lowCh.map(c=>`${c.name}(${pct(c.touch)})`).join(", ")}임.`;
   if(m.tPend)s+=` 마감일 기준 ${S.touchDays}영업일이 지나지 않은 미터치 ${nf(m.tPend)}건은 판단 보류로 분모에서 제외함.`;
-  L.push(s);
-  const a=by("auto");L.push(`- 자동심사율 ${pct(m.auto)}로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, 전월 대비 ${a.dTxt}`:"")+".");
-  const r=by("reject");L.push(`- 심사결과는 성립 ${pct(rate(m.st["성립"],m.total))}, 조건부성립 ${pct(rate(m.st["조건부성립"],m.total))}, 거절 ${pct(rate(m.st["거절"],m.total))}, 연기 ${pct(rate(m.st["연기"],m.total))}이며, 거절률(심사결정 대비) ${pct(m.reject)}로 기준(${r.targetTxt}) ${r.ok?"이내":"초과"}`+(p?`, 전월 대비 ${r.dTxt}`:"")+".");
+  T.push({key:"touch",title:"3일이내 터치율",...tag(t.ok),text:s});
+  const a=by("auto");s=`자동심사율 ${pct(m.auto)}로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, 전월 대비 ${a.dTxt}`:"")+".";
+  const lowA=m.byCh.filter(c=>c.autoBase>=10&&c.auto!=null&&c.auto<S.autoTarget/100).sort((x,y)=>x.auto-y.auto);
+  if(lowA.length)s+=` 목표 미달 채널은 ${lowA.map(c=>`${c.name}(${pct(c.auto)})`).join(", ")}임.`;
+  T.push({key:"auto",title:"자동심사율",...tag(a.ok),text:s});
+  const r=by("reject");const rt=tag(r.ok);if(r.ok===false)rt.chip="초과";
+  s=`심사결과는 성립 ${pct(rate(m.st["성립"],m.total))}, 조건부성립 ${pct(rate(m.st["조건부성립"],m.total))}, 거절 ${pct(rate(m.st["거절"],m.total))}, 연기 ${pct(rate(m.st["연기"],m.total))}임. 거절률(심사결정 대비) ${pct(m.reject)}로 기준(${r.targetTxt}) ${r.ok?"이내":"초과"}`+(p?`, 전월 대비 ${r.dTxt}`:"")+".";
+  const hiR=m.byCh.filter(c=>c.decided>=10&&c.reject!=null&&c.reject>S.rejectMax/100).sort((x,y)=>y.reject-x.reject);
+  if(hiR.length)s+=` 기준 초과 채널은 ${hiR.map(c=>`${c.name}(${pct(c.reject)})`).join(", ")}임.`;
+  T.push({key:"result",title:"심사결과·거절률",...rt,text:s});
   const lowRv=m.byRv.filter(x=>x.tBase>=10&&x.touch!=null&&x.touch<S.touchTarget/100).sort((a,b)=>a.touch-b.touch);
-  if(lowRv.length)L.push(`- 터치율 목표 미달 심사자: ${lowRv.map(x=>`${x.name} ${pct(x.touch)}`).join(", ")}.`);
-  const big=ms.filter(x=>x.big);if(big.length)L.push(`- 전월 대비 변동 큼: ${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}. 원인 확인 필요.`);
+  const reas=m.byRv.reduce((n,x)=>n+x.reassigned,0);
+  T.push({key:"reviewer",title:"심사자별",cls:lowRv.length?"warn":m.byRv.length?"good":"",chip:lowRv.length?`확인 ${lowRv.length}명`:"",
+    text:!m.byRv.length?"수동심사 건의 심사자 정보 없음.":(lowRv.length?`터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.name}(${pct(x.touch)})`).join(", ")}임.`:`전 심사자 터치율 목표 충족.`)+(reas?` 최초·실제심사자가 다른 재배정 ${nf(reas)}건.`:"")});
+  const big=ms.filter(x=>x.big);
+  T.push({key:"mom",title:"전월 대비 변동",cls:!p?"":big.length?"warn":"good",chip:big.length?`변동 큼 ${big.length}`:"",
+    text:!p?"전월 마감 데이터가 없어 증감을 계산하지 않음.":big.length?`${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}로 변동 폭이 커 원인 확인 필요.`:`주요 지표 모두 기준 이내의 변동(비율 ${S.momP}%p, 건수 ${S.momC}% 미만).`});
   const iss=CUR.issues;const eN=iss.filter(i=>i.sev==="오류").length,wN=iss.length-eN;
   if(iss.length){const types={};iss.forEach(i=>{const k=`${i.field} ${i.type}`;types[k]=(types[k]||0)+1;});
     const top=Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k} ${v}건`).join(", ");
-    L.push(`- 데이터 점검: 오류 ${nf(eN)}건(${nf(CUR.rows.filter(x=>x.err).length)}개 행${S.excl?", 산출 제외":""}), 경고 ${nf(wN)}건. 주요 유형은 ${top}이며 원천 데이터 보정 필요.`);}
-  else L.push(`- 데이터 점검: 이상 없음.`);
-  return L.join("\n");}
+    s=`오류 ${nf(eN)}건(${nf(CUR.rows.filter(x=>x.err).length)}개 행${S.excl?", 산출 제외":""}), 경고 ${nf(wN)}건. 주요 유형은 ${top}이며 원천 데이터 보정 필요.`;}
+  else s="이상 없음. 전체 행을 산출에 반영함.";
+  T.push({key:"data",title:"데이터 점검",cls:eN?"crit":wN?"warn":"good",chip:eN?`오류 ${eN}`:wN?`경고 ${wN}`:"이상 없음",wide:true,text:s});
+  return T;}
+function renderComments(){
+  $("comments").innerHTML=COMMENTS.map((c,i)=>`<div class="cmt ${c.cls}${c.wide?" wide":""}" id="cmt-${c.key}">
+    <div class="cmt-h"><label for="cm-${c.key}">${esc(c.title)}</label>${c.chip?`<span class="chip ${c.cls}">${esc(c.chip)}</span>`:""}</div>
+    <textarea id="cm-${c.key}" data-i="${i}" rows="3"></textarea></div>`).join("");
+  COMMENTS.forEach((c,i)=>{const ta=$("cm-"+c.key);ta.value=c.text;fit(ta);ta.oninput=()=>{COMMENTS[i].text=ta.value;fit(ta);};});}
+function fit(ta){ta.style.height="auto";ta.style.height=Math.max(64,ta.scrollHeight+2)+"px";}
+function setComment(key,text){const i=COMMENTS.findIndex(c=>c.key===key);if(i<0)return;COMMENTS[i].text=text;const ta=$("cm-"+key);if(ta){ta.value=text;fit(ta);}}
+function commentPlain(){return`■ ${ymTxt(CUR)} 신계약 심사지표 요약\n`+COMMENTS.map(c=>`- [${c.title}] ${c.text}`).join("\n");}
+function redraft(){COMMENTS=draftTopics();renderComments();}
 
 /* ---------- AI polish (sample capability) ---------- */
 let sampleFn=null,ctl=null;
@@ -550,33 +583,37 @@ $("btnAI").onclick=async()=>{
     채널별:m.byCh.map(c=>({채널:c.name,접수:c.total,터치율:pct(c.touch),자동심사율:pct(c.auto),거절률:pct(c.reject)})),
     심사자별:m.byRv.map(r=>({심사자:r.name,터치율:pct(r.touch),처리:r.done})),
     데이터점검:{오류:CUR.issues.filter(i=>i.sev==="오류").length,경고:CUR.issues.filter(i=>i.sev==="경고").length}};
-  const prompt=`당신은 보험사 계약심사부 지표 담당자입니다. 아래 월간 신계약 심사지표 산출 결과로 부서장 보고용 요약 코멘트를 작성하세요.
+  const keys=COMMENTS.map(c=>c.key);
+  const prompt=`당신은 보험사 계약심사부 지표 담당자입니다. 아래 월간 신계약 심사지표 산출 결과로 부서장 보고용 요약 코멘트를 주제별로 작성하세요.
 규칙:
-- 첫 줄은 "■ ${ymTxt(CUR)} 신계약 심사지표 요약", 이후 "- "로 시작하는 4~7개 항목.
-- 보고서체(~임, ~함)로, 문장은 짧게.
-- 숫자는 아래 데이터에 있는 값만 그대로 사용하고 새로 계산하거나 지어내지 말 것.
-- 기준 미달·초과 항목과 전월 대비 변동이 큰 항목을 먼저, 원인 확인이 필요한 채널·심사자를 짚을 것.
-- 데이터 점검 결과(오류·경고 건수)를 마지막 항목으로.
-- 코멘트 본문만 출력.
+- JSON 객체 하나만 출력. 키는 정확히 ${JSON.stringify(keys)} 이고 값은 해당 주제의 코멘트 문자열.
+- 주제: ${COMMENTS.map(c=>`${c.key}=${c.title}`).join(", ")}.
+- 각 값은 1~3문장, 보고서체(~임, ~함), 짧게. 주제 이름을 값 앞에 반복하지 말 것.
+- 숫자는 아래 데이터와 기준 문안에 있는 값만 그대로 쓰고 새로 계산하거나 지어내지 말 것.
+- 기준 미달·초과, 전월 대비 큰 변동, 원인 확인이 필요한 채널·심사자를 우선 짚을 것.
 
-참고용 기준 문안:
-${$("comment").value}
+기준 문안(주제별):
+${JSON.stringify(Object.fromEntries(COMMENTS.map(c=>[c.key,c.text])))}
 
 데이터(JSON):
 ${JSON.stringify(facts)}`;
-  ctl=new AbortController();const box=$("comment");const before=box.value;
-  $("btnAI").disabled=true;$("btnStop").hidden=false;$("sumNote").textContent="AI가 문안을 작성하는 중입니다…";
+  ctl=new AbortController();
+  $("btnAI").disabled=true;$("btnStop").hidden=false;$("sumNote").textContent="AI가 주제별 문안을 작성하는 중입니다…";
+  document.querySelectorAll(".cmt").forEach(el=>el.classList.add("busy"));
   try{
-    await sampleFn(prompt,{signal:ctl.signal,onText:({text})=>{box.value=text;}});
-    $("sumNote").textContent="AI 문안으로 바꿨습니다. 숫자는 위 지표와 대조한 뒤 사용하세요.";
+    const out=await sampleFn.json(prompt,{signal:ctl.signal});
+    let n=0;if(out&&typeof out==="object")keys.forEach(k=>{if(typeof out[k]==="string"&&out[k].trim()){setComment(k,out[k].trim());n++;}});
+    $("sumNote").textContent=n?`AI 문안으로 ${n}개 주제를 바꿨습니다. 숫자는 위 지표와 대조한 뒤 사용하세요.`:"AI 답을 주제별로 나누지 못해 기준 문안을 유지합니다.";
   }catch(e){
-    box.value=e.text||before;
-    const msg={not_granted:"AI 사용이 허용되지 않아 기준 문안을 유지합니다.",rate_limited:"요청이 많습니다. 잠시 뒤 다시 눌러 주세요.",cancelled:"중지했습니다."}[e.code]||"AI 문안을 만들지 못했습니다. 기준 문안을 유지합니다.";
+    const msg={not_granted:"AI 사용이 허용되지 않아 기준 문안을 유지합니다.",rate_limited:"요청이 많습니다. 잠시 뒤 다시 눌러 주세요.",cancelled:"중지했습니다. 기준 문안을 유지합니다."}[e.code]||"AI 문안을 만들지 못했습니다. 기준 문안을 유지합니다.";
     $("sumNote").textContent=msg;if(e.code==="not_granted")$("btnAI").hidden=true;
-  }finally{$("btnAI").disabled=false;$("btnStop").hidden=true;}
+  }finally{$("btnAI").disabled=false;$("btnStop").hidden=true;document.querySelectorAll(".cmt").forEach(el=>el.classList.remove("busy"));}
 };
 $("btnStop").onclick=()=>ctl?.abort();
-$("btnRedraft").onclick=()=>{$("comment").value=draftComment();$("sumNote").textContent="현재 지표로 기준 문안을 다시 만들었습니다.";};
+$("btnRedraft").onclick=()=>{redraft();$("sumNote").textContent="현재 지표로 주제별 기준 문안을 다시 만들었습니다.";};
+$("btnCopy").onclick=()=>{const t=commentPlain();const done=()=>toast("요약 코멘트 전체를 복사했습니다.");
+  const fallback=()=>{const ta=document.createElement("textarea");ta.value=t;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy");}catch(e){}ta.remove();ok?done():toast("복사하지 못했습니다. 각 칸에서 직접 복사해 주세요.");};
+  try{navigator.clipboard.writeText(t).then(done,fallback);}catch(e){fallback();}};
 
 /* ---------- Excel export ---------- */
 const X={hdr:{fill:{fgColor:{rgb:"1D5B73"}},font:{bold:true,color:{rgb:"FFFFFF"}},alignment:{horizontal:"center",vertical:"center",wrapText:true}},
@@ -610,8 +647,14 @@ function buildWorkbook(){
     sum.push([x.name,isR?R(x.val):x.val,isR?R(x.prev):numOr(x.prev),{v:x.dTxt||"-",s:x.big?X.warn:undefined},x.targetTxt,
       {v:x.ok===null?"-":x.ok?"충족":x.cmp==="<="?"초과":"미달",s:x.ok===null?undefined:x.ok?X.good:X.crit},x.fx]);});
   sum.push([]);sum.push([{v:"요약 코멘트",s:{font:{bold:true}},nob:true}]);
-  $("comment").value.split("\n").forEach(l=>sum.push([{v:l,nob:true}]));
+  const cStart=sum.length;sum.push(H(["주제","코멘트","","","","",""]));
+  const WR={alignment:{wrapText:true,vertical:"top"}};
+  COMMENTS.forEach(c=>{const st=c.cls==="crit"?X.crit:c.cls==="warn"?X.warn:c.cls==="good"?X.good:undefined;
+    sum.push([{v:c.title+(c.chip?` (${c.chip})`:""),s:Object.assign({},st||{},WR)},{v:c.text,s:WR},{v:""},{v:""},{v:""},{v:""},{v:""}]);});
   const ws1=sheet(sum,[22,12,12,12,12,9,44],{from:3});
+  ws1["!merges"]=[];ws1["!rows"]=[];
+  for(let r=cStart;r<sum.length;r++){ws1["!merges"].push({s:{r,c:1},e:{r,c:6}});
+    if(r>cStart){const len=String(sum[r][1].v).length;ws1["!rows"][r]={hpt:Math.max(18,Math.ceil(len/52)*16+4)};}}
   XLSX.utils.book_append_sheet(wb,ws1,"요약");
   // 2. 채널별
   const pCh=p?Object.fromEntries(p.byCh.map(c=>[c.name,c])):{};
@@ -729,13 +772,13 @@ function loadSample(){
   isSample=true;$("fnCur").textContent="예시: "+CUR.name;$("fnPrev").textContent="예시: "+PREV.name;recompute(true);}
 
 /* ---------- pipeline ---------- */
-function render0(){["chkSum","chkTypes","tblIssues","cards","tblCh","tblSt","tblRv","meta"].forEach(id=>$(id).innerHTML="");$("comment").value="";$("banner").hidden=true;}
-function recompute(redraft){
+function render0(){["chkSum","chkTypes","tblIssues","cards","tblCh","tblSt","tblRv","meta","comments"].forEach(id=>$(id).innerHTML="");COMMENTS=[];$("banner").hidden=true;}
+function recompute(fresh){
   buildHolidays();
   [CUR,PREV].forEach(d=>{if(d){check(d);compute(d);}});
   renderDefs();render();
-  if(redraft)$("comment").value=draftComment();
-  $("sumNote").textContent=redraft?"기준 문안을 지표에 맞춰 새로 만들었습니다.":"";
+  if(fresh)redraft();
+  $("sumNote").textContent=fresh?"주제별 기준 문안을 지표에 맞춰 새로 만들었습니다.":"";
 }
 async function handleFile(file,which){
   $("loadErr").hidden=true;
