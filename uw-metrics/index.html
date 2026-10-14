@@ -155,6 +155,29 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
 .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .monthpick select{font-weight:600}
+.sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.smc{border:1px solid var(--line);border-radius:8px;padding:10px 12px 6px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.smc .h{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.smc .nm{font-weight:600;font-size:13px}
+.smc .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.smc .v small{font-size:12px;font-weight:500;color:var(--ink-3);margin-left:2px}
+.smc .sub{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.smc svg{width:100%;height:auto;display:block;overflow:visible}
+.smc .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.smc .ar{fill:var(--accent-soft)}
+.smc .gr{stroke:var(--line-2);stroke-width:1}
+.smc .ax{font-size:9.5px;fill:var(--ink-3);font-family:var(--f-mono)}
+.smc .dot{fill:var(--accent);stroke:var(--sheet);stroke-width:2}
+.smc .hit rect{fill:transparent}
+.smc .hv{opacity:0;pointer-events:none}
+.smc .hit:hover .hv,.smc .hit:focus .hv{opacity:1}
+.smc .hv line{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 2}
+.smc .hv text{font-size:10.5px;fill:var(--ink);font-weight:600;font-family:var(--f-mono)}
+.smc .hv .tip{fill:var(--sheet);stroke:var(--line)}
+.trend-up{color:var(--good)} .trend-down{color:var(--crit)}
+#tblRv td:first-child,#tblRv th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet)}
+#tblRv th:first-child{background:var(--paper)}
+@media (max-width:560px){.sm{grid-template-columns:repeat(2,minmax(0,1fr))}.smc{padding:8px 8px 4px}.smc .sub{display:none}.smc .v{font-size:15px}}
 th.sel{background:var(--accent-soft);color:var(--ink)}
 td.sel{background:var(--accent-soft);font-weight:600}
 td.sep,th.sep{border-left:1.5px solid var(--line)}
@@ -213,9 +236,10 @@ td.zero{color:var(--ink-3)}
 
   <section class="blk" id="secRv">
     <div class="blk-h">
-      <h2><span class="step">②</span>심사자별 월별 처리 건수</h2>
+      <h2><span class="step">②</span>심사자별 월별 처리 건수 추이</h2>
       <span class="hint" id="rvHint"></span>
     </div>
+    <div class="sm" id="rvTrend"></div>
     <div class="tbl"><table id="tblRv"></table></div>
   </section>
 
@@ -349,6 +373,7 @@ const fmt=dn=>{if(dn==null)return"";const d=new Date(dn*864e5);return d.getUTCFu
 const monthOf=dn=>{const d=new Date(dn*864e5);return String(d.getUTCFullYear()*100+d.getUTCMonth()+1);};
 const isBiz=d=>{const w=((d%7)+7+4)%7;return w!==0&&w!==6&&!HSET.has(d);};
 // 영업일 차이: a 다음날부터 b까지 중 영업일 수 (b<a면 음수로 셈)
+function addBiz(d,n){while(n>0){d++;if(isBiz(d))n--;}return d;}
 function bizDiff(a,b){if(b<a)return-bizDiff(b,a);let c=0;for(let d=a+1;d<=b;d++)if(isBiz(d))c++;return c;}
 const mLabel=m=>m?m.slice(0,4)+"."+m.slice(4):"-";
 const prevMonth=m=>{let y=+m.slice(0,4),mo=+m.slice(4)-1;if(mo===0){y--;mo=12;}return String(y*100+mo);};
@@ -524,7 +549,7 @@ function render(){
   const pk=PREV();
   $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].n)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
   $("banner").hidden=!isSample;
-  $("banner").textContent="예시 데이터를 보여주고 있습니다. 제공해 주신 가상 더미 워크북(신계약마감 시트 1,200건, 2026년 8·9월)과 그 기준표·공휴일을 그대로 넣었습니다. 실제 파일을 올리면 바로 바뀝니다.";
+  $("banner").textContent="예시 데이터(모두 가상)를 보여주고 있습니다. 2026년 8·9월은 제공해 주신 더미 워크북 1,200건 그대로이고, 추이를 보여주려고 2025년 10월~2026년 7월 10개월치를 같은 분포로 지어 앞에 붙였습니다(증번 G로 시작). 실제 파일을 올리면 바로 바뀝니다.";
   renderCheck();if(SEL)renderMetrics();}
 function renderCheck(){
   const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
@@ -563,6 +588,32 @@ function deltaHtml(x){
   let cls="flat";if(x.d>0.0001)cls=x.good==="up"?"up":x.good==="down"?"down":"neutral";else if(x.d<-0.0001)cls=x.good==="up"?"down":x.good==="down"?"up":"neutral";
   const arrow=x.d>0.0001?"▲":x.d<-0.0001?"▼":"–";
   return`<span class="delta ${cls}">${arrow} ${x.dTxt}</span><span style="color:var(--ink-3)">전월 ${x.kind==="rate"?pct(x.prev):nf(x.prev)}</span>${x.big?`<span class="chip warn">변동 큼</span>`:""}`;}
+const winMonths=()=>MONTHS.filter(mm=>mm<=SEL).slice(-12);
+function trendOf(vals){const n=vals.length;if(n<4)return null;const k=Math.min(3,Math.floor(n/2));
+  const a=vals.slice(0,k).reduce((x,y)=>x+y,0)/k,b=vals.slice(-k).reduce((x,y)=>x+y,0)/k;return{first:a,last:b,d:b-a,k};}
+function renderTrend(rvs,WIN){
+  const people=rvs.filter(k=>k!=="(공란)"&&!isAutoName(k));
+  if(WIN.length<2||!people.length){$("rvTrend").innerHTML=WIN.length<2?`<div class="note">추이를 보려면 2개월 이상의 데이터가 필요합니다. 여러 달이 담긴 파일(또는 여러 파일)을 올려 주세요.</div>`:"";return;}
+  const mx=Math.max(1,...people.flatMap(k=>WIN.map(mm=>M[mm].byRv[k]||0)));
+  const step=mx<=20?5:mx<=50?10:mx<=100?20:50;const top=Math.ceil(mx/step)*step;
+  const W=220,Hh=74,L=22,Rr=6,T=8,B=14,iw=W-L-Rr,ih=Hh-T-B;
+  const x=i=>L+(WIN.length===1?iw/2:i*iw/(WIN.length-1)),y=v=>T+ih-(v/top)*ih;
+  $("rvTrend").innerHTML=people.map(k=>{const vals=WIN.map(mm=>M[mm].byRv[k]||0);const last=vals[vals.length-1];const prev=vals.length>1?vals[vals.length-2]:null;
+    const tr=trendOf(vals);const pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    const area=`M${x(0).toFixed(1)},${y(0)} L${pts.split(" ").join(" L")} L${x(vals.length-1).toFixed(1)},${y(0)} Z`;
+    const si=WIN.indexOf(SEL);const sub=tr?`${tr.k}개월 평균 ${tr.first.toFixed(1)} → ${tr.last.toFixed(1)}`:"";
+    const dcls=tr&&Math.abs(tr.d)>=Math.max(3,tr.first*0.2)?(tr.d>0?"trend-up":"trend-down"):"";
+    return`<div class="smc"><div class="h"><span class="nm">${esc(k)}</span><span class="v">${nf(last)}<small>건</small></span></div>
+      <div class="sub">${prev!=null?`전월 ${nf(prev)} · `:""}<span class="${dcls}">${sub}</span></div>
+      <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(k)} 월별 처리 건수: ${WIN.map((mm,i)=>`${mLabel(mm)} ${vals[i]}건`).join(", ")}">
+        <line class="gr" x1="${L}" x2="${W-Rr}" y1="${y(0)}" y2="${y(0)}"/><line class="gr" x1="${L}" x2="${W-Rr}" y1="${y(top)}" y2="${y(top)}"/>
+        <text class="ax" x="${L-4}" y="${y(top)+3}" text-anchor="end">${top}</text><text class="ax" x="${L-4}" y="${y(0)+3}" text-anchor="end">0</text>
+        <text class="ax" x="${x(0)}" y="${Hh-1}" text-anchor="start">${mLabel(WIN[0]).slice(2)}</text><text class="ax" x="${x(WIN.length-1)}" y="${Hh-1}" text-anchor="end">${mLabel(WIN[WIN.length-1]).slice(2)}</text>
+        <path class="ar" d="${area}"/><polyline class="ln" points="${pts}"/>
+        ${si>=0?`<circle class="dot" cx="${x(si)}" cy="${y(vals[si])}" r="4"/>`:""}
+        ${vals.map((v,i)=>{const cx=x(i),bw=iw/Math.max(1,WIN.length-1);const tx=Math.min(Math.max(cx,L+26),W-Rr-26);
+          return`<g class="hit" tabindex="0"><rect x="${cx-bw/2}" y="0" width="${bw}" height="${Hh}"/><g class="hv"><line x1="${cx}" x2="${cx}" y1="${T}" y2="${y(0)}"/><circle class="dot" cx="${cx}" cy="${y(v)}" r="3.5"/><rect class="tip" x="${tx-26}" y="${Math.max(0,y(v)-22)}" width="52" height="15" rx="3"/><text x="${tx}" y="${Math.max(0,y(v)-22)+11}" text-anchor="middle">${WIN[i].slice(2,4)}.${WIN[i].slice(4)} ${v}</text></g></g>`;}).join("")}
+      </svg></div>`;}).join("");}
 const ST_COLORS=[["표준인수","--st-ok","std"],["조건부인수","--st-cond","cond"],["반송","--st-rej","ret"],["청철","--st-wd","wd"]];
 function renderMetrics(){
   const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;const ms=metricList();
@@ -594,14 +645,18 @@ function renderMetrics(){
     rrow("정상인수","normal",true)+rrow("ㄴ 표준인수","std",true)+rrow("ㄴ 조건부인수","cond",true)+rrow("반송","ret",true)+rrow("청철","wd",true)+
     `<tr class="total"><td>합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr>`+
     rrow("(참고) 미결","pend",false)+"</tbody>";
-  // reviewers × months
-  const rvs=rvList();const pkI=MONTHS.indexOf(SEL);
-  $("rvHint").textContent=`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"} · 증감과 터치율은 ${mLabel(SEL)} 기준`;
-  const sumOf=k=>MONTHS.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0);
-  $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th>${MONTHS.map(mm=>`<th class="n${mm===SEL?" sel":""}">${mLabel(mm)}</th>`).join("")}<th class="n">합계</th><th class="n sep">증감 (전월 대비)</th><th class="n">구성비</th><th class="n">터치율</th><th class="n">3일 초과</th><th class="n">평균 경과일</th></tr></thead><tbody>`+
-    rvs.map(k=>{const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;const s=rvStats(k,SEL);
-      return`<tr><td>${esc(k)}</td>${MONTHS.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(M[mm].byRv[k]||0)}</td>`).join("")}<td class="n">${nf(sumOf(k))}</td><td class="n sep ${p?bigC(v,pv):""}">${p?`${dTxt(v,pv)} (${chgTxt(v,pv)})`:"-"}</td><td class="n">${pct(rate(v,m.proc))}</td><td class="n ${s.n>=10?cT(s.touch):""}">${pct(s.touch)}</td><td class="n">${nf(s.tOut)}</td><td class="n">${s.avgLag==null?"-":s.avgLag.toFixed(2)}</td></tr>`;}).join("")+
-    `<tr class="total"><td>합계</td>${MONTHS.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(M[mm].proc)}</td>`).join("")}<td class="n">${nf(MONTHS.reduce((n,mm)=>n+M[mm].proc,0))}</td><td class="n sep">${p?`${dTxt(m.proc,p.proc)} (${chgTxt(m.proc,p.proc)})`:"-"}</td><td class="n">100.0%</td><td class="n">${pct(m.touch)}</td><td class="n">${nf(m.tOut)}</td><td class="n">${m.avgLag==null?"-":m.avgLag.toFixed(2)}</td></tr></tbody>`;
+  // reviewers × months (trend, last 12 months up to the selected month)
+  const rvs=rvList();const WIN=winMonths();
+  $("rvHint").textContent=`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"} · ${mLabel(WIN[0])}~${mLabel(WIN[WIN.length-1])} (${WIN.length}개월)`+(WIN.length<12?` · 데이터에 있는 달만 표시`:"");
+  renderTrend(rvs,WIN);
+  const people=rvs.filter(k=>k!=="(공란)"&&!isAutoName(k));
+  const pMax=Math.max(1,...people.flatMap(k=>WIN.map(mm=>M[mm].byRv[k]||0)));
+  const heat=(v,mx)=>{const a=Math.round(Math.min(1,v/mx)*55);return a?`style="background:color-mix(in srgb, var(--accent) ${a}%, transparent)${a>38?";color:var(--sheet)":""}"`:"";};
+  $("tblRv").innerHTML=`<thead><tr><th>실제심사자</th>${WIN.map(mm=>`<th class="n${mm===SEL?" sel":""}">${mm.slice(2,4)}.${mm.slice(4)}</th>`).join("")}<th class="n sep">합계</th><th class="n">월평균</th><th class="n">전월 대비</th><th class="n">터치율</th></tr></thead><tbody>`+
+    rvs.map(k=>{const isP=people.includes(k);const vals=WIN.map(mm=>M[mm].byRv[k]||0);const tot=vals.reduce((a,b)=>a+b,0);
+      const mx=isP?pMax:Math.max(1,...vals);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;const st=rvStats(k,SEL);
+      return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
+    `<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n">${nf(M[mm].proc)}</td>`).join("")}<td class="n sep">${nf(WIN.reduce((n,mm)=>n+M[mm].proc,0))}</td><td class="n">${(WIN.reduce((n,mm)=>n+M[mm].proc,0)/WIN.length).toFixed(1)}</td><td class="n">${p?dTxt(m.proc,p.proc):"-"}</td><td class="n">${pct(m.touch)}</td></tr></tbody>`;
   // months
   $("tblMonths").innerHTML=`<thead><tr><th>마감월</th><th class="n">총 심사건수</th><th class="n">3일이내</th><th class="n">3일초과</th><th class="n">터치율</th><th class="n">자동심사</th><th class="n">인심사</th><th class="n">공란(제외)</th><th class="n">자동심사율</th><th class="n">처리 건수</th><th class="n">정상인수</th><th class="n">표준</th><th class="n">조건부</th><th class="n">반송</th><th class="n">청철</th><th class="n">미결</th><th class="n">재분배</th></tr></thead><tbody>`+
     MONTHS.map(mm=>{const a=M[mm];return`<tr${mm===SEL?' style="font-weight:600"':""}><td>${mLabel(mm)}</td><td class="n">${nf(a.n)}</td><td class="n">${nf(a.tIn)}</td><td class="n">${nf(a.tOut)}</td><td class="n ${cT(a.touch)}">${pct(a.touch)}</td><td class="n">${nf(a.auto)}</td><td class="n">${nf(a.manual)}</td><td class="n">${nf(a.autoBlank)}</td><td class="n ${cA(a.autoRate)}">${pct(a.autoRate)}</td><td class="n">${nf(a.proc)}</td><td class="n">${nf(a.normal)}</td><td class="n">${nf(a.std)}</td><td class="n">${nf(a.cond)}</td><td class="n">${nf(a.ret)}</td><td class="n">${nf(a.wd)}</td><td class="n">${nf(a.pend)}</td><td class="n">${nf(a.comp.diff)}</td></tr>`;}).join("")+"</tbody>";
@@ -632,6 +687,9 @@ function draftTopics(){
   T.push({key:"reviewer",title:"심사자별",cls:lowRv.length||m.byRv["(공란)"]?"warn":"good",chip:lowRv.length?`확인 ${lowRv.length}명`:m.byRv["(공란)"]?`공란 ${m.byRv["(공란)"]}건`:"",
     text:`실제심사자 기준 처리는 ${top.map(k=>`${k} ${nf(m.byRv[k])}건`).join(", ")} 순이고, 자동심사 ${nf(autoN)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`+
       (lowRv.length?` 터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}임.`:" 심사자별 터치율은 모두 목표 충족.")+` 최초심사자와 실제심사자가 다른 재분배 ${nf(m.comp.diff)}건.`+
+      (()=>{const WIN=winMonths();if(WIN.length<4)return"";const t=people.map(k=>({k,t:trendOf(WIN.map(mm=>M[mm].byRv[k]||0))})).filter(x=>x.t&&Math.abs(x.t.d)>=Math.max(3,x.t.first*0.2));
+        const up=t.filter(x=>x.t.d>0).sort((a,b)=>b.t.d-a.t.d),dn=t.filter(x=>x.t.d<0).sort((a,b)=>a.t.d-b.t.d);const f=x=>`${x.k}(월 ${x.t.first.toFixed(0)}→${x.t.last.toFixed(0)}건)`;
+        return` ${WIN.length}개월 추이(처음·최근 ${t[0]?t[0].t.k:3}개월 평균 비교)로 보면 `+(up.length?`증가: ${up.map(f).join(", ")}`:"뚜렷한 증가 없음")+(dn.length?`, 감소: ${dn.map(f).join(", ")}`:"")+".";})()+
       (p?(()=>{const ch=people.map(k=>({k,d:(m.byRv[k]||0)-(p.byRv[k]||0)})).filter(x=>x.d).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,3);
         return ch.length?` 전월 대비 처리 건수 변동이 큰 심사자는 ${ch.map(x=>`${x.k}(${x.d>0?"+":"−"}${Math.abs(x.d)}건)`).join(", ")}.`:"";})():"")});
   const big=ms.filter(x=>x.big);
@@ -811,7 +869,7 @@ async function saveFile(name,wb){
   catch(e){toast({declined:"저장을 취소했습니다.",rate_limited:"이미 저장 확인 창이 열려 있습니다. 잠시 뒤 다시 시도해 주세요."}[e.code]||"파일을 저장하지 못했습니다 ("+(e.code||"오류")+").");}}
 $("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
 $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
-  const rows=[H(FIELDS.map(f=>f[1]))].concat(SAMPLE.map(r=>r.map((v,i)=>[1,7,8].includes(i)&&typeof v==="number"?{v,z:"yyyy-mm-dd"}:{v})));
+  const rows=[H(FIELDS.map(f=>f[1]))].concat(sampleRows().map(r=>r.map((v,i)=>[1,7,8].includes(i)&&typeof v==="number"?{v,z:"yyyy-mm-dd"}:{v})));
   XLSX.utils.book_append_sheet(wb,sheet(rows,[11,11,8,10,10,9,11,11,11,13],{border:false}),"신계약마감");
   const hol=[H(["날짜","공휴일명"])].concat(SAMPLE_HOL.map(([d,n])=>[{v:d+25569,z:"yyyy-mm-dd"},n]));
   XLSX.utils.book_append_sheet(wb,sheet(hol,[12,20],{border:false}),"공휴일");
@@ -836,10 +894,39 @@ const SAMPLE=[["P0000001",46235,"GA","심사자A","","미결","인심사",46238,
 const SAMPLE_HOL=[[20680,"광복절"],[20682,"광복절 대체공휴일"],[20720,"추석 연휴"],[20721,"추석"],[20722,"추석 연휴"],[20729,"개천절"],[20731,"개천절 대체공휴일"],[20735,"한글날"]];
 const SAMPLE_CRITERIA={"inclPending":false,"touchDays":3,"dayMode":"영업일","channels":"GA, 전속, 방카, TM","statuses":"정상, 반송, 청철, 미결"};
 function applyCriteria(c){if(!c)return false;Object.assign(S,c);fillSettings();return true;}
+/* 추이 확인용 가상 데이터: 2025.10~2026.07 (10개월). 더미 워크북의 채널·자동심사결과·계약상태 분포를 따르고, 점검 오류·경고가 없게 만든다. */
+function genExtra(){
+  const rnd=(a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;})(20251001);
+  const w=(arr,ws)=>{let r=rnd()*ws.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){r-=ws[i];if(r<0)return arr[i];}return arr[arr.length-1];};
+  const months=["202510","202511","202512","202601","202602","202603","202604","202605","202606","202607"];
+  const vol=[585,600,640,575,540,610,600,595,605,590];
+  const REV={"심사자A":[48,50,52,49,47,51,50,52,50,51],"심사자B":[62,61,60,58,57,56,55,54,53,52],"심사자C":[31,33,30,32,34,31,30,32,31,33],"심사자D":[16,17,18,19,20,21,22,23,24,25],
+    "심사자E":[0,0,0,6,9,12,14,16,18,20],"심사자F":[26,25,24,22,21,19,18,16,15,14],"심사자G":[15,14,13,15,14,13,14,15,13,14],"심사자H":[0,0,0,0,0,0,5,8,10,12]};
+  const names=Object.keys(REV);const CONDS=["부담보","일부보장제외","감액","할증"];const out=[];let seq=1;
+  const ser=dn=>dn+25569;
+  months.forEach((mm,mi)=>{const y=+mm.slice(0,4),mo=+mm.slice(4);const st=Date.UTC(y,mo-1,1)/864e5,en=Date.UTC(y,mo,0)/864e5;
+    const days=[];for(let d=st;d<=en;d++)if(isBiz(d))days.push(d);
+    const lagW=names.map(k=>k==="심사자B"||k==="심사자H"?[18,22,22,20,8,5,5]:[28,26,22,18,3,2,1]);
+    for(let i=0;i<vol[mi];i++){
+      const cd=days[Math.floor(rnd()*days.length)];const ch=w(["GA","전속","방카","TM"],[47.5,21,21.5,10]);
+      const au=w(["가입가능","조건부인수","가입불가","인심사"],[44,7,4.5,44.5]);
+      const fd=addBiz(cd,w([0,1,2,3],[24,26,26,24]));let r1="",r2="자동심사",sdv="",stt="정상",cond="";
+      if(au==="인심사"){const ws=names.map(k=>REV[k][mi]);r1=w(names,ws);const ki=names.indexOf(r1);
+        sdv=ser(addBiz(fd,w([0,1,2,3,4,5,6],lagW[ki])));stt=w(["정상","반송","청철","미결"],[62,14,6,18]);
+        r2=stt==="미결"?(rnd()<0.8?"":r1):(rnd()<0.86?r1:w(names,ws));if(!r2&&stt!=="미결")r2=r1;
+        if(stt==="정상"&&rnd()<0.27)cond=CONDS[Math.floor(rnd()*4)];}
+      else{if(rnd()<0.28)sdv=ser(fd+w([0,1,2,3],[30,25,25,20]));
+        if(au==="가입가능")stt=w(["정상","청철","반송","미결"],[92,6,1,1]);
+        else if(au==="가입불가")stt=w(["반송","청철"],[95,5]);
+        else{stt=w(["정상","청철","미결"],[90,6,4]);if(stt==="정상")cond=CONDS[Math.floor(rnd()*4)];}}
+      out.push(["G"+String(seq++).padStart(7,"0"),ser(cd),ch,r1,r2,stt,au,sdv,ser(fd),cond]);}});
+  return out;}
+let SAMPLE_ALL=null;
+const sampleRows=()=>SAMPLE_ALL||(SAMPLE_ALL=genExtra().concat(SAMPLE));
 function loadSample(){
-  ROWS=prepRows(SAMPLE.map((a,i)=>{const r={line:i+2,file:"예시",raw:{}};FIELDS.forEach(([k],ci)=>r.raw[k]=a[ci]);return r;}));
+  ROWS=prepRows(sampleRows().map((a,i)=>{const r={line:i+2,file:"예시",raw:{}};FIELDS.forEach(([k],ci)=>r.raw[k]=a[ci]);return r;}));
   EXTRA_HOL=SAMPLE_HOL.slice();applyCriteria(SAMPLE_CRITERIA);
-  SOURCE="예시_더미데이터.xlsx (신계약마감)";isSample=true;SEL=null;$("fnIn").textContent="예시: 가상 더미 1,200건";recompute(true);}
+  SOURCE="예시: 더미 워크북 + 추이용 가상 10개월";isSample=true;SEL=null;$("fnIn").textContent=`예시: 가상 데이터 ${nf(ROWS.length)}건 (2025.10~2026.09)`;recompute(true);}
 
 /* ---------- uploads ---------- */
 async function handleFiles(files){
