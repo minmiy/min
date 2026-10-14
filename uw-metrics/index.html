@@ -162,6 +162,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:-8px}
 .tabs button{border:none;border-bottom:2.5px solid transparent;border-radius:0;background:none;padding:10px 14px;font-weight:600;color:var(--ink-3)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.subtabs button{border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--ink-2);background:var(--sheet)}
+.subtabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
 .tab-badge{font-size:11px;font-weight:600;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
 .tab-badge.crit{background:var(--crit-bg);color:var(--crit)} .tab-badge.warn{background:var(--warn-bg);color:var(--warn)} .tab-badge.good{background:var(--good-bg);color:var(--good)}
 .view{display:flex;flex-direction:column;gap:22px}
@@ -347,6 +350,10 @@ td.zero{color:var(--ink-3)}
   </div>
   <div class="err" id="loadErr" hidden></div>
 
+  <nav class="subtabs" role="tablist" aria-label="지표 산출 하위 화면">
+    <button type="button" role="tab" id="subMetric" aria-selected="true" aria-controls="secMetric">① 심사지표</button>
+    <button type="button" role="tab" id="subRv" aria-selected="false" aria-controls="secRv">② 심사자별 현황</button>
+  </nav>
   <section class="blk" id="secMetric">
     <div class="blk-h">
       <h2><span class="step">①</span>심사지표</h2>
@@ -365,7 +372,7 @@ td.zero{color:var(--ink-3)}
     <div><h3 style="margin-bottom:8px" id="monthsTitle">당월·전월 요약</h3><div class="tbl"><table id="tblMonths"></table></div></div>
   </section>
 
-  <section class="blk" id="secRv">
+  <section class="blk" id="secRv" hidden>
     <div class="blk-h">
       <h2><span class="step">②</span>심사자별 현황</h2>
       <span class="hint" id="rvHint"></span>
@@ -376,7 +383,7 @@ td.zero{color:var(--ink-3)}
     <div class="tbl"><table id="tblRv"></table></div>
   </section>
 
-  <div class="actions calc-actions"><span class="note">심사지표·심사자별 현황을 확인한 뒤 '월마감 보고서' 탭에서 보고서를 작성합니다.</span><span style="flex:1"></span><button id="btnXlsx" type="button">결과표 엑셀 다운로드</button><button id="btnGoReport" class="primary" type="button">월마감 보고서 작성 →</button></div>
+  <div class="actions calc-actions"><span class="note">① 심사지표·② 심사자별 현황을 확인한 뒤 '월마감 보고서' 탭에서 보고서를 작성합니다.</span><span style="flex:1"></span><button id="btnXlsx" type="button">결과표 엑셀 다운로드</button><button id="btnGoReport" class="primary" type="button">월마감 보고서 작성 →</button></div>
 
   </div>
 
@@ -1397,6 +1404,10 @@ $("btnPrint").onclick=()=>{if(!SEL)return;if(window.claude)savePdf();else window
 function showTab(t){const rp=t==="report";["calc","report","chk","std"].forEach(k=>{const on=k===t;$("view"+k[0].toUpperCase()+k.slice(1)).hidden=!on;$("tab"+k[0].toUpperCase()+k.slice(1)).setAttribute("aria-selected",String(on));});
   if(t==="std")fillSettings();if(t==="chk")setTimeout(()=>selfTest(),0);
   try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);if(rp)requestAnimationFrame(fitCheck);}
+function showSub(t){const rv=t==="rv";$("secMetric").hidden=rv;$("secRv").hidden=!rv;$("subMetric").setAttribute("aria-selected",String(!rv));$("subRv").setAttribute("aria-selected",String(rv));
+  try{localStorage.setItem("uwm-sub",t);}catch(e){}}
+$("subMetric").onclick=()=>showSub("metric");$("subRv").onclick=()=>showSub("rv");
+try{if(localStorage.getItem("uwm-sub")==="rv")showSub("rv");}catch(e){}
 $("tabCalc").onclick=()=>showTab("calc");$("tabReport").onclick=()=>showTab("report");$("tabStd").onclick=()=>showTab("std");$("tabChk").onclick=()=>showTab("chk");$("btnSelf").onclick=()=>selfTest().then(()=>toast("자가진단을 다시 실행했습니다."));$("btnXlsx3").onclick=()=>$("btnXlsx").click();$("btnGoReport").onclick=()=>showTab("report");
 $("btnXlsx").onclick=()=>{if(!SEL)return;try{saveFile(`신계약심사지표_${SEL}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
 $("btnTemplate").onclick=()=>{const wb=XLSX.utils.book_new();
