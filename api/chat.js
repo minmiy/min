@@ -1,8 +1,8 @@
-// 신계약 심사지표 산출기 챗봇: 브라우저 → /api/chat → OpenRouter (무료 Nemotron)
+// 신계약 심사 마감 현황 챗봇: 브라우저 → /api/chat → OpenRouter (무료 Nemotron)
 // API 키는 Vercel 환경변수(OPENROUTER_API_KEY)에만 두고 브라우저로 보내지 않는다.
 const MODEL = process.env.OPENROUTER_MODEL || "nvidia/nemotron-3-super-120b-a12b:free";
 
-const SYSTEM = `당신은 보험사 계약심사부의 '신계약 심사지표 산출기' 도우미입니다.
+const SYSTEM = `당신은 보험사 계약심사부의 '신계약 심사 마감 현황' 도우미입니다.
 - 한국어로, 짧고 정확하게 답합니다. 보고서에 옮길 문장은 보고서체(~임, ~함)로 씁니다.
 - 숫자는 아래 [현재 화면 데이터]에 있는 값만 씁니다. 데이터에 없는 값은 추측하지 말고 "화면 데이터에 없음"이라고 말합니다.
 - 간단한 계산(차이, 비율)은 해도 되지만 계산했다는 것을 밝힙니다.

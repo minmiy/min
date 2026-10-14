@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>신계약 심사지표 산출기</title>
+<title>신계약 심사 마감 현황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -273,7 +273,7 @@ td.zero{color:var(--ink-3)}
   <header class="top">
     <div>
       <div class="eyebrow">계약심사부 · 월 마감</div>
-      <h1>신계약 심사지표 산출기</h1>
+      <h1 id="pageTitle">신계약 심사 마감 현황</h1>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
       <label class="monthpick" for="selMonth">마감월 <select id="selMonth"></select></label>
@@ -705,6 +705,7 @@ function chStats(ch,mm){return agg(inMonth(mm).filter(r=>r.ch===ch));}
 
 /* ---------- rendering ---------- */
 function render(){
+  {const t=SEL?`${SEL.slice(0,4)}년 ${+SEL.slice(4)}월 신계약 심사 마감 현황`:"신계약 심사 마감 현황";$("pageTitle").textContent=t;document.title=t;}
   if(!SEL){["cards","tblCh","tblSt","tblRv","tblMonths","meta","rvHint"].forEach(id=>$(id).innerHTML="");}
   const pk=PREV();
   $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].all)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
@@ -1364,7 +1365,7 @@ $("stdFile").onchange=async()=>{const f=$("stdFile").files[0];$("stdFile").value
   catch(e){toast("기준 파일을 읽지 못했습니다: "+(e.message||e));}};
 
 /* ---------- chatbot ---------- */
-const CHAT_SYSTEM=`당신은 보험사 계약심사부의 '신계약 심사지표 산출기' 도우미입니다. 한국어로 짧고 정확하게 답합니다. 숫자는 아래 [현재 화면 데이터]에 있는 값만 쓰고, 없으면 "화면 데이터에 없음"이라고 말합니다. 간단한 계산을 했다면 계산했다고 밝힙니다. 보고서에 옮길 문장은 보고서체(~임, ~함)로 씁니다.`;
+const CHAT_SYSTEM=`당신은 보험사 계약심사부의 '신계약 심사 마감 현황' 도구 도우미입니다. 한국어로 짧고 정확하게 답합니다. 숫자는 아래 [현재 화면 데이터]에 있는 값만 쓰고, 없으면 "화면 데이터에 없음"이라고 말합니다. 간단한 계산을 했다면 계산했다고 밝힙니다. 보고서에 옮길 문장은 보고서체(~임, ~함)로 씁니다.`;
 const CHAT={hist:[],busy:false,ctl:null};
 function chatContext(){
   if(!SEL)return"데이터가 아직 없습니다.";
