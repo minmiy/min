@@ -251,9 +251,13 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6
 .tops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .tcard{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;border-top:3px solid var(--accent)}
 button.tcard{font:inherit;text-align:left;cursor:pointer;background:var(--sheet);color:var(--ink);align-items:stretch}
-button.tcard:hover{border-color:var(--accent)}
-button.tcard.on{background:var(--accent-soft);border-color:var(--accent)}
-.tcard .more{font-size:11.5px;color:var(--accent);font-weight:600;margin-top:2px}
+button.tcard{transition:transform .12s,box-shadow .12s;position:relative}
+button.tcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+button.tcard.on{background:var(--accent-soft);border-color:var(--accent);border-width:1.5px}
+button.tcard.on::after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--accent);border-bottom:0}
+.tcard .more{align-self:flex-start;font-size:11.5px;font-weight:600;margin-top:4px;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:1px 9px}
+button.tcard.on .more{background:var(--accent);color:var(--sheet)}
+.tap-hint{font-weight:400;font-size:12px;color:var(--accent);margin-left:8px}
 .rank{border:1px solid var(--accent);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .rank-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
 .rank-h .chip{margin-left:auto;cursor:pointer}
@@ -845,7 +849,7 @@ function topLists(){
   L.forEach(l=>{l.items.sort((a,b)=>(b.v??-1)-(a.v??-1));const best=l.items[0];
     l.winners=best?l.items.filter(x=>x.v===best.v):[];});
   return L;}
-let RANK_KEY=null;
+let RANK_KEY="touch";
 /* 지표별 전체 심사자 순위: 1위 카드를 누르면 펼친다 */
 function rankAll(key){
   const m=M[SEL],people=RV_PEOPLE();const st=Object.fromEntries(people.map(k=>[k,rvStats(k,SEL)]));
@@ -866,20 +870,20 @@ function renderRank(){
   const fmtV=v=>v==null?"-":r.unit==="rate"?pct(v):nf(v)+"건";
   const bad=x=>r.target!=null&&x.v!=null&&x.v<r.target;
   el.hidden=false;
-  el.innerHTML=`<div class="rank-h"><b>${mLabel(SEL)} 심사자별 ${r.title}</b><span class="note">${esc(r.tTxt)}${r.min?` · ${MIN_N}건 이상만 순위`:""}</span><button type="button" class="chip" id="rankClose">닫기</button></div>
+  el.innerHTML=`<div class="rank-h"><b>${mLabel(SEL)} 심사자별 ${r.title}</b><span class="note">${esc(r.tTxt)}${r.min?` · ${MIN_N}건 이상만 순위`:""}</span></div>
     <div class="tbl"><table><thead><tr><th class="n">순위</th><th>심사자</th><th class="n">${r.title}</th><th style="width:34%"></th><th class="n">건수</th><th>참고</th></tr></thead><tbody>`+
     r.main.map((x,i)=>`<tr${x.v===top?' class="rk1"':""}><td class="n">${i+1}</td><td>${esc(x.k)}</td><td class="n ${bad(x)?"cell-crit":""}">${fmtV(x.v)}</td>
       <td><div class="rbar"><span style="width:${Math.max(1,(x.v||0)/mx*100).toFixed(1)}%"></span>${r.target!=null&&r.unit==="rate"?`<i style="left:${r.target*100}%" title="목표 ${pct(r.target)}"></i>`:""}</div></td>
       <td class="n">${x.cnt}</td><td class="txt${x.bad2?" crit-txt":""}">${esc(x.sub)}${x.bad2?" · 반송률 기준 초과":""}</td></tr>`).join("")+
     (r.ref.length?`<tr><td colspan="6" class="txt" style="color:var(--ink-3)">참고 (${MIN_N}건 미만, 순위 제외): ${r.ref.map(x=>`${esc(x.k)} ${fmtV(x.v)} (${x.cnt})`).join(", ")}</td></tr>`:"")+`</tbody></table></div>`;
-  $("rankClose").onclick=()=>{RANK_KEY=null;renderTops();};}
+}
 function renderTops(){
   const L=topLists();CUR_TOPS=L;
-  $("topTitle").textContent=`${mLabel(SEL)} 지표별 1위 심사자 · 카드를 누르면 심사자별 전체 순위`;
-  $("tops").innerHTML=L.map(l=>`<button type="button" class="tcard${RANK_KEY===l.key?" on":""}" data-k="${l.key}" aria-expanded="${RANK_KEY===l.key}" aria-controls="rankPanel"><span class="tt">${l.title}</span>`+
+  $("topTitle").innerHTML=`${mLabel(SEL)} 지표별 1위 심사자 <span class="tap-hint">카드를 눌러 아래 심사자별 순위를 바꿔 보세요</span>`;
+  $("tops").innerHTML=L.map(l=>`<button type="button" class="tcard${RANK_KEY===l.key?" on":""}" data-k="${l.key}" aria-pressed="${RANK_KEY===l.key}" aria-controls="rankPanel"><span class="tt">${l.title}</span>`+
     (l.winners.length?`<span class="win">${l.winners.map(x=>esc(x.who)).join(", ")}</span><span class="wv">${l.winners[0].txt?`<b>${l.winners[0].txt}</b> · `:""}${l.winners.length>1?l.winners.map(x=>`${esc(x.who)} ${x.cnt}`).join(", "):l.winners[0].cnt}</span>`
-      :`<span class="none">기준(${MIN_N}건 이상)을 채운 심사자가 없습니다.</span>`)+`<span class="bs">${esc(l.basis)}</span><span class="more">${RANK_KEY===l.key?"▲ 순위 닫기":"▼ 심사자별 보기"}</span></button>`).join("");
-  $("tops").querySelectorAll(".tcard").forEach(b=>b.onclick=()=>{RANK_KEY=RANK_KEY===b.dataset.k?null:b.dataset.k;renderTops();});
+      :`<span class="none">기준(${MIN_N}건 이상)을 채운 심사자가 없습니다.</span>`)+`<span class="bs">${esc(l.basis)}</span><span class="more">${RANK_KEY===l.key?"보는 중 ▼":"눌러서 보기 ›"}</span></button>`).join("");
+  $("tops").querySelectorAll(".tcard").forEach(b=>b.onclick=()=>{if(RANK_KEY===b.dataset.k)return;RANK_KEY=b.dataset.k;renderTops();});
   renderRank();}
 let CUR_TOPS=[];
 const ST_COLORS=[["표준인수","--st-ok","std"],["조건부인수","--st-cond","cond"],["반송","--st-rej","ret"],["청철","--st-wd","wd"]];
