@@ -1095,7 +1095,7 @@ function draftTopics(){
   if(lowCh.length)s+=` 목표 미달 채널은 ${lowCh.map(x=>`${x.c}(${pct(x.s.touch)})`).join(", ")}임.`;
   T.push({key:"touch",title:"3일이내 터치율",...tag(t.ok),text:s});
   const a=by("auto");T.push({key:"auto",title:"자동심사율",...tag(a.ok),
-    text:`자동심사율 ${pct(m.autoRate)}(자동심사 ${nf(m.auto)}건 / 자동+인심사 ${nf(m.auto+m.manual)}건)로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, ${vs} ${a.dTxt}`:"")+`. 자동심사결과 공란 ${nf(m.autoBlank)}건은 분모에서 제외함.`});
+    text:`자동심사율 ${pct(m.autoRate)}(자동심사 ${nf(m.auto)}건 / 자동+인심사 ${nf(m.auto+m.manual)}건)로 목표(${a.targetTxt}) ${a.ok?"충족":"미달"}`+(p?`, ${vs} ${a.dTxt}`:"")+`. 당월 자동심사결과 공란 ${nf(m.autoBlank)}건(오류 제외 후 지표 반영 행 기준)은 분모에서 제외함.`});
   const r=by("ret");const rt=tag(r.ok);if(r.ok===false)rt.chip="초과";
   T.push({key:"result",title:"심사결과",...rt,
     text:`미결 제외 ${nf(m.resTotal)}건 중 정상인수 ${nf(m.normal)}건(표준 ${nf(m.std)}·조건부 ${nf(m.cond)}), 반송 ${nf(m.ret)}건, 청철 ${nf(m.wd)}건. 반송률 ${pct(m.retRate)}로 기준(${r.targetTxt}) ${r.ok?"이내":"초과"}`+(p?`, ${vs} ${r.dTxt}`:"")+`. 조건부인수 비중은 정상인수의 ${pct(m.condRate)}.`});
@@ -1171,16 +1171,16 @@ function composeReport(T){
   const hols=[...new Map(S.holidays.split(/\n/).map(l=>{const pd=parseDate(l.trim().slice(0,10));return pd.ok?[pd.dn,l.trim().slice(10).trim()]:null;}).filter(Boolean).concat(EXTRA_HOL)).entries()]
     .filter(([dn])=>monthOf(dn)===SEL&&((dn%7)+7+4)%7!==0&&((dn%7)+7+4)%7!==6).sort((a,b)=>a[0]-b[0]);
   const holTxt=hols.length?`${[...new Set(hols.map(h=>h[1].replace(/\s*(연휴|대체공휴일)$/,"")))].join("·")} ${hols.map(h=>fmt(h[0]).slice(5).replace("-","/")).join("·")} 휴무`:"";
-  const per={};ROWS.forEach(rw=>rw.codes.forEach(c=>per[c]=(per[c]||0)+1));const exc=ROWS.filter(rw=>!rw.include&&rw.month===SEL).length;
-  const wTop=RULES.filter(([id,sev])=>sev==="경고"&&per[id]).sort((a,b)=>per[b[0]]-per[a[0]]).slice(0,2).map(([id,,d])=>`${d.replace(/\s*\(.*\)$/,"")} ${per[id]}건`).join(", ");
+  /* 특이사항 수치는 모두 당월 행 기준으로 센다 (본문 수치와 범위를 맞춤) */
+  const exc=ROWS.filter(rw=>!rw.include&&rw.month===SEL).length;
   const lowChA=chList().map(c=>({c,s:chStats(c,SEL)})).filter(x=>x.s.auto+x.s.manual>=20&&x.s.autoRate<S.autoTarget/100);
   const acts=[];
   if(low.length)acts.push(`터치율 미달 심사자(${low.join(", ")}) 지연 사유 확인·배정량 조정 검토`);
   if(overR.length)acts.push(`반송률 기준 초과 심사자(${overR.map(x=>x.k).join(", ")}) 반송 사유 분석`);
   if(lowChA.length)acts.push(`${lowChA.map(x=>x.c).join("·")} 채널 자동심사율 목표 미달: 자동심사 기준 점검`);
-  if(per.W3&&acts.length<3)acts.push(`자동심사결과 공란 등 원천 데이터 입력 보완 요청`);
+  if(m.autoBlank&&acts.length<3)acts.push(`자동심사결과 공란 등 원천 데이터 입력 보완 요청`);
   if(!acts.length)acts.push("특이 개선 과제 없음. 현 수준 유지 모니터링");
-  const improve=`[당월 특이사항]\n- 영업일 ${bizIn(SEL)}일${holTxt||p?`(${[holTxt,p?`전월 ${bizIn(pk)}일`:""].filter(Boolean).join(", ")})`:""}, 데이터 점검 오류 ${nf(exc)}건 산출 제외${per.W3?`, 자동심사결과 공란 ${per.W3}건`:""}.\n[개선사항]\n`+acts.slice(0,3).map(a=>`- ${a}`).join("\n");
+  const improve=`[당월 특이사항]\n- 영업일 ${bizIn(SEL)}일${holTxt||p?`(${[holTxt,p?`전월 ${bizIn(pk)}일`:""].filter(Boolean).join(", ")})`:""}, 당월 데이터 점검 오류 ${nf(exc)}건 산출 제외${m.autoBlank?`, 당월 자동심사결과 공란 ${nf(m.autoBlank)}건(오류 제외 후 지표 반영 행 기준, 자동심사율 분모 제외)`:""}.\n[개선사항]\n`+acts.slice(0,3).map(a=>`- ${a}`).join("\n");
   return[
     {key:"t_touch",title:"3일이내 터치율",cls:"",chip:"",text:get("touch")},
     {key:"t_auto",title:"자동심사율",cls:"",chip:"",text:get("auto")},
