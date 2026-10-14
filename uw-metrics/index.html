@@ -45,7 +45,7 @@ button:disabled{opacity:.5;cursor:default}
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:14px}
 .top .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
 .top h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
-.top-r{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px 22px}
+.top-r{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 18px;margin-bottom:-6px}
 .meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .meta b{color:var(--ink);font-weight:600}
 .banner{background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:10px 14px;font-size:13px}
@@ -162,11 +162,11 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .chat-in textarea{min-height:44px;max-height:140px;padding:8px 10px;font-size:13.5px;line-height:1.5;flex:1;resize:none;background:var(--paper)}
 .chat-note{font-size:11px;color:var(--ink-3);padding:0 12px 10px}
 @media (max-width:560px){.chat{right:0;left:0;bottom:0;width:100%;height:calc(100% - 40px);border-radius:12px 12px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}.chat-fab{right:16px}}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:-8px;flex-wrap:wrap}
-.tabs button{white-space:nowrap;flex:none}
-@media (max-width:520px){.tabs{gap:0}.tabs button{padding:10px 7px;font-size:13.5px}}
-.tabs button{border:none;border-bottom:2.5px solid transparent;border-radius:0;background:none;padding:10px 14px;font-weight:600;color:var(--ink-3)}
-.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs{display:flex;gap:6px;border-bottom:2px solid var(--accent);margin-top:-4px;padding-inline:2px}
+.tabs button{white-space:nowrap;flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;background:var(--line-2);padding:11px 22px;font-size:16px;font-weight:700;color:var(--ink-2);margin-bottom:-2px;border-top:3px solid transparent}
+.tabs button:hover{background:var(--accent-soft);color:var(--accent)}
+.tabs button[aria-selected="true"]{background:var(--sheet);color:var(--accent);border-color:var(--accent);border-top-color:var(--accent);border-width:2px 2px 0;border-top-width:3px;padding-bottom:13px}
+@media (max-width:560px){.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:0}.tabs button{padding:9px 2px;font-size:13px;flex-direction:column;gap:2px;white-space:normal;line-height:1.25}.tabs button[aria-selected="true"]{padding-bottom:11px}}
 .calc-bar>.subtabs{width:100%}
 .calc-bar>.actions{margin-left:auto;justify-content:flex-end}
 .subtabs{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--accent);border-radius:10px;overflow:hidden;background:var(--sheet)}
@@ -259,8 +259,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 </style>
 <style>
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
-.monthpick{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--ink-2)}
-.monthpick select{font-size:18px;font-weight:700;padding:8px 36px 8px 14px;min-height:44px;border:1.5px solid var(--accent);border-radius:8px;color:var(--ink);cursor:pointer}
+.monthpick{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.monthpick select{font-size:14px;font-weight:700;padding:3px 26px 3px 9px;min-height:0;height:28px;border:1.5px solid var(--accent);border-radius:6px;color:var(--ink);cursor:pointer}
 .tops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .tcard{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;border-top:3px solid var(--accent)}
 button.tcard{font:inherit;text-align:left;cursor:pointer;background:var(--sheet);color:var(--ink);align-items:stretch}
