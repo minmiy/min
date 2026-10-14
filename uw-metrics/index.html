@@ -232,7 +232,13 @@ td.zero{color:var(--ink-3)}
 .recon b{font-variant-numeric:tabular-nums}
 .recon.good{background:var(--good-bg);color:var(--good);border-color:transparent}
 .recon.crit{background:var(--crit-bg);color:var(--crit);border-color:transparent}
-.grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.grid2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+.kf{flex:1;border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:10px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;align-content:start}
+.kf div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.kf .k{font-size:11.5px;color:var(--ink-3)}
+.kf .v{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.kf .v small{font-size:11.5px;font-weight:500;color:var(--ink-3);margin-left:4px}
+.kf .v.crit{color:var(--crit)} .kf .v.good{color:var(--good)}
 .uploads.single{grid-template-columns:minmax(0,1fr) auto}
 @media (max-width:900px){.uploads.single{grid-template-columns:1fr}}
 .form select{font:inherit;padding:6px 8px}
@@ -280,8 +286,8 @@ td.zero{color:var(--ink-3)}
     </div>
     <div class="cards" id="cards"></div>
     <div class="grid2 even">
-      <div><h3>채널별 처리 건수</h3><div class="tbl"><table id="tblCh"></table></div></div>
-      <div><h3>심사결과 통계 <span style="font-weight:400;color:var(--ink-3)">(미결 제외)</span></h3><div class="tbl"><table id="tblSt"></table></div></div>
+      <div><h3>채널별 처리 건수</h3><div class="tbl"><table id="tblCh"></table></div><div class="kf" id="kfCh"></div></div>
+      <div><h3>심사결과 통계 <span style="font-weight:400;color:var(--ink-3)">(미결 제외)</span></h3><div class="tbl"><table id="tblSt"></table></div><div class="kf" id="kfSt"></div></div>
     </div>
     <div><h3 style="margin-bottom:8px" id="monthsTitle">당월·전월 요약</h3><div class="tbl"><table id="tblMonths"></table></div></div>
   </section>
@@ -717,7 +723,24 @@ function renderMetrics(){
   $("tblSt").innerHTML=`<thead><tr><th>구분</th><th class="n">건수</th><th class="n">구성비</th><th class="n">전월</th><th class="n">증감</th></tr></thead><tbody>`+
     rrow("정상인수","normal",true)+rrow("ㄴ 표준인수","std",true)+rrow("ㄴ 조건부인수","cond",true)+rrow("반송","ret",true)+rrow("청철","wd",true)+
     `<tr class="total"><td>합계</td><td class="n">${nf(m.resTotal)}</td><td class="n">100.0%</td><td class="n">${p?nf(p.resTotal):"-"}</td><td class="n">${p?chgTxt(m.resTotal,p.resTotal):"-"}</td></tr>`+
-    rrow("(참고) 미결","pend",false)+"</tbody>";
+    "</tbody>";
+  // key figures under each table (the shorter column's box stretches so both columns end level)
+  const kf=a=>a.map(([k,v,sub,c])=>`<div><span class="k">${k}</span><span class="v ${c||""}">${v}${sub?`<small>${sub}</small>`:""}</span></div>`).join("");
+  const chsK=chList().filter(c=>m.byCh[c]);const big1=chsK.slice().sort((a,b)=>m.byCh[b]-m.byCh[a])[0];
+  const chg=p?chsK.map(c=>({c,d:p.byCh[c]?(m.byCh[c]-p.byCh[c])/p.byCh[c]:null})).filter(x=>x.d!=null).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d))[0]:null;
+  const lowT=chsK.map(c=>({c,t:chStats(c,SEL).touch})).filter(x=>x.t!=null).sort((a,b)=>a.t-b.t)[0];
+  const lowA=chsK.map(c=>({c,a:chStats(c,SEL).autoRate})).filter(x=>x.a!=null).sort((a,b)=>a.a-b.a)[0];
+  $("kfCh").innerHTML=kf([
+    ["최대 채널",big1?esc(big1):"-",big1?`${nf(m.byCh[big1])}건 · ${pct(rate(m.byCh[big1],m.proc))}`:""],
+    ["전월 대비 변동 최대",chg?esc(chg.c):"-",chg?`${chg.d>0?"+":"−"}${Math.abs(chg.d*100).toFixed(1)}%`:"전월 없음"],
+    ["터치율 최저",lowT?esc(lowT.c):"-",lowT?pct(lowT.t):"",lowT&&lowT.t<tt?"crit":""],
+    ["자동심사율 최저",lowA?esc(lowA.c):"-",lowA?pct(lowA.a):"",lowA&&lowA.a<at?"crit":""]]);
+  const rm=S.returnMax/100;
+  $("kfSt").innerHTML=kf([
+    ["정상인수율",pct(rate(m.normal,m.resTotal)),p?ppTxt(rate(m.normal,m.resTotal),rate(p.normal,p.resTotal)):""],
+    ["조건부 비중",pct(m.condRate),"정상인수 중"],
+    ["반송률",pct(m.retRate),`기준 ${S.returnMax}% 이하`,m.retRate!=null&&m.retRate>rm?"crit":"good"],
+    ["청철률",pct(rate(m.wd,m.resTotal)),p?ppTxt(rate(m.wd,m.resTotal),rate(p.wd,p.resTotal)):""]]);
   // reviewers × months (trend, last 12 months up to the selected month)
   const rvs=rvList();const WIN=winMonths();
   $("rvHint").textContent=`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"}`;
@@ -732,8 +755,14 @@ function renderMetrics(){
       return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
     `<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n">${nf(M[mm].proc)}</td>`).join("")}<td class="n sep">${nf(WIN.reduce((n,mm)=>n+M[mm].proc,0))}</td><td class="n">${(WIN.reduce((n,mm)=>n+M[mm].proc,0)/WIN.length).toFixed(1)}</td><td class="n">${p?dTxt(m.proc,p.proc):"-"}</td><td class="n">${pct(m.touch)}</td></tr></tbody>`;
   // months
-  $("tblMonths").innerHTML=`<thead><tr><th>마감월</th><th class="n">총 심사건수</th><th class="n">3일이내</th><th class="n">3일초과</th><th class="n">터치율</th><th class="n">자동심사</th><th class="n">인심사</th><th class="n">공란(제외)</th><th class="n">자동심사율</th><th class="n">처리 건수</th><th class="n">정상인수</th><th class="n">표준</th><th class="n">조건부</th><th class="n">반송</th><th class="n">청철</th><th class="n">미결</th><th class="n">재분배</th></tr></thead><tbody>`+
-    [pk,SEL].filter(Boolean).map(mm=>{const a=M[mm];return`<tr${mm===SEL?' style="font-weight:600"':""}><td>${mLabel(mm)}</td><td class="n">${nf(a.n)}</td><td class="n">${nf(a.tIn)}</td><td class="n">${nf(a.tOut)}</td><td class="n ${cT(a.touch)}">${pct(a.touch)}</td><td class="n">${nf(a.auto)}</td><td class="n">${nf(a.manual)}</td><td class="n">${nf(a.autoBlank)}</td><td class="n ${cA(a.autoRate)}">${pct(a.autoRate)}</td><td class="n">${nf(a.proc)}</td><td class="n">${nf(a.normal)}</td><td class="n">${nf(a.std)}</td><td class="n">${nf(a.cond)}</td><td class="n">${nf(a.ret)}</td><td class="n">${nf(a.wd)}</td><td class="n">${nf(a.pend)}</td><td class="n">${nf(a.comp.diff)}</td></tr>`;}).join("")+"</tbody>";
+  const mcols=[["n","총 심사건수","c"],["tIn","3일이내","c"],["tOut","3일초과","c"],["touch","터치율","r",cT],["auto","자동심사","c"],["manual","인심사","c"],["autoRate","자동심사율","r",cA],
+    ["proc","처리 건수","c"],["normal","정상인수","c"],["std","표준","c"],["cond","조건부","c"],["ret","반송","c"],["wd","청철","c"],["pend","미결","c"]];
+  const mval=(a,c)=>c[0]==="diff"?a.comp.diff:a[c[0]];
+  mcols.push(["diff","재분배","c"]);
+  $("tblMonths").innerHTML=`<thead><tr><th>마감월</th>${mcols.map(c=>`<th class="n">${c[1]}</th>`).join("")}</tr></thead><tbody>`+
+    [pk,SEL].filter(Boolean).map(mm=>{const a=M[mm];return`<tr${mm===SEL?' style="font-weight:600"':""}><td>${mLabel(mm)}</td>${mcols.map(c=>`<td class="n ${c[3]?c[3](mval(a,c)):""}">${c[2]==="r"?pct(mval(a,c)):nf(mval(a,c))}</td>`).join("")}</tr>`;}).join("")+
+    (p?`<tr class="total"><td>전월 대비</td>${mcols.map(c=>{const v=mval(m,c),pv=mval(p,c);const big=c[2]==="r"?Math.abs((v-pv)*100)>=S.momP:(pv&&Math.abs((v-pv)/pv*100)>=S.momC);
+      return`<td class="n ${big?"cell-warn":""}">${c[2]==="r"?ppTxt(v,pv):`${dTxt(v,pv)}<br><small style="font-weight:400;color:var(--ink-3)">${chgTxt(v,pv)}</small>`}</td>`;}).join("")}</tr>`:"")+"</tbody>";
 }
 
 /* ---------- summary comment, one block per topic ---------- */
