@@ -89,7 +89,8 @@ button.chip[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--line-2);white-space:nowrap}
 th{background:var(--paper);color:var(--ink-2);font-weight:600;font-size:12px;position:sticky;top:0;z-index:1}
-td.n{text-align:left}
+td.n{text-align:right}
+td.n.pc{text-align:center}
 th.n{text-align:center}
 td.txt{white-space:normal;min-width:240px}
 td.cell-crit{background:var(--crit-bg);color:var(--crit);font-weight:600}
@@ -160,7 +161,9 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .chat-in textarea{min-height:44px;max-height:140px;padding:8px 10px;font-size:13.5px;line-height:1.5;flex:1;resize:none;background:var(--paper)}
 .chat-note{font-size:11px;color:var(--ink-3);padding:0 12px 10px}
 @media (max-width:560px){.chat{right:0;left:0;bottom:0;width:100%;height:calc(100% - 40px);border-radius:12px 12px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}.chat-fab{right:16px}}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:-8px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:-8px;flex-wrap:wrap}
+.tabs button{white-space:nowrap;flex:none}
+@media (max-width:520px){.tabs{gap:0}.tabs button{padding:10px 7px;font-size:13.5px}}
 .tabs button{border:none;border-bottom:2.5px solid transparent;border-radius:0;background:none;padding:10px 14px;font-weight:600;color:var(--ink-3)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .calc-bar>.subtabs{width:100%}
@@ -214,7 +217,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-tbl{border-collapse:collapse;width:100%;font-size:8pt;line-height:1.25}
 .rp-tbl th{position:static;background:var(--paper);color:var(--ink);font-weight:600;font-size:8pt;text-align:center}
 .rp-tbl th,.rp-tbl td{border:.5pt solid var(--line);padding:.45mm 1.5mm;white-space:nowrap}
-.rp-tbl td.n{text-align:left;font-variant-numeric:tabular-nums}
+.rp-tbl td.n.pc{text-align:center}
+.rp-tbl td.n{text-align:right;font-variant-numeric:tabular-nums}
 .rp-tbl td.bad{color:var(--crit);font-weight:700}
 .rp-tbl td.okc{color:var(--good);font-weight:600}
 .rp-tbl tr.tot td{font-weight:700;background:var(--paper)}
@@ -254,8 +258,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 </style>
 <style>
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
-.monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
-.monthpick select{font-weight:600}
+.monthpick{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--ink-2)}
+.monthpick select{font-size:18px;font-weight:700;padding:8px 36px 8px 14px;min-height:44px;border:1.5px solid var(--accent);border-radius:8px;color:var(--ink);cursor:pointer}
 .tops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .tcard{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;border-top:3px solid var(--accent)}
 button.tcard{font:inherit;text-align:left;cursor:pointer;background:var(--sheet);color:var(--ink);align-items:stretch}
@@ -1127,6 +1131,9 @@ function rpStatus(){const f=RPS.final;const st=$("rpStatus");if(!st)return;
   st.textContent=f?`최종 확인 · ${f.at}${f.by?` · ${f.by}`:""}`:"초안";st.className="chip "+(f?"good":"warn");
   $("btnFinal").textContent=f?"확인 취소":"최종 확인";$("btnFinal").classList.toggle("primary",!f);
   const stamp=$("rpStamp");if(stamp){stamp.textContent=f?`최종 확인 ${f.at.slice(0,10)}`:"초 안";stamp.className="rp-stamp "+(f?"final":"draft");}}
+/* 표 안 % 값은 가운데, 숫자는 오른쪽 정렬: 렌더 후 % 칸에 pc 클래스를 붙인다 */
+const tagPc=root=>root.querySelectorAll&&root.querySelectorAll("td.n").forEach(c=>c.classList.toggle("pc",c.textContent.includes("%")));
+new MutationObserver(ms=>{const seen=new Set();ms.forEach(m=>{const t=m.target.closest?m.target.closest("table"):null;if(t&&!seen.has(t)){seen.add(t);tagPc(t);}else if(!t&&m.target.querySelectorAll&&!seen.has(m.target)){seen.add(m.target);tagPc(m.target);}});}).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 const tdN=v=>/^[+\-−±]?[\d,.]+(%|%p|건|일)?$/.test(String(v).trim())||/^[+\-−±][\d,.]+/.test(String(v))?"n":"";
 const cv=c=>c!==null&&typeof c==="object"?c:{v:c};
 const spanA=o=>`${o.rs?` rowspan="${o.rs}"`:""}${o.cs?` colspan="${o.cs}"`:""}`;
@@ -1338,7 +1345,8 @@ function sheet(rows,widths,{border=true,from=0}={}){
     const cell=typeof o.v==="number"&&isFinite(o.v)?{t:"n",v:o.v}:{t:"s",v:String(o.v)};
     if(o.z)cell.z=o.z;
     let s=Object.assign({},o.s||{});if(border&&r>=from&&!o.nob&&!(rows[r].length===1&&o.s&&(o.s===X.sec||o.s===X.title||o.s===X.sub)))s.border=BORDER;
-    if(typeof o.v==="number"){if(!o.z&&Number.isInteger(o.v))cell.z="#,##0";s.alignment=Object.assign({horizontal:"left"},s.alignment||{});}
+    if(typeof o.v==="number"){if(!o.z&&Number.isInteger(o.v))cell.z="#,##0";s.alignment=Object.assign({horizontal:o.z&&o.z.includes("%")?"center":"right"},s.alignment||{});}
+    else if(r>=from&&rows[r].length>1&&/^[+\-−±]?[\d,.]+(건|일)?$/.test(String(o.v).trim()))s.alignment=Object.assign({horizontal:"right",vertical:"center"},s.alignment||{});
     else if(r>=from&&!(rows[r].length===1))s.alignment=Object.assign({horizontal:"center",vertical:"center"},s.alignment||{});
     cell.s=s;ws[XLSX.utils.encode_cell({r,c:ci})]=cell;});});
   ws["!ref"]=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:Math.max(rows.length-1,0),c:Math.max(maxC-1,0)}});
@@ -1459,7 +1467,7 @@ function buildDocx(){
     if(o.c&&o.c.includes("selc"))brd={...brd,left:SB,right:SB,...(h?{top:SB}:{}),...(o.c.includes("selb")?{bottom:SB}:{})};
     if(o.c==="grp"||o.c==="gap"){h=false;first=false;}
     return new d.TableCell({borders:brd,width:w?{size:w,type:d.WidthType.DXA}:undefined,rowSpan:o.rs,columnSpan:o.cs,verticalAlign:o.rs?d.VerticalAlign.CENTER:undefined,shading:h||first?{type:d.ShadingType.CLEAR,color:"auto",fill:h?"EEF1F3":"F6F7F8"}:undefined,margins:{top:15,bottom:15,left:50,right:50},
-      children:[new d.Paragraph({alignment:numL?d.AlignmentType.LEFT:d.AlignmentType.CENTER,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp"||!!(o.c&&o.c.includes("selc")),color:o.c==="bad"?"A42020":undefined})]})]});};
+      children:[new d.Paragraph({alignment:numL&&!t.includes("%")?d.AlignmentType.RIGHT:d.AlignmentType.CENTER,children:[new d.TextRun({text:t,font:FONT,size:sz,bold:h||o.c==="bad"||o.c==="grp"||!!(o.c&&o.c.includes("selc")),color:o.c==="bad"?"A42020":undefined})]})]});};
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
     ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[320,1780,1621,1621,1621,1621,1622]}:{}),
     rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",hdr:ri===0,first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
