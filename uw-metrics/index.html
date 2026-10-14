@@ -276,7 +276,9 @@ button.tcard.on .more{background:var(--accent);color:var(--sheet)}
 #cards .card.on .more{background:var(--accent);color:var(--sheet)}
 .tap-row{margin-bottom:-8px}
 .mpanel{border:2px solid var(--accent);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
-.mp-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px;align-items:start}
+.mp-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px;align-items:stretch}
+.mp-grid>.tbl{display:flex}
+.mp-grid>.tbl>table{height:100%}
 #tblMonths tr.cur td{font-weight:600}
 @media (max-width:900px){.mp-grid{grid-template-columns:1fr}}
 .rank{border:1px solid var(--accent);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
@@ -974,7 +976,7 @@ function renderMetrics(){
   $("tblMonths").innerHTML=`<thead><tr><th>마감월</th>${mcols.map(c=>`<th class="n">${c[1]}</th>`).join("")}</tr></thead><tbody>`+
     [pk,SEL].filter(Boolean).map(mm=>{const a=M[mm];return`<tr${mm===SEL?' class="cur"':""}><td>${mLabel(mm)}${mm===SEL?" (당월)":" (전월)"}</td>${mcols.map(c=>`<td class="n ${c[3]?c[3](mval(a,c)):""}">${fv(c,mval(a,c))}</td>`).join("")}</tr>`;}).join("")+
     (p?`<tr class="total"><td>전월 대비</td>${mcols.map(c=>{const v=mval(m,c),pv=mval(p,c);if(v==null||pv==null)return`<td class="n">-</td>`;const big=c[2]==="r"?Math.abs((v-pv)*100)>=S.momP:c[2]==="d"?false:(pv&&Math.abs((v-pv)/pv*100)>=S.momC);
-      return`<td class="n ${big?"cell-warn":""}">${c[2]==="r"?ppTxt(v,pv):c[2]==="d"?`${v-pv>0?"+":v-pv<0?"−":"±"}${Math.abs(v-pv).toFixed(2)}일`:`${dTxt(v,pv)}<br><small style="font-weight:400;color:var(--ink-3)">${chgTxt(v,pv)}</small>`}</td>`;}).join("")}</tr>`:"")+"</tbody>";
+      return`<td class="n ${big?"cell-warn":""}">${c[2]==="r"?ppTxt(v,pv):c[2]==="d"?`${v-pv>0?"+":v-pv<0?"−":"±"}${Math.abs(v-pv).toFixed(2)}일`:dTxt(v,pv)}</td>`;}).join("")}</tr>`:"")+"</tbody>";
   // 채널별 같은 지표
   const CH={touch:["touch","터치율","r",cT,"tOut","3일초과"],auto:["autoRate","자동심사율","r",cA,"autoBlank","결과 공란"],proc:["proc","처리 건수","c",null,"pend","미결"],ret:["retRate","반송률","r",v=>v!=null&&v>S.returnMax/100?"cell-crit":"","ret","반송"]}[MKEY];
   const chs2=chList().filter(c=>chStats(c,SEL).all||(p&&chStats(c,pk).all));
@@ -1006,7 +1008,8 @@ function renderCharts(){
   // 1) 처리 건수 막대
   const vals=W.map(mm=>M[mm].proc),mx=Math.max(1,...vals),step=mx<=200?50:mx<=1000?200:500,top=Math.ceil(mx*1.1/step)*step;
   const bw=iw/n,y=v=>T+ih-v/top*ih;const ticks=[0,top/2,top];
-  $("chProc").innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="월별 처리 건수: ${W.map((mm,i)=>`${mLabel(mm)} ${vals[i]}건`).join(", ")}">
+  $("chProc").innerHTML=`<div class="legend"><span><i style="background:var(--accent-2);opacity:.55"></i>처리 건수</span><span><i style="background:var(--accent)"></i>당월 (${mLabel(SEL)})</span></div>
+  <svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="월별 처리 건수: ${W.map((mm,i)=>`${mLabel(mm)} ${vals[i]}건`).join(", ")}">
     ${ticks.map(t=>`<line class="gr" x1="${L}" x2="${VW-R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L-5}" y="${y(t)+3}" text-anchor="end">${nf(t)}</text>`).join("")}
     ${W.map((mm,i)=>{const x=L+i*bw+bw*.18,w=bw*.64,h=Math.max(1,ih-(y(vals[i])-T)),sel=mm===SEL;
       return`<g class="hit" tabindex="0"><title>${mLabel(mm)} 처리 ${nf(vals[i])}건</title><path class="bar${sel?" sel":""}" d="M${x},${y(0)} V${y(vals[i])+3} q0,-3 3,-3 h${w-6} q3,0 3,3 V${y(0)} Z"/>
