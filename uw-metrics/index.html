@@ -170,7 +170,14 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .rp-bar-l{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
 .report{overflow-x:auto;padding-block:4px 12px}
 .rp-page{background:var(--sheet);color:var(--ink);width:210mm;box-sizing:border-box;padding:15mm;margin:0 auto;border:1px solid var(--line);box-shadow:0 2px 14px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:2.6mm;font-size:9pt;line-height:1.45}
-.rp-head{display:flex;flex-direction:column;gap:2mm}
+.rp-head{display:flex;flex-direction:column;gap:2mm;position:relative}
+.rp-stamp{position:absolute;right:0;top:-1mm;font-size:9pt;font-weight:700;letter-spacing:.15em;border:1.5pt solid;border-radius:3px;padding:.6mm 2.5mm;transform:rotate(-4deg)}
+.rp-stamp.draft{color:var(--crit);border-color:var(--crit)}
+.rp-stamp.final{color:var(--good);border-color:var(--good);letter-spacing:.02em}
+.report.capturing .rp-text{background:none;border-color:transparent;padding-inline:0}
+.report.capturing .rp-edit{border-bottom-color:transparent}
+.report.capturing .rp-edit:empty::before{content:""}
+.report.capturing .rp-page{box-shadow:none;border-color:transparent}
 .rp-title{font-size:15pt;font-weight:700;letter-spacing:-.01em;border-bottom:1.5pt solid var(--ink);padding-bottom:1.5mm;outline:none;text-align:center}
 .rp-meta{width:100%;font-size:8.5pt;border-collapse:collapse}
 .rp-meta th{position:static;background:var(--paper);width:18mm;text-align:center;font-weight:600;color:var(--ink-2);font-size:8.5pt}
@@ -335,15 +342,17 @@ td.zero{color:var(--ink-3)}
 
   <div class="view" id="viewReport" hidden>
     <div class="rp-bar">
-      <div class="rp-bar-l"><b id="rpBarTitle">월마감 보고서</b><span class="chip" id="fitInfo"></span><span class="note">회색 칸의 문장은 눌러서 바로 고칠 수 있습니다. 표의 숫자는 산출 결과에서 자동으로 채웁니다.</span></div>
+      <div class="rp-bar-l"><b id="rpBarTitle">월마감 보고서</b><span class="chip" id="fitInfo"></span><span class="note">보고서는 초안으로 만들어집니다. 표 아래 주석(회색 칸)은 언제든 눌러서 고칠 수 있고, 고친 내용은 이 브라우저에 마감월별로 저장됩니다. 확인이 끝나면 '최종 확인'을 누르세요.</span></div>
       <div class="actions">
-        <button id="btnRedraft" type="button">기준 문안 다시 만들기</button>
+        <span class="chip" id="rpStatus"></span>
+        <button id="btnFinal" class="primary" type="button">최종 확인</button>
+        <button id="btnRedraft" type="button">초안 다시 만들기</button>
         <button id="btnAI" type="button" hidden>AI로 문안 다듬기</button>
         <button id="btnStop" type="button" hidden>중지</button>
         <button id="btnCopy" type="button">본문 복사</button>
-        <button id="btnPrint" type="button" hidden>인쇄 · PDF</button>
+        <button id="btnPrint" type="button">출력</button>
         <button id="btnXlsx2" type="button">엑셀</button>
-        <button id="btnDocx" class="primary" type="button">Word 다운로드</button>
+        <button id="btnDocx" type="button">Word 다운로드</button>
       </div>
       <div class="note" id="sumNote"></div>
     </div>
@@ -708,7 +717,7 @@ function render(){
   {const t=SEL?`${SEL.slice(0,4)}년 ${+SEL.slice(4)}월 신계약 심사 마감 현황`:"신계약 심사 마감 현황";$("pageTitle").textContent=t;document.title=t;}
   if(!SEL){["cards","tblCh","tblSt","tblRv","tblMonths","meta","rvHint"].forEach(id=>$(id).innerHTML="");}
   const pk=PREV();
-  $("meta").innerHTML=SEL?`<span>비교 <b>${pk?mLabel(pk):"없음"}</b></span><span>지표 대상 <b>${nf(M[SEL].all)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
+  $("meta").innerHTML=SEL?`<span>지표 대상 <b>${nf(M[SEL].all)}건</b></span><span>파일 <b>${esc(SOURCE)}</b></span>`:"";
   $("banner").hidden=!isSample;
   $("banner").textContent="예시 데이터(모두 가상)를 보여주고 있습니다. 2026년 8·9월은 제공해 주신 더미 워크북 1,200건 그대로이고, 추이를 보여주려고 2025년 10월~2026년 7월 10개월치를 같은 분포로 지어 앞에 붙였습니다(증번 G로 시작). 실제 파일을 올리면 바로 바뀝니다.";
   renderCheck();if(SEL)renderMetrics();}
@@ -880,6 +889,17 @@ function draftTopics(){
    T.push({key:"note",title:"특이사항 및 향후 조치",cls:"",chip:"",text:`- 데이터 점검: 전체 ${nf(ROWS.length)}행 중 오류 ${nf(exc)}행${eTxt?`(${eTxt})`:""}은 지표 산출에서 제외하였고, 경고 ${nf(wN)}건은 원천 데이터 확인이 필요함.\n- 향후 조치: (작성)`});}
   return T;}
 const RP_META={dept:"계약심사부",author:"",title:""};
+/* 보고서 상태(주석 수정본·작성 정보·최종 확인)를 마감월·파일별로 저장 */
+let RPS={comments:{},meta:{},final:null};
+const rpKey=()=>{let h=0;const str=`${SOURCE}|${ROWS.length}`;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))|0;return`uwm-rp-${SEL}-${(h>>>0).toString(36)}`;};
+function rpLoad(){RPS={comments:{},meta:{},final:null};try{const j=JSON.parse(localStorage.getItem(rpKey())||"null");if(j)Object.assign(RPS,j);}catch(e){}
+  RP_META.dept=RPS.meta.dept??"계약심사부";RP_META.author=RPS.meta.author??"";RP_META.title=RPS.meta.title??"";}
+function rpSave(){RPS.meta={dept:RP_META.dept,author:RP_META.author,title:RP_META.title};try{localStorage.setItem(rpKey(),JSON.stringify(RPS));}catch(e){}}
+function rpEdited(){if(RPS.final){RPS.final=null;toast("내용을 고쳐 보고서가 다시 초안 상태가 되었습니다.");}rpSave();rpStatus();}
+function rpStatus(){const f=RPS.final;const st=$("rpStatus");if(!st)return;
+  st.textContent=f?`최종 확인 · ${f.at}${f.by?` · ${f.by}`:""}`:"초안";st.className="chip "+(f?"good":"warn");
+  $("btnFinal").textContent=f?"확인 취소":"최종 확인";$("btnFinal").classList.toggle("primary",!f);
+  const stamp=$("rpStamp");if(stamp){stamp.textContent=f?`최종 확인 ${f.at.slice(0,10)}`:"초 안";stamp.className="rp-stamp "+(f?"final":"draft");}}
 const tdN=v=>/^[+\-−±]?[\d,.]+(%|%p|건|일)?$/.test(String(v).trim())||/^[+\-−±][\d,.]+/.test(String(v))?"n":"";
 const cv=c=>c!==null&&typeof c==="object"?c:{v:c};
 const spanA=o=>`${o.rs?` rowspan="${o.rs}"`:""}${o.cs?` colspan="${o.cs}"`:""}`;
@@ -990,7 +1010,7 @@ function renderComments(){
   if(!SEL){$("report").innerHTML="";return;}
   const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
   $("rpBarTitle").textContent=D.title;
-  const head=`<header class="rp-head"><div class="rp-title" id="rpTitle" contenteditable="true" spellcheck="false">${esc(D.title)}</div>
+  const head=`<header class="rp-head"><div class="rp-stamp draft" id="rpStamp">초 안</div><div class="rp-title" id="rpTitle" contenteditable="true" spellcheck="false">${esc(D.title)}</div>
     <table class="rp-meta"><tbody><tr><th>보고 기간</th><td>${esc(D.period)}</td><th>작성일</th><td>${esc(D.date)}</td></tr>
       <tr><th>산출 대상</th><td>${esc(D.target)}</td><th>작성</th><td><span class="rp-edit" id="rpDept" contenteditable="true">${esc(RP_META.dept)}</span> <span class="rp-edit" id="rpAuthor" contenteditable="true" data-ph="작성자">${esc(RP_META.author)}</span></td></tr></tbody></table></header>`;
   const box=(k,label)=>byK[k]?`${label?`<div class="rp-lbl">${esc(byK[k].title)}</div>`:""}<div class="rp-text" id="cm-${k}" contenteditable="true" spellcheck="false" aria-label="${esc(byK[k].title)} 코멘트"></div>`:"";
@@ -999,27 +1019,29 @@ function renderComments(){
       (h?`<div class="rp-h3"><h3>${h}${t==="rmonth"?` <span class="rp-sub">${esc(D.winTxt)}</span>`:""}</h3>${b?`<span class="rp-badge">${esc(D.badges[b])}</span>`:""}</div>`:"")+
       (t?`<div class="rp-wrap">${rpTable(D[t],{tot:TOT[t]})}</div>`:"")+keys.map(k=>box(k,keys.length>1)).join("")+`</section>`).join("")).join("")+
     (pi===0?`<footer class="rp-foot">${esc(D.basis)}</footer>`:"")+`</div>`).join("");
-  COMMENTS.forEach((c,i)=>{const el=$("cm-"+c.key);if(!el)return;el.textContent=c.text;el.oninput=()=>{COMMENTS[i].text=el.innerText.replace(/\n$/,"");fitCheck();};});
-  $("rpTitle").oninput=()=>{RP_META.title=$("rpTitle").innerText.trim();$("rpBarTitle").textContent=RP_META.title;};
-  $("rpDept").oninput=()=>{RP_META.dept=$("rpDept").innerText.trim();};$("rpAuthor").oninput=()=>{RP_META.author=$("rpAuthor").innerText.trim();};
+  COMMENTS.forEach((c,i)=>{const el=$("cm-"+c.key);if(!el)return;el.textContent=c.text;el.oninput=()=>{COMMENTS[i].text=el.innerText.replace(/\n$/,"");RPS.comments[c.key]=COMMENTS[i].text;rpEdited();fitCheck();};});
+  $("rpTitle").oninput=()=>{RP_META.title=$("rpTitle").innerText.trim();$("rpBarTitle").textContent=RP_META.title;rpEdited();};
+  $("rpDept").oninput=()=>{RP_META.dept=$("rpDept").innerText.trim();rpEdited();};$("rpAuthor").oninput=()=>{RP_META.author=$("rpAuthor").innerText.trim();rpEdited();};
+  rpStatus();
   fitCheck();}
 /* A4 인쇄 영역(180×267mm)에 각 쪽이 들어가는지 화면에서 미리 잰다 */
 function fitCheck(){const el=$("fitInfo");if(!el||$("viewReport").hidden||!$("rpPage1"))return;
   const probe=document.createElement("div");probe.style.cssText="position:absolute;visibility:hidden;height:267mm";document.body.appendChild(probe);const lim=probe.offsetHeight;probe.remove();
   const rs=RP.map((_,i)=>{const pg=$("rpPage"+(i+1));const cs=getComputedStyle(pg);return(pg.scrollHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom))/lim;});
   const over=rs.some(r=>r>1);el.textContent=rs.map((r,i)=>`${i+1}쪽 ${Math.round(r*100)}%`).join(" · ")+(over?" · 넘친 쪽의 문장을 줄여 주세요":` · A4 ${RP.length}장`);el.className="chip "+(over?"crit":"good");}
-function setComment(key,text){const i=COMMENTS.findIndex(c=>c.key===key);if(i<0)return;COMMENTS[i].text=text;const el=$("cm-"+key);if(el)el.textContent=text;fitCheck();}
+function setComment(key,text){const i=COMMENTS.findIndex(c=>c.key===key);if(i<0)return;COMMENTS[i].text=text;RPS.comments[key]=text;rpEdited();const el=$("cm-"+key);if(el)el.textContent=text;fitCheck();}
 function commentPlain(){const D=reportData();const byK=Object.fromEntries(COMMENTS.map(c=>[c.key,c]));
   return D.title+`\n보고 기간: ${D.period} / 산출 대상: ${D.target} / 작성일: ${D.date} / 작성: ${RP_META.dept}${RP_META.author?" "+RP_META.author:""}\n\n`+
     RP.flat().map(sec=>sec.h+"\n"+sec.subs.map(([keys,h,,b])=>(h?`${h}${b?` — ${D.badges[b]}`:""}\n`:"")+keys.map(k=>byK[k]?(keys.length>1?`[${byK[k].title}] `:"")+byK[k].text:"").join("\n")).join("\n")).join("\n\n");}
-function redraft(){if(!SEL){COMMENTS=[];$("report").innerHTML="";return;}COMMENTS=composeReport(draftTopics());renderComments();}
+function redraft(reset){if(!SEL){COMMENTS=[];$("report").innerHTML="";return;}rpLoad();
+  if(reset){RPS.comments={};RPS.final=null;RP_META.title="";rpSave();}
+  COMMENTS=composeReport(draftTopics()).map(c=>RPS.comments[c.key]!=null?{...c,text:RPS.comments[c.key]}:c);renderComments();}
 
 /* ---------- AI polish (sample capability) ---------- */
 let sampleFn=null,ctl=null;
 const useApi=()=>!window.claude&&/^https?:$/.test(location.protocol);
 async function initCaps(){try{sampleFn=await window.claude?.use?.("sample");}catch(e){sampleFn=null;}
   if(sampleFn||useApi())$("btnAI").hidden=false;
-  if(!window.claude)$("btnPrint").hidden=false;
   if(sampleFn||useApi()){$("chatFab").hidden=false;$("chatModel").textContent=sampleFn?"Claude (claude.ai)":"Nemotron · OpenRouter";}}
 // Vercel: /api/chat (OpenRouter). 스트리밍 텍스트를 모아 onText로 넘긴다.
 async function askApi(messages,{signal,context="",onText}={}){
@@ -1066,7 +1088,10 @@ ${JSON.stringify(facts)}`;
   }finally{$("btnAI").disabled=false;$("btnStop").hidden=true;document.querySelectorAll(".rp-text").forEach(el=>el.classList.remove("busy"));}
 };
 $("btnStop").onclick=()=>ctl?.abort();
-$("btnRedraft").onclick=()=>{redraft();$("sumNote").textContent="현재 지표로 주제별 기준 문안을 다시 만들었습니다.";};
+$("btnRedraft").onclick=()=>{redraft(true);$("sumNote").textContent="고친 주석을 지우고 현재 지표로 초안을 다시 만들었습니다.";};
+$("btnFinal").onclick=()=>{if(!SEL)return;if(RPS.final){RPS.final=null;rpSave();rpStatus();toast("최종 확인을 취소했습니다. 초안 상태입니다.");return;}
+  const n=new Date(),p2=x=>String(x).padStart(2,"0");RPS.final={at:`${n.getFullYear()}.${p2(n.getMonth()+1)}.${p2(n.getDate())} ${p2(n.getHours())}:${p2(n.getMinutes())}`,by:RP_META.author||""};
+  rpSave();rpStatus();toast("최종 확인했습니다. 이후 내용을 고치면 다시 초안이 됩니다.");};
 $("btnCopy").onclick=()=>{if(!SEL)return;const t=commentPlain();const done=()=>toast("보고서 본문을 복사했습니다.");
   const fallback=()=>{const ta=document.createElement("textarea");ta.value=t;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy");}catch(e){}ta.remove();ok?done():toast("복사하지 못했습니다. 각 칸에서 직접 복사해 주세요.");};
   try{navigator.clipboard.writeText(t).then(done,fallback);}catch(e){fallback();}};
@@ -1203,7 +1228,8 @@ function buildDocx(){
   const table=(rows,{tot=false,sz=16}={})=>new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},
     ...(rows===D.result?{layout:d.TableLayoutType.FIXED,columnWidths:[320,1780,1621,1621,1621,1621,1622]}:{}),
     rows:rows.map((r,ri)=>new d.TableRow({children:r.filter(c=>!cv(c).skip).map((c,ci)=>cell(c,{h:ri===0||(tot&&ri===rows.length-1)||cv(c).c==="grp",first:(ci===0&&!cv(c).lbl)||cv(c).c==="gap",sz,w:cv(c).c==="gap"?320:undefined}))}))});
-  const kids=[P(D.title,{size:30,bold:true,after:80}),
+  const stTxt=RPS.final?`최종 확인 ${RPS.final.at}${RPS.final.by?` · ${RPS.final.by}`:""}`:"초안";
+  const kids=[new d.Paragraph({alignment:d.AlignmentType.RIGHT,spacing:{after:0},children:[new d.TextRun({text:stTxt,font:FONT,size:16,bold:true,color:RPS.final?"1E6B3A":"A42020"})]}),P(D.title,{size:30,bold:true,after:80}),
     new d.Table({width:{size:100,type:d.WidthType.PERCENTAGE},rows:[
       new d.TableRow({children:[cell("보고 기간",{h:true,w:1300}),cell(D.period),cell("작성일",{h:true,w:1100}),cell(D.date)]}),
       new d.TableRow({children:[cell("산출 대상",{h:true,w:1300}),cell(D.target),cell("작성",{h:true,w:1100}),cell(`${RP_META.dept||""} ${RP_META.author||""}`.trim()||"-")]})]})];
@@ -1213,9 +1239,24 @@ function buildDocx(){
       keys.forEach(k=>{const c=byK[k];if(!c)return;if(keys.length>1)kids.push(P(c.title,{size:17,bold:true,color:"444444",before:50,after:0}));String(c.text||"").split("\n").forEach((line,i)=>kids.push(P(line,{before:i||keys.length>1?0:50})));});});});});
   return new d.Document({creator:RP_META.dept||"계약심사부",title:D.title,sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:850,bottom:850,left:850,right:850}}},children:kids}]});}
 $("btnDocx").onclick=async()=>{if(!SEL)return;if(!window.docx){toast("Word 모듈을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.");return;}
-  try{const blob=await window.docx.Packer.toBlob(buildDocx());await saveBlob(`${SEL}_신계약심사_월마감보고서.docx`,blob,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");}
+  try{const blob=await window.docx.Packer.toBlob(buildDocx());await saveBlob(`${SEL}_신계약심사_월마감보고서${RPS.final?"":"_초안"}.docx`,blob,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");}
   catch(e){toast("Word 파일을 만들지 못했습니다: "+(e.message||e));}};
-$("btnPrint").onclick=()=>window.print();
+const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("모듈을 불러오지 못했습니다."));document.head.appendChild(s);});
+async function savePdf(){
+  const btn=$("btnPrint");btn.disabled=true;const old=btn.textContent;btn.textContent="PDF 만드는 중…";
+  const root=document.documentElement,prevTheme=root.getAttribute("data-theme");
+  try{
+    if(!window.html2canvas)await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    if(!window.jspdf)await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    root.setAttribute("data-theme","light");$("report").classList.add("capturing");await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const pdf=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"portrait"});
+    const pages=[...document.querySelectorAll("#report .rp-page")];
+    for(let i=0;i<pages.length;i++){const c=await window.html2canvas(pages[i],{scale:2,backgroundColor:"#ffffff",useCORS:true});
+      if(i)pdf.addPage();const h=Math.min(297,c.height*210/c.width);pdf.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",0,0,210,h);}
+    await saveBlob(`${SEL}_신계약심사_월마감보고서${RPS.final?"":"_초안"}.pdf`,pdf.output("blob"),"application/pdf");
+  }catch(e){toast("PDF를 만들지 못했습니다: "+(e.message||e));}
+  finally{$("report").classList.remove("capturing");if(prevTheme==null)root.removeAttribute("data-theme");else root.setAttribute("data-theme",prevTheme);btn.disabled=false;btn.textContent=old;}}
+$("btnPrint").onclick=()=>{if(!SEL)return;if(window.claude)savePdf();else window.print();};
 function showTab(t){const rp=t==="report";["calc","report","chk","std"].forEach(k=>{const on=k===t;$("view"+k[0].toUpperCase()+k.slice(1)).hidden=!on;$("tab"+k[0].toUpperCase()+k.slice(1)).setAttribute("aria-selected",String(on));});
   if(t==="std")fillSettings();
   try{localStorage.setItem("uwm-tab",t);}catch(e){}window.scrollTo(0,0);if(rp)requestAnimationFrame(fitCheck);}
