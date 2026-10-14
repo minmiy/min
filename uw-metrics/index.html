@@ -168,7 +168,7 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 .tab-badge{font-size:11px;font-weight:600;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
 .tab-badge.crit{background:var(--crit-bg);color:var(--crit)} .tab-badge.warn{background:var(--warn-bg);color:var(--warn)} .tab-badge.good{background:var(--good-bg);color:var(--good)}
 .view{display:flex;flex-direction:column;gap:22px}
-.calc-actions{justify-content:flex-end}
+.calc-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 .rp-bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line)}
 .rp-bar-l{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
 .report{overflow-x:auto;padding-block:4px 12px}
@@ -350,10 +350,13 @@ td.zero{color:var(--ink-3)}
   </div>
   <div class="err" id="loadErr" hidden></div>
 
+  <div class="calc-bar">
   <nav class="subtabs" role="tablist" aria-label="지표 산출 하위 화면">
     <button type="button" role="tab" id="subMetric" aria-selected="true" aria-controls="secMetric">① 심사지표</button>
     <button type="button" role="tab" id="subRv" aria-selected="false" aria-controls="secRv">② 심사자별 현황</button>
   </nav>
+  <div class="actions"><button id="btnXlsx" type="button">결과표 엑셀 다운로드</button><button id="btnGoReport" class="primary" type="button">월마감 보고서 작성 →</button></div>
+  </div>
   <section class="blk" id="secMetric">
     <div class="blk-h">
       <h2><span class="step">①</span>심사지표</h2>
@@ -383,7 +386,6 @@ td.zero{color:var(--ink-3)}
     <div class="tbl"><table id="tblRv"></table></div>
   </section>
 
-  <div class="actions calc-actions"><span class="note">① 심사지표·② 심사자별 현황을 확인한 뒤 '월마감 보고서' 탭에서 보고서를 작성합니다.</span><span style="flex:1"></span><button id="btnXlsx" type="button">결과표 엑셀 다운로드</button><button id="btnGoReport" class="primary" type="button">월마감 보고서 작성 →</button></div>
 
   </div>
 
