@@ -8,4 +8,8 @@
 3. 전월 대비 증감, 기준 초과 색상 표시, 요약 코멘트(기준 문안 + AI 다듬기)를 만든 뒤
 4. 결과표를 엑셀(요약/채널별/심사결과/심사자별/데이터점검/원본_점검표시/산출기준)로 내려받습니다.
 
-배포: https://claude.ai/artifact/6TWkjEZqyTq4zBkEWU4XM2 (Claude 아티팩트)
+배포
+- Claude 아티팩트: https://claude.ai/artifact/6TWkjEZqyTq4zBkEWU4XM2 — AI 코멘트 다듬기(`sample`)와 저장 확인 창(`downloads`) 사용
+- Vercel: 정적 파일 그대로 배포(빌드 불필요). `/`는 `vercel.json`에서 `/uw-metrics/`로 이동. 단독 페이지에서는 엑셀이 브라우저 다운로드로 저장되고, AI 다듬기 버튼은 숨겨지며 기준 문안 자동 생성만 동작
+
+`uw-metrics/index.html`은 완전한 HTML 문서이므로 두 곳에 같은 파일을 씁니다.

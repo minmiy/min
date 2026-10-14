@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>신계약 심사지표 산출기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +33,8 @@
   --st-ok:#5aa8c4; --st-cond:#3f7286; --st-rej:#e0675c; --st-delay:#d9a440; --st-wd:#62737c; --st-pend:#33454f;
   color-scheme:dark}
 *{box-sizing:border-box}
+body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 [hidden]{display:none!important}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:20px 64px;display:flex;flex-direction:column;gap:22px}
@@ -141,7 +148,8 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 @media (max-width:560px){.wrap{padding-inline:16px}.cards,.uploads{grid-template-columns:1fr}.chk-sum{grid-template-columns:repeat(2,minmax(0,1fr))}section.blk{padding:16px}.top h1{font-size:22px}dl.defs{grid-template-columns:1fr;gap:2px 0}dl.defs dd{margin-bottom:8px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header class="top">
     <div>
@@ -654,11 +662,15 @@ function buildWorkbook(){
   const ws7=sheet(df,[22,100]);
   XLSX.utils.book_append_sheet(wb,ws7,"산출기준");
   return wb;}
-let dl=null;
-async function initDownloads(){try{dl=await window.claude?.use?.("downloads");}catch(e){dl=null;}}
+let dl=null,dlReady=null;
+function initDownloads(){dlReady=(async()=>{try{dl=await window.claude?.use?.("downloads")||null;}catch(e){dl=null;}})();}
 async function saveFile(name,wb){
+  if(window.claude&&dlReady)await dlReady;
   const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
-  if(!dl){toast("이 화면에서는 파일 저장을 쓸 수 없습니다. claude.ai에서 아티팩트를 열어 다시 시도해 주세요.");return;}
+  if(!dl){ // 단독 웹페이지(Vercel 등): 브라우저 다운로드
+    const url=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+    const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},4000);toast("내려받았습니다: "+name);return;}
   try{await dl.save({filename:name,data:new Blob([buf])});toast("저장했습니다: "+name);}
   catch(e){toast({declined:"저장을 취소했습니다.",rate_limited:"이미 저장 확인 창이 열려 있습니다. 잠시 뒤 다시 시도해 주세요."}[e.code]||"파일을 저장하지 못했습니다 ("+(e.code||"오류")+").");}}
 $("btnXlsx").onclick=()=>{if(!CUR)return;try{saveFile(`신계약심사지표_${CUR.y}${String(CUR.mo).padStart(2,"0")}.xlsx`,buildWorkbook());}catch(e){toast("엑셀을 만들지 못했습니다: "+e.message);}};
@@ -763,3 +775,5 @@ else loadSample();
 initCaps();initDownloads();
 })();
 </script>
+</body>
+</html>
