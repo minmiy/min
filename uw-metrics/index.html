@@ -45,6 +45,7 @@ button:disabled{opacity:.5;cursor:default}
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:14px}
 .top .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
 .top h1{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.top-r{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px 22px}
 .meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .meta b{color:var(--ink);font-weight:600}
 .banner{background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:10px 14px;font-size:13px}
@@ -364,9 +365,9 @@ td.zero{color:var(--ink-3)}
       <div class="eyebrow">계약심사부 · 월 마감</div>
       <h1 id="pageTitle">신계약 심사 마감 현황</h1>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-      <label class="monthpick" for="selMonth">마감월 <select id="selMonth"></select></label>
+    <div class="top-r">
       <div class="meta" id="meta"></div>
+      <label class="monthpick" for="selMonth">마감월 <select id="selMonth"></select></label>
     </div>
   </header>
 
