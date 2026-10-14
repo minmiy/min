@@ -265,6 +265,20 @@ button.tcard.on::after{content:"";position:absolute;left:50%;bottom:-9px;transfo
 .tcard .more{align-self:flex-start;font-size:11.5px;font-weight:600;margin-top:4px;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:1px 9px}
 button.tcard.on .more{background:var(--accent);color:var(--sheet)}
 .tap-hint{font-weight:400;font-size:12px;color:var(--accent);margin-left:8px}
+.tap-row .tap-hint{margin-left:0;font-weight:600}
+#cards .card{cursor:pointer;transition:transform .12s,box-shadow .12s}
+#cards .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+#cards .card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#cards .card.on{border-color:var(--accent);border-width:2px;box-shadow:0 0 0 3px var(--accent-soft);overflow:visible}
+#cards .card.on::after{content:"";position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);border:9px solid transparent;border-top-color:var(--accent);border-bottom:0}
+#cards .card .nm{display:flex;justify-content:space-between;align-items:center;gap:6px}
+#cards .card .more{font-size:11px;font-weight:600;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:0 8px;white-space:nowrap}
+#cards .card.on .more{background:var(--accent);color:var(--sheet)}
+.tap-row{margin-bottom:-8px}
+.mpanel{border:2px solid var(--accent);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.mp-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px;align-items:start}
+#tblMonths tr.cur td{font-weight:600}
+@media (max-width:900px){.mp-grid{grid-template-columns:1fr}}
 .rank{border:1px solid var(--accent);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .rank-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
 .rank-h .chip{margin-left:auto;cursor:pointer}
@@ -386,7 +400,12 @@ td.zero{color:var(--ink-3)}
       <span class="hint" id="metricHint"></span>
     </div>
     <div class="alerts" id="alerts"></div>
+    <div class="tap-row"><span class="tap-hint">지표 카드를 눌러 아래 당월·전월 요약을 바꿔 보세요</span></div>
     <div class="cards" id="cards"></div>
+    <div class="mpanel" id="mPanel">
+      <div class="rank-h"><b id="monthsTitle">당월·전월 요약</b><span class="note" id="monthsNote"></span></div>
+      <div class="mp-grid"><div class="tbl"><table id="tblMonths"></table></div><div class="tbl"><table id="tblMCh"></table></div></div>
+    </div>
     <div class="grid2 even">
       <div><h3 id="chProcT">월별 처리 건수</h3><div class="chart" id="chProc"></div></div>
       <div><h3 id="chRateT">월별 지표 추이</h3><div class="chart" id="chRate"></div></div>
@@ -395,7 +414,6 @@ td.zero{color:var(--ink-3)}
       <div><h3>채널별 처리 건수</h3><div class="tbl"><table id="tblCh"></table></div></div>
       <div><h3>심사결과 통계 <span style="font-weight:400;color:var(--ink-3)">(미결 제외)</span></h3><div class="tbl"><table id="tblSt"></table></div></div>
     </div>
-    <div><h3 style="margin-bottom:8px" id="monthsTitle">당월·전월 요약</h3><div class="tbl"><table id="tblMonths"></table></div></div>
   </section>
 
   <section class="blk" id="secRv" hidden>
@@ -856,7 +874,7 @@ function topLists(){
   L.forEach(l=>{l.items.sort((a,b)=>(b.v??-1)-(a.v??-1));const best=l.items[0];
     l.winners=best?l.items.filter(x=>x.v===best.v):[];});
   return L;}
-let RANK_KEY="touch";
+let RANK_KEY="touch",MKEY="touch";
 /* 지표별 전체 심사자 순위: 1위 카드를 누르면 펼친다 */
 function rankAll(key){
   const m=M[SEL],people=RV_PEOPLE();const st=Object.fromEntries(people.map(k=>[k,rvStats(k,SEL)]));
@@ -905,9 +923,11 @@ function renderMetrics(){
     if(x.key==="ret"){const tot=m.resTotal||1;
       extra=`<div class="bar" role="img" aria-label="심사결과 구성">${ST_COLORS.filter(([, ,k])=>m[k]).map(([l,c,k])=>`<span style="width:${m[k]/tot*100}%;background:var(${c})" title="${l} ${m[k]}건"></span>`).join("")}</div>
       <div class="legend">${ST_COLORS.map(([l,c,k])=>`<span><i style="background:var(${c})"></i>${l} ${nf(m[k])}</span>`).join("")}</div>`;}
-    return`<div class="card ${cls}"><span class="nm">${x.name}</span>
+    const on=MKEY===x.key;
+    return`<div class="card ${cls}${on?" on":""}" role="button" tabindex="0" data-k="${x.key}" aria-pressed="${on}" aria-controls="mPanel"><span class="nm">${x.name}<span class="more">${on?"보는 중 ▼":"눌러서 보기 ›"}</span></span>
       <span class="big">${x.kind==="rate"?(x.val==null?"-":(x.val*100).toFixed(1)+"<small>%</small>"):nf(x.val)+"<small>건</small>"}</span>
       <span class="fx">${x.fx}</span><div class="row">${deltaHtml(x)}</div>${chip?`<div class="row">${chip}</div>`:""}${extra}</div>`;}).join("");
+  $("cards").querySelectorAll(".card[data-k]").forEach(c=>{const go=()=>{if(MKEY===c.dataset.k)return;MKEY=c.dataset.k;renderMetrics();};c.onclick=go;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};});
   const tt=S.touchTarget/100,at=S.autoTarget/100;
   const cT=v=>v!=null&&v<tt?"cell-crit":"",cA=v=>v!=null&&v<at?"cell-crit":"";
   const bigC=(a,b)=>b&&Math.abs((a-b)/b*100)>=S.momC?"cell-warn":"";
@@ -942,15 +962,25 @@ function renderMetrics(){
       return`<tr><td>${esc(k)}</td>${vals.map((x,i)=>`<td class="n${WIN[i]===SEL?" sel":""}" ${isP?heat(x,mx):""} title="${esc(k)} ${mLabel(WIN[i])}: ${x}건">${nf(x)}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n ${p?bigC(v,pv):""}">${p?dTxt(v,pv):"-"}</td><td class="n ${st.n>=10?cT(st.touch):""}">${pct(st.touch)}</td></tr>`;}).join("")+
     (()=>{const sP=mm=>people.reduce((n,k)=>n+(M[mm].byRv[k]||0),0);const tot=WIN.reduce((n,mm)=>n+sP(mm),0);const PA=rvAgg(people,SEL);
       return`<tr class="total"><td>합계</td>${WIN.map(mm=>`<td class="n${mm===SEL?" sel":""}">${nf(sP(mm))}</td>`).join("")}<td class="n sep">${nf(tot)}</td><td class="n">${(tot/WIN.length).toFixed(1)}</td><td class="n">${p?dTxt(sP(SEL),sP(pk)):"-"}</td><td class="n">${pct(PA.touch)}</td></tr></tbody>`;})();
-  // months
-  const mcols=[["n","총 심사건수","c"],["tIn","3일이내","c"],["tOut","3일초과","c"],["touch","터치율","r",cT],["auto","자동심사","c"],["manual","인심사","c"],["autoRate","자동심사율","r",cA],
-    ["proc","처리 건수","c"],["normal","정상인수","c"],["std","표준","c"],["cond","조건부","c"],["ret","반송","c"],["wd","청철","c"],["pend","미결","c"]];
+  // 당월·전월 요약: 선택한 지표 카드와 관련된 열만
+  const MC={touch:[["n","총 심사건수","c"],["tIn","3일이내","c"],["tOut","3일초과","c"],["blankDates","날짜 공란","c"],["avgLag","평균 경과일","d"],["touch","3일이내 터치율","r",cT]],
+    auto:[["auto","자동심사","c"],["manual","인심사","c"],["autoBlank","결과 공란(제외)","c"],["autoRate","자동심사율","r",cA]],
+    proc:[["all","접수(지표 대상)","c"],["proc","처리 건수","c"],["pend","미결","c"],["diff","재분배","c"]],
+    ret:[["normal","정상인수","c"],["std","ㄴ 표준","c"],["cond","ㄴ 조건부","c"],["ret","반송","c"],["wd","청철","c"],["resTotal","합계(미결 제외)","c"],["retRate","반송률","r",v=>v!=null&&v>S.returnMax/100?"cell-crit":""]]};
+  const mcols=MC[MKEY]||MC.touch,mname=ms.find(x=>x.key===MKEY)?.name||"";
   const mval=(a,c)=>c[0]==="diff"?a.comp.diff:a[c[0]];
-  mcols.push(["diff","재분배","c"]);
+  const fv=(c,v)=>v==null?"-":c[2]==="r"?pct(v):c[2]==="d"?v.toFixed(2)+"일":nf(v);
+  $("monthsTitle").textContent=`당월·전월 요약 · ${mname}`;$("monthsNote").textContent=p?`${mLabel(pk)} → ${mLabel(SEL)}`:`${mLabel(SEL)} (비교할 전월 없음)`;
   $("tblMonths").innerHTML=`<thead><tr><th>마감월</th>${mcols.map(c=>`<th class="n">${c[1]}</th>`).join("")}</tr></thead><tbody>`+
-    [pk,SEL].filter(Boolean).map(mm=>{const a=M[mm];return`<tr${mm===SEL?' style="font-weight:600"':""}><td>${mLabel(mm)}</td>${mcols.map(c=>`<td class="n ${c[3]?c[3](mval(a,c)):""}">${c[2]==="r"?pct(mval(a,c)):nf(mval(a,c))}</td>`).join("")}</tr>`;}).join("")+
-    (p?`<tr class="total"><td>전월 대비</td>${mcols.map(c=>{const v=mval(m,c),pv=mval(p,c);const big=c[2]==="r"?Math.abs((v-pv)*100)>=S.momP:(pv&&Math.abs((v-pv)/pv*100)>=S.momC);
-      return`<td class="n ${big?"cell-warn":""}">${c[2]==="r"?ppTxt(v,pv):`${dTxt(v,pv)}<br><small style="font-weight:400;color:var(--ink-3)">${chgTxt(v,pv)}</small>`}</td>`;}).join("")}</tr>`:"")+"</tbody>";
+    [pk,SEL].filter(Boolean).map(mm=>{const a=M[mm];return`<tr${mm===SEL?' class="cur"':""}><td>${mLabel(mm)}${mm===SEL?" (당월)":" (전월)"}</td>${mcols.map(c=>`<td class="n ${c[3]?c[3](mval(a,c)):""}">${fv(c,mval(a,c))}</td>`).join("")}</tr>`;}).join("")+
+    (p?`<tr class="total"><td>전월 대비</td>${mcols.map(c=>{const v=mval(m,c),pv=mval(p,c);if(v==null||pv==null)return`<td class="n">-</td>`;const big=c[2]==="r"?Math.abs((v-pv)*100)>=S.momP:c[2]==="d"?false:(pv&&Math.abs((v-pv)/pv*100)>=S.momC);
+      return`<td class="n ${big?"cell-warn":""}">${c[2]==="r"?ppTxt(v,pv):c[2]==="d"?`${v-pv>0?"+":v-pv<0?"−":"±"}${Math.abs(v-pv).toFixed(2)}일`:`${dTxt(v,pv)}<br><small style="font-weight:400;color:var(--ink-3)">${chgTxt(v,pv)}</small>`}</td>`;}).join("")}</tr>`:"")+"</tbody>";
+  // 채널별 같은 지표
+  const CH={touch:["touch","터치율","r",cT,"tOut","3일초과"],auto:["autoRate","자동심사율","r",cA,"autoBlank","결과 공란"],proc:["proc","처리 건수","c",null,"pend","미결"],ret:["retRate","반송률","r",v=>v!=null&&v>S.returnMax/100?"cell-crit":"","ret","반송"]}[MKEY];
+  const chs2=chList().filter(c=>chStats(c,SEL).all||(p&&chStats(c,pk).all));
+  $("tblMCh").innerHTML=`<thead><tr><th>채널</th><th class="n">${CH[1]} 당월</th><th class="n">전월</th><th class="n">증감</th><th class="n">당월 ${CH[5]}</th></tr></thead><tbody>`+
+    chs2.map(c=>{const a=chStats(c,SEL),b=p?chStats(c,pk):null;const v=a[CH[0]],pv=b?b[CH[0]]:null;
+      return`<tr><td>${esc(c)}</td><td class="n ${CH[3]?CH[3](v):""}">${CH[2]==="r"?pct(v):nf(v)}</td><td class="n">${b?(CH[2]==="r"?pct(pv):nf(pv)):"-"}</td><td class="n">${b?(CH[2]==="r"?ppTxt(v,pv):dTxt(v,pv)):"-"}</td><td class="n">${nf(a[CH[4]])}</td></tr>`;}).join("")+"</tbody>";
 }
 
 /* ---------- 기준 경고 · 추이 그래프 ---------- */
