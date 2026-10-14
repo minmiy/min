@@ -155,29 +155,27 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sheet);color:var(--ink)}
 .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .monthpick select{font-weight:600}
-.sm{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
-.smc{border:1px solid var(--line);border-radius:8px;padding:10px 12px 6px;display:flex;flex-direction:column;gap:2px;min-width:0}
-.smc .h{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-.smc .nm{font-weight:600;font-size:13px}
-.smc .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
-.smc .v small{font-size:12px;font-weight:500;color:var(--ink-3);margin-left:2px}
-.smc .sub{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
-.smc svg{width:100%;height:auto;display:block;overflow:visible}
-.smc .ln{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.smc .ar{fill:var(--accent-soft)}
-.smc .gr{stroke:var(--line-2);stroke-width:1}
-.smc .ax{font-size:9.5px;fill:var(--ink-3);font-family:var(--f-mono)}
-.smc .dot{fill:var(--accent);stroke:var(--sheet);stroke-width:2}
-.smc .hit rect{fill:transparent}
-.smc .hv{opacity:0;pointer-events:none}
-.smc .hit:hover .hv,.smc .hit:focus .hv{opacity:1}
-.smc .hv line{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 2}
-.smc .hv text{font-size:10.5px;fill:var(--ink);font-weight:600;font-family:var(--f-mono)}
-.smc .hv .tip{fill:var(--sheet);stroke:var(--line)}
+.tops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tcard{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.tcard .tt{font-weight:600;font-size:13.5px}
+.tcard .bs{font-size:11.5px;color:var(--ink-3);margin-top:-6px}
+.tcard ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.tcard li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:2px 8px;align-items:center;font-size:13px}
+.tcard .rk{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);text-align:right}
+.tcard li:first-child .rk{color:var(--accent);font-weight:600}
+.tcard li:first-child .who{font-weight:700}
+.tcard .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcard .val{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.tcard .val small{font-weight:400;color:var(--ink-3);margin-left:4px}
+.tcard .bar{grid-column:2/4;height:6px;border-radius:3px;background:var(--line-2)}
+.tcard .bar span{border-radius:3px;background:var(--accent)}
+.tcard li:not(:first-child) .bar span{background:var(--accent-2)}
+.tcard .none{font-size:12.5px;color:var(--ink-3)}
+@media (max-width:900px){.tops{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.tops{grid-template-columns:1fr}}
 .trend-up{color:var(--good)} .trend-down{color:var(--crit)}
 #tblRv td:first-child,#tblRv th:first-child{position:sticky;left:0;z-index:2;background:var(--sheet)}
 #tblRv th:first-child{background:var(--paper)}
-@media (max-width:560px){.sm{grid-template-columns:repeat(2,minmax(0,1fr))}.smc{padding:8px 8px 4px}.smc .sub{display:none}.smc .v{font-size:15px}}
 th.sel{background:var(--accent-soft);color:var(--ink)}
 td.sel{background:var(--accent-soft);font-weight:600}
 td.sep,th.sep{border-left:1.5px solid var(--line)}
@@ -236,26 +234,18 @@ td.zero{color:var(--ink-3)}
 
   <section class="blk" id="secRv">
     <div class="blk-h">
-      <h2><span class="step">②</span>심사자별 월별 처리 건수 추이</h2>
+      <h2><span class="step">②</span>심사자별 현황</h2>
       <span class="hint" id="rvHint"></span>
     </div>
-    <div class="sm" id="rvTrend"></div>
+    <h3 id="topTitle">지표별 상위 심사자</h3>
+    <div class="tops" id="tops"></div>
+    <h3 id="rvTblTitle" style="margin-top:6px">월별 처리 건수</h3>
     <div class="tbl"><table id="tblRv"></table></div>
-  </section>
-
-  <section class="blk" id="secCheck">
-    <div class="blk-h">
-      <h2><span class="step">③</span>데이터 점검</h2>
-      <span class="hint">전체 행 기준 요약. 오류 행은 지표에서 빠지고 경고는 포함합니다. 행별 상세는 엑셀의 데이터점검·원본_점검표시 시트에 있습니다.</span>
-    </div>
-    <div class="chk-sum" id="chkSum"></div>
-    <div class="recon" id="recon" hidden></div>
-    <div class="tbl"><table class="rules" id="tblRules"></table></div>
   </section>
 
   <section class="blk" id="secSum">
     <div class="blk-h">
-      <h2><span class="step">④</span>요약 코멘트 · 결과표</h2>
+      <h2><span class="step">③</span>요약 코멘트 · 결과표</h2>
       <span class="hint">주제별 코멘트는 직접 고칠 수 있고, 고친 내용이 엑셀에 그대로 들어갑니다.</span>
     </div>
     <div class="cmts" id="comments"></div>
@@ -298,6 +288,16 @@ td.zero{color:var(--ink-3)}
     <summary>지표 정의 · 점검 규칙</summary>
     <div class="in">
       <dl class="defs" id="defs"></dl>
+    </div>
+  </details>
+
+  <details id="chkDetails">
+    <summary id="chkSummary">데이터 점검 결과</summary>
+    <div class="in">
+      <div class="note">전체 행 기준입니다. 오류 행은 지표에서 빠지고 경고는 포함합니다. 행별 상세는 엑셀의 데이터점검·원본_점검표시 시트에 있습니다.</div>
+      <div class="chk-sum" id="chkSum"></div>
+      <div class="recon" id="recon" hidden></div>
+      <div class="tbl"><table class="rules" id="tblRules"></table></div>
     </div>
   </details>
 </div>
@@ -553,6 +553,7 @@ function render(){
   renderCheck();if(SEL)renderMetrics();}
 function renderCheck(){
   const n=ROWS.length,exc=ROWS.filter(r=>!r.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
+  $("chkSummary").textContent=`데이터 점검 결과 · 전체 ${nf(n)}행 중 오류로 제외 ${nf(exc)}행 · 경고 ${nf(wN)}건`;
   $("chkSum").innerHTML=`<div><span class="k">전체 행</span><span class="v">${nf(n)}</span></div>
   <div><span class="k">오류로 제외된 행</span><span class="v ${exc?"crit":"good"}">${nf(exc)}</span></div>
   <div><span class="k">경고 건수</span><span class="v ${wN?"warn":"good"}">${nf(wN)}</span></div>
@@ -591,29 +592,29 @@ function deltaHtml(x){
 const winMonths=()=>MONTHS.filter(mm=>mm<=SEL).slice(-12);
 function trendOf(vals){const n=vals.length;if(n<4)return null;const k=Math.min(3,Math.floor(n/2));
   const a=vals.slice(0,k).reduce((x,y)=>x+y,0)/k,b=vals.slice(-k).reduce((x,y)=>x+y,0)/k;return{first:a,last:b,d:b-a,k};}
-function renderTrend(rvs,WIN){
-  const people=rvs.filter(k=>k!=="(공란)"&&!isAutoName(k));
-  if(WIN.length<2||!people.length){$("rvTrend").innerHTML=WIN.length<2?`<div class="note">추이를 보려면 2개월 이상의 데이터가 필요합니다. 여러 달이 담긴 파일(또는 여러 파일)을 올려 주세요.</div>`:"";return;}
-  const mx=Math.max(1,...people.flatMap(k=>WIN.map(mm=>M[mm].byRv[k]||0)));
-  const step=mx<=20?5:mx<=50?10:mx<=100?20:50;const top=Math.ceil(mx/step)*step;
-  const W=220,Hh=74,L=22,Rr=6,T=8,B=14,iw=W-L-Rr,ih=Hh-T-B;
-  const x=i=>L+(WIN.length===1?iw/2:i*iw/(WIN.length-1)),y=v=>T+ih-(v/top)*ih;
-  $("rvTrend").innerHTML=people.map(k=>{const vals=WIN.map(mm=>M[mm].byRv[k]||0);const last=vals[vals.length-1];const prev=vals.length>1?vals[vals.length-2]:null;
-    const tr=trendOf(vals);const pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-    const area=`M${x(0).toFixed(1)},${y(0)} L${pts.split(" ").join(" L")} L${x(vals.length-1).toFixed(1)},${y(0)} Z`;
-    const si=WIN.indexOf(SEL);const sub=tr?`${tr.k}개월 평균 ${tr.first.toFixed(1)} → ${tr.last.toFixed(1)}`:"";
-    const dcls=tr&&Math.abs(tr.d)>=Math.max(3,tr.first*0.2)?(tr.d>0?"trend-up":"trend-down"):"";
-    return`<div class="smc"><div class="h"><span class="nm">${esc(k)}</span><span class="v">${nf(last)}<small>건</small></span></div>
-      <div class="sub">${prev!=null?`전월 ${nf(prev)} · `:""}<span class="${dcls}">${sub}</span></div>
-      <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(k)} 월별 처리 건수: ${WIN.map((mm,i)=>`${mLabel(mm)} ${vals[i]}건`).join(", ")}">
-        <line class="gr" x1="${L}" x2="${W-Rr}" y1="${y(0)}" y2="${y(0)}"/><line class="gr" x1="${L}" x2="${W-Rr}" y1="${y(top)}" y2="${y(top)}"/>
-        <text class="ax" x="${L-4}" y="${y(top)+3}" text-anchor="end">${top}</text><text class="ax" x="${L-4}" y="${y(0)+3}" text-anchor="end">0</text>
-        <text class="ax" x="${x(0)}" y="${Hh-1}" text-anchor="start">${mLabel(WIN[0]).slice(2)}</text><text class="ax" x="${x(WIN.length-1)}" y="${Hh-1}" text-anchor="end">${mLabel(WIN[WIN.length-1]).slice(2)}</text>
-        <path class="ar" d="${area}"/><polyline class="ln" points="${pts}"/>
-        ${si>=0?`<circle class="dot" cx="${x(si)}" cy="${y(vals[si])}" r="4"/>`:""}
-        ${vals.map((v,i)=>{const cx=x(i),bw=iw/Math.max(1,WIN.length-1);const tx=Math.min(Math.max(cx,L+26),W-Rr-26);
-          return`<g class="hit" tabindex="0"><rect x="${cx-bw/2}" y="0" width="${bw}" height="${Hh}"/><g class="hv"><line x1="${cx}" x2="${cx}" y1="${T}" y2="${y(0)}"/><circle class="dot" cx="${cx}" cy="${y(v)}" r="3.5"/><rect class="tip" x="${tx-26}" y="${Math.max(0,y(v)-22)}" width="52" height="15" rx="3"/><text x="${tx}" y="${Math.max(0,y(v)-22)+11}" text-anchor="middle">${WIN[i].slice(2,4)}.${WIN[i].slice(4)} ${v}</text></g></g>`;}).join("")}
-      </svg></div>`;}).join("");}
+const MIN_N=10;
+function topLists(){
+  const m=M[SEL];const people=rvList().filter(k=>k!=="(공란)"&&!isAutoName(k));
+  const st=Object.fromEntries(people.map(k=>[k,rvStats(k,SEL)]));
+  const fixed=(v,d)=>v==null?"-":v.toFixed(d);
+  const L=[];
+  L.push({key:"touch",title:"3일이내 터치율",basis:`실제심사자 기준 · ${MIN_N}건 이상 · 높은 순`,
+    items:people.filter(k=>st[k].n>=MIN_N).map(k=>({who:k,v:st[k].touch,txt:pct(st[k].touch),sub:`${st[k].tIn}/${st[k].n}`})).sort((a,b)=>b.v-a.v||b.sub.localeCompare(a.sub)),max:1});
+  const chs=chList().map(c=>({c,s:chStats(c,SEL)})).filter(x=>x.s.auto+x.s.manual>0);
+  L.push({key:"auto",title:"자동심사율",basis:"자동심사 건은 심사자가 없어 채널 기준 · 높은 순",
+    items:chs.map(x=>({who:x.c,v:x.s.autoRate,txt:pct(x.s.autoRate),sub:`${x.s.auto}/${x.s.auto+x.s.manual}`})).sort((a,b)=>b.v-a.v),max:1});
+  L.push({key:"proc",title:"처리 건수",basis:`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"} · 많은 순`,
+    items:people.filter(k=>m.byRv[k]).map(k=>({who:k,v:m.byRv[k],txt:nf(m.byRv[k])+"건",sub:""})).sort((a,b)=>b.v-a.v)});
+  L.push({key:"result",title:"정상인수율",basis:`정상 ÷ (정상+반송+청철) · ${MIN_N}건 이상 · 높은 순`,
+    items:people.filter(k=>st[k].resTotal>=MIN_N).map(k=>({who:k,v:rate(st[k].normal,st[k].resTotal),txt:pct(rate(st[k].normal,st[k].resTotal)),sub:`${st[k].normal}/${st[k].resTotal}`})).sort((a,b)=>b.v-a.v),max:1});
+  L.forEach(l=>{if(l.max==null)l.max=Math.max(1,...l.items.map(x=>x.v));l.items=l.items.slice(0,5);});
+  return L;}
+function renderTops(){
+  const L=topLists();CUR_TOPS=L;
+  $("topTitle").textContent=`${mLabel(SEL)} 지표별 상위 심사자`;
+  $("tops").innerHTML=L.map(l=>`<div class="tcard"><span class="tt">${l.title}</span><span class="bs">${esc(l.basis)}</span>`+
+    (l.items.length?`<ol>${l.items.map((x,i)=>`<li><span class="rk">${i+1}</span><span class="who">${esc(x.who)}</span><span class="val">${x.txt}${x.sub?`<small>${x.sub}</small>`:""}</span><div class="bar"><span style="width:${Math.max(2,(x.v||0)/l.max*100).toFixed(1)}%"></span></div></li>`).join("")}</ol>`:`<span class="none">기준(${MIN_N}건 이상)을 채운 대상이 없습니다.</span>`)+`</div>`).join("");}
+let CUR_TOPS=[];
 const ST_COLORS=[["표준인수","--st-ok","std"],["조건부인수","--st-cond","cond"],["반송","--st-rej","ret"],["청철","--st-wd","wd"]];
 function renderMetrics(){
   const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;const ms=metricList();
@@ -647,8 +648,9 @@ function renderMetrics(){
     rrow("(참고) 미결","pend",false)+"</tbody>";
   // reviewers × months (trend, last 12 months up to the selected month)
   const rvs=rvList();const WIN=winMonths();
-  $("rvHint").textContent=`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"} · ${mLabel(WIN[0])}~${mLabel(WIN[WIN.length-1])} (${WIN.length}개월)`+(WIN.length<12?` · 데이터에 있는 달만 표시`:"");
-  renderTrend(rvs,WIN);
+  $("rvHint").textContent=`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"}`;
+  $("rvTblTitle").textContent=`월별 처리 건수 · ${mLabel(WIN[0])}~${mLabel(WIN[WIN.length-1])} (${WIN.length}개월${WIN.length<12?", 데이터에 있는 달만":""})`;
+  renderTops();
   const people=rvs.filter(k=>k!=="(공란)"&&!isAutoName(k));
   const pMax=Math.max(1,...people.flatMap(k=>WIN.map(mm=>M[mm].byRv[k]||0)));
   const heat=(v,mx)=>{const a=Math.round(Math.min(1,v/mx)*55);return a?`style="background:color-mix(in srgb, var(--accent) ${a}%, transparent)${a>38?";color:var(--sheet)":""}"`:"";};
@@ -684,8 +686,9 @@ function draftTopics(){
   const top=people.slice().sort((x,y)=>m.byRv[y]-m.byRv[x]).slice(0,3);
   const lowRv=people.map(k=>({k,s:rvStats(k,SEL)})).filter(x=>x.s.n>=10&&x.s.touch<S.touchTarget/100).sort((a,b)=>a.s.touch-b.s.touch);
   const autoN=Object.entries(m.byRv).filter(([k])=>isAutoName(k)).reduce((n,[,v])=>n+v,0);
+  const tops=topLists();const tTxt=tops.filter(l=>l.key!=="auto"&&l.items.length).map(l=>`${l.title} ${l.items[0].who}(${l.items[0].txt})`).join(", ");
   T.push({key:"reviewer",title:"심사자별",cls:lowRv.length||m.byRv["(공란)"]?"warn":"good",chip:lowRv.length?`확인 ${lowRv.length}명`:m.byRv["(공란)"]?`공란 ${m.byRv["(공란)"]}건`:"",
-    text:`실제심사자 기준 처리는 ${top.map(k=>`${k} ${nf(m.byRv[k])}건`).join(", ")} 순이고, 자동심사 ${nf(autoN)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`+
+    text:(tTxt?`${mLabel(SEL)} 지표별 1위는 ${tTxt}. `:"")+`실제심사자 기준 처리는 ${top.map(k=>`${k} ${nf(m.byRv[k])}건`).join(", ")} 순이고, 자동심사 ${nf(autoN)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`+
       (lowRv.length?` 터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}임.`:" 심사자별 터치율은 모두 목표 충족.")+` 최초심사자와 실제심사자가 다른 재분배 ${nf(m.comp.diff)}건.`+
       (()=>{const WIN=winMonths();if(WIN.length<4)return"";const t=people.map(k=>({k,t:trendOf(WIN.map(mm=>M[mm].byRv[k]||0))})).filter(x=>x.t&&Math.abs(x.t.d)>=Math.max(3,x.t.first*0.2));
         const up=t.filter(x=>x.t.d>0).sort((a,b)=>b.t.d-a.t.d),dn=t.filter(x=>x.t.d<0).sort((a,b)=>a.t.d-b.t.d);const f=x=>`${x.k}(월 ${x.t.first.toFixed(0)}→${x.t.last.toFixed(0)}건)`;
@@ -695,13 +698,6 @@ function draftTopics(){
   const big=ms.filter(x=>x.big);
   T.push({key:"mom",title:"전월 대비 변동",cls:!p?"":big.length?"warn":"good",chip:big.length?`변동 큼 ${big.length}`:"",
     text:!p?`데이터에 ${mLabel(prevMonth(SEL))} 자료가 없어 증감을 계산하지 않음.`:big.length?`${big.map(x=>`${x.name} ${x.dTxt}`).join(", ")}로 변동 폭이 커 원인 확인 필요.`:`주요 지표 모두 변동 기준 이내(비율 ${S.momP}%p, 건수 ${S.momC}% 미만).`});
-  const per={};ROWS.forEach(rw=>rw.codes.forEach(c=>per[c]=(per[c]||0)+1));
-  const eTxt=RULES.filter(([id,sev])=>sev==="오류"&&per[id]).map(([id])=>`${id} ${per[id]}`).join(", ");
-  const wTop=RULES.filter(([id,sev])=>sev==="경고"&&per[id]).sort((x,y)=>per[y[0]]-per[x[0]]).slice(0,3).map(([id,,d])=>`${id} ${d.replace(/\s*\(.*\)$/,"")} ${per[id]}건`).join(", ");
-  const exc=ROWS.filter(rw=>!rw.include).length,wN=ISSUES.filter(i=>i.id[0]==="W").length;
-  T.push({key:"data",title:"데이터 점검",cls:exc?"crit":wN?"warn":"good",chip:exc?`제외 ${exc}행`:wN?`경고 ${wN}`:"이상 없음",wide:true,
-    text:`전체 ${nf(ROWS.length)}행 점검 결과 오류 ${nf(exc)}행${eTxt?`(${eTxt})`:""}은 지표에서 제외함. 경고 ${nf(wN)}건은 지표에 포함하되 확인 필요하며, 많은 순으로 ${wTop||"없음"}.`+
-      (RECON?` 파일의 검증용 계산열과 대조 결과 ${[RECON.inc,RECON.e,RECON.w].every(v=>v[0]===v[1])?"모두 일치":"불일치 있음"}.`:"")});
   return T;}
 function renderComments(){
   $("comments").innerHTML=COMMENTS.map((c,i)=>`<div class="cmt ${c.cls}${c.wide?" wide":""}">
@@ -823,6 +819,8 @@ function buildWorkbook(){
   rvs.forEach(k=>{const s=rvStats(k,SEL);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;
     rv.push([k].concat(MONTHS.map(mm=>({v:M[mm].byRv[k]||0,s:mm===SEL?{font:{bold:true}}:undefined})),[MONTHS.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0),p?v-pv:"-",{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(rate(v,m.proc)),R(s.touch,s.n>=10?fl(s.touch,tt,">="):undefined),s.tOut,s.avgLag==null?"-":{v:+s.avgLag.toFixed(2),z:"0.00"}]));});
   rv.push([{v:"합계",s:X.tot}].concat(MONTHS.map(mm=>({v:M[mm].proc,s:X.tot})),[{v:MONTHS.reduce((n,mm)=>n+M[mm].proc,0),s:X.tot},{v:p?m.proc-p.proc:"-",s:X.tot},{v:p?chgTxt(m.proc,p.proc):"-",s:X.tot},R(1,X.tot),R(m.touch,X.tot),{v:m.tOut,s:X.tot},{v:m.avgLag==null?"-":+m.avgLag.toFixed(2),s:X.tot}]));
+  rv.push([]);rv.push(SEC(`${mLabel(SEL)} 지표별 상위 5`));rv.push(H(["지표","순위","대상","값","분자/분모","기준"]));
+  topLists().forEach(l=>l.items.forEach((x,i)=>rv.push([i?"":l.title,i+1,{v:x.who,s:i?undefined:{font:{bold:true}}},x.txt,x.sub||"-",i?"":l.basis])));
   XLSX.utils.book_append_sheet(wb,sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11])),"심사자별");
   // 심사결과
   const st=[H(["구분",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
