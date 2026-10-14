@@ -1,5 +1,8 @@
 {
   "redirects": [
     { "source": "/", "destination": "/uw-metrics/", "permanent": false }
-  ]
+  ],
+  "functions": {
+    "api/chat.js": { "maxDuration": 60 }
+  }
 }

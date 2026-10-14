@@ -149,6 +149,25 @@ dl.defs code{font-family:var(--f-mono);font-size:12px;background:var(--paper);pa
 
 @media (max-width:900px){.cmts{grid-template-columns:1fr}.cmt.wide{grid-column:auto}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.uploads{grid-template-columns:1fr 1fr}.side-actions{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}}
 @media (max-width:560px){.wrap{padding-inline:16px}.cards,.uploads{grid-template-columns:1fr}.chk-sum{grid-template-columns:repeat(2,minmax(0,1fr))}section.blk{padding:16px}.top h1{font-size:22px}dl.defs{grid-template-columns:1fr;gap:2px 0}dl.defs dd{margin-bottom:8px}}
+.chat-fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:20;background:var(--accent);color:var(--sheet);border-color:var(--accent);border-radius:999px;padding:11px 18px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.chat{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:21;width:min(420px,calc(100% - 32px));height:min(640px,calc(100% - 40px));background:var(--sheet);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;overflow:hidden}
+.chat-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.chat-t{display:flex;flex-direction:column;min-width:0}
+.chat-m{font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-a{display:flex;gap:6px}
+.chat-a button{padding:5px 10px;font-size:12.5px;white-space:nowrap}
+.chat-log{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+.msg{max-width:88%;padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.6;overflow-wrap:anywhere}
+.msg.u{align-self:flex-end;background:var(--accent);color:var(--sheet);border-bottom-right-radius:3px}
+.msg.a{align-self:flex-start;background:var(--sheet);border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg.a.err{background:var(--crit-bg);color:var(--crit);border-color:transparent}
+.msg.a.wait{color:var(--ink-3)}
+.chat-sug{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0}
+.chat-sug button{font-size:12px;padding:4px 10px;border-radius:999px;font-weight:400;color:var(--ink-2)}
+.chat-in{display:flex;gap:8px;padding:10px 12px 6px;align-items:flex-end}
+.chat-in textarea{min-height:44px;max-height:140px;padding:8px 10px;font-size:13.5px;line-height:1.5;flex:1;resize:none;background:var(--paper)}
+.chat-note{font-size:11px;color:var(--ink-3);padding:0 12px 10px}
+@media (max-width:560px){.chat{right:0;left:0;bottom:0;width:100%;height:calc(100% - 40px);border-radius:12px 12px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}.chat-fab{right:16px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 <style>
@@ -156,20 +175,12 @@ select{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6
 .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .monthpick select{font-weight:600}
 .tops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.tcard{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.tcard .tt{font-weight:600;font-size:13.5px}
-.tcard .bs{font-size:11.5px;color:var(--ink-3);margin-top:-6px}
-.tcard ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
-.tcard li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:2px 8px;align-items:center;font-size:13px}
-.tcard .rk{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);text-align:right}
-.tcard li:first-child .rk{color:var(--accent);font-weight:600}
-.tcard li:first-child .who{font-weight:700}
-.tcard .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tcard .val{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
-.tcard .val small{font-weight:400;color:var(--ink-3);margin-left:4px}
-.tcard .bar{grid-column:2/4;height:6px;border-radius:3px;background:var(--line-2)}
-.tcard .bar span{border-radius:3px;background:var(--accent)}
-.tcard li:not(:first-child) .bar span{background:var(--accent-2)}
+.tcard{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;border-top:3px solid var(--accent)}
+.tcard .tt{font-weight:600;font-size:13px;color:var(--ink-2)}
+.tcard .win{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.tcard .wv{font-size:13.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tcard .wv b{color:var(--ink);font-weight:600}
+.tcard .bs{font-size:11.5px;color:var(--ink-3)}
 .tcard .none{font-size:12.5px;color:var(--ink-3)}
 @media (max-width:900px){.tops{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.tops{grid-template-columns:1fr}}
@@ -302,6 +313,20 @@ td.zero{color:var(--ink-3)}
   </details>
 </div>
 <div class="toast" id="toast" hidden></div>
+<button id="chatFab" class="chat-fab" type="button" hidden aria-controls="chatPanel" aria-expanded="false">지표 챗봇</button>
+<div id="chatPanel" class="chat" hidden role="dialog" aria-label="지표 챗봇">
+  <div class="chat-h">
+    <div class="chat-t"><b>지표 챗봇</b><span id="chatModel" class="chat-m"></span></div>
+    <div class="chat-a"><button id="chatClear" type="button">새 대화</button><button id="chatClose" type="button" aria-label="챗봇 닫기">닫기</button></div>
+  </div>
+  <div class="chat-log" id="chatLog" aria-live="polite"></div>
+  <div class="chat-sug" id="chatSug"></div>
+  <form class="chat-in" id="chatForm">
+    <textarea id="chatText" rows="2" aria-label="질문 입력" placeholder="화면의 지표에 대해 물어보세요"></textarea>
+    <button class="primary" id="chatSend" type="submit">보내기</button>
+  </form>
+  <div class="chat-note">지표·심사자·점검 요약(증번 등 행 단위 데이터 제외)을 모델에 보냅니다. 답변의 숫자는 화면과 대조해 주세요.</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
@@ -596,24 +621,24 @@ const MIN_N=10;
 function topLists(){
   const m=M[SEL];const people=rvList().filter(k=>k!=="(공란)"&&!isAutoName(k));
   const st=Object.fromEntries(people.map(k=>[k,rvStats(k,SEL)]));
-  const fixed=(v,d)=>v==null?"-":v.toFixed(d);
   const L=[];
-  L.push({key:"touch",title:"3일이내 터치율",basis:`실제심사자 기준 · ${MIN_N}건 이상 · 높은 순`,
-    items:people.filter(k=>st[k].n>=MIN_N).map(k=>({who:k,v:st[k].touch,txt:pct(st[k].touch),sub:`${st[k].tIn}/${st[k].n}`})).sort((a,b)=>b.v-a.v||b.sub.localeCompare(a.sub)),max:1});
-  const chs=chList().map(c=>({c,s:chStats(c,SEL)})).filter(x=>x.s.auto+x.s.manual>0);
-  L.push({key:"auto",title:"자동심사율",basis:"자동심사 건은 심사자가 없어 채널 기준 · 높은 순",
-    items:chs.map(x=>({who:x.c,v:x.s.autoRate,txt:pct(x.s.autoRate),sub:`${x.s.auto}/${x.s.auto+x.s.manual}`})).sort((a,b)=>b.v-a.v),max:1});
-  L.push({key:"proc",title:"처리 건수",basis:`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"} · 많은 순`,
-    items:people.filter(k=>m.byRv[k]).map(k=>({who:k,v:m.byRv[k],txt:nf(m.byRv[k])+"건",sub:""})).sort((a,b)=>b.v-a.v)});
-  L.push({key:"result",title:"정상인수율",basis:`정상 ÷ (정상+반송+청철) · ${MIN_N}건 이상 · 높은 순`,
-    items:people.filter(k=>st[k].resTotal>=MIN_N).map(k=>({who:k,v:rate(st[k].normal,st[k].resTotal),txt:pct(rate(st[k].normal,st[k].resTotal)),sub:`${st[k].normal}/${st[k].resTotal}`})).sort((a,b)=>b.v-a.v),max:1});
-  L.forEach(l=>{if(l.max==null)l.max=Math.max(1,...l.items.map(x=>x.v));l.items=l.items.slice(0,5);});
+  L.push({key:"touch",title:"3일이내 터치율",basis:`실제심사자 기준 · ${MIN_N}건 이상`,
+    items:people.filter(k=>st[k].n>=MIN_N).map(k=>({who:k,v:st[k].touch,txt:pct(st[k].touch),cnt:`${nf(st[k].tIn)}/${nf(st[k].n)}건`}))});
+  L.push({key:"manual",title:"인심사율",basis:`심사자 인심사 건수 ÷ 당월 전체 인심사 ${nf(m.manual)}건`,
+    items:people.filter(k=>st[k].manual).map(k=>({who:k,v:rate(st[k].manual,m.manual),txt:pct(rate(st[k].manual,m.manual)),cnt:`인심사 ${nf(st[k].manual)}건`}))});
+  L.push({key:"proc",title:"처리 건수",basis:`실제심사자 기준 · 미결 ${S.inclPending?"포함":"제외"}`,
+    items:people.filter(k=>m.byRv[k]).map(k=>({who:k,v:m.byRv[k],txt:"",cnt:`${nf(m.byRv[k])}건`}))});
+  L.push({key:"result",title:"정상인수율",basis:`정상 ÷ (정상+반송+청철) · ${MIN_N}건 이상`,
+    items:people.filter(k=>st[k].resTotal>=MIN_N).map(k=>({who:k,v:rate(st[k].normal,st[k].resTotal),txt:pct(rate(st[k].normal,st[k].resTotal)),cnt:`${nf(st[k].normal)}/${nf(st[k].resTotal)}건`}))});
+  L.forEach(l=>{l.items.sort((a,b)=>(b.v??-1)-(a.v??-1));const best=l.items[0];
+    l.winners=best?l.items.filter(x=>x.v===best.v):[];});
   return L;}
 function renderTops(){
   const L=topLists();CUR_TOPS=L;
-  $("topTitle").textContent=`${mLabel(SEL)} 지표별 상위 심사자`;
-  $("tops").innerHTML=L.map(l=>`<div class="tcard"><span class="tt">${l.title}</span><span class="bs">${esc(l.basis)}</span>`+
-    (l.items.length?`<ol>${l.items.map((x,i)=>`<li><span class="rk">${i+1}</span><span class="who">${esc(x.who)}</span><span class="val">${x.txt}${x.sub?`<small>${x.sub}</small>`:""}</span><div class="bar"><span style="width:${Math.max(2,(x.v||0)/l.max*100).toFixed(1)}%"></span></div></li>`).join("")}</ol>`:`<span class="none">기준(${MIN_N}건 이상)을 채운 대상이 없습니다.</span>`)+`</div>`).join("");}
+  $("topTitle").textContent=`${mLabel(SEL)} 지표별 1위 심사자`;
+  $("tops").innerHTML=L.map(l=>`<div class="tcard"><span class="tt">${l.title}</span>`+
+    (l.winners.length?`<span class="win">${l.winners.map(x=>esc(x.who)).join(", ")}</span><span class="wv">${l.winners[0].txt?`<b>${l.winners[0].txt}</b> · `:""}${l.winners.length>1?l.winners.map(x=>`${esc(x.who)} ${x.cnt}`).join(", "):l.winners[0].cnt}</span>`
+      :`<span class="none">기준(${MIN_N}건 이상)을 채운 심사자가 없습니다.</span>`)+`<span class="bs">${esc(l.basis)}</span></div>`).join("");}
 let CUR_TOPS=[];
 const ST_COLORS=[["표준인수","--st-ok","std"],["조건부인수","--st-cond","cond"],["반송","--st-rej","ret"],["청철","--st-wd","wd"]];
 function renderMetrics(){
@@ -686,7 +711,7 @@ function draftTopics(){
   const top=people.slice().sort((x,y)=>m.byRv[y]-m.byRv[x]).slice(0,3);
   const lowRv=people.map(k=>({k,s:rvStats(k,SEL)})).filter(x=>x.s.n>=10&&x.s.touch<S.touchTarget/100).sort((a,b)=>a.s.touch-b.s.touch);
   const autoN=Object.entries(m.byRv).filter(([k])=>isAutoName(k)).reduce((n,[,v])=>n+v,0);
-  const tops=topLists();const tTxt=tops.filter(l=>l.key!=="auto"&&l.items.length).map(l=>`${l.title} ${l.items[0].who}(${l.items[0].txt})`).join(", ");
+  const tops=topLists();const tTxt=tops.filter(l=>l.winners.length).map(l=>`${l.title} ${l.winners.map(x=>x.who).join("·")}(${l.winners[0].txt?l.winners[0].txt+", ":""}${l.winners[0].cnt})`).join(", ");
   T.push({key:"reviewer",title:"심사자별",cls:lowRv.length||m.byRv["(공란)"]?"warn":"good",chip:lowRv.length?`확인 ${lowRv.length}명`:m.byRv["(공란)"]?`공란 ${m.byRv["(공란)"]}건`:"",
     text:(tTxt?`${mLabel(SEL)} 지표별 1위는 ${tTxt}. `:"")+`실제심사자 기준 처리는 ${top.map(k=>`${k} ${nf(m.byRv[k])}건`).join(", ")} 순이고, 자동심사 ${nf(autoN)}건, 실제심사자 공란 ${nf(m.byRv["(공란)"]||0)}건.`+
       (lowRv.length?` 터치율 목표 미달 심사자는 ${lowRv.map(x=>`${x.k}(${pct(x.s.touch)})`).join(", ")}임.`:" 심사자별 터치율은 모두 목표 충족.")+` 최초심사자와 실제심사자가 다른 재분배 ${nf(m.comp.diff)}건.`+
@@ -712,9 +737,23 @@ function redraft(){if(!SEL){COMMENTS=[];$("comments").innerHTML="";return;}COMME
 
 /* ---------- AI polish (sample capability) ---------- */
 let sampleFn=null,ctl=null;
-async function initCaps(){try{sampleFn=await window.claude?.use?.("sample");}catch(e){sampleFn=null;}if(sampleFn)$("btnAI").hidden=false;}
+const useApi=()=>!window.claude&&/^https?:$/.test(location.protocol);
+async function initCaps(){try{sampleFn=await window.claude?.use?.("sample");}catch(e){sampleFn=null;}
+  if(sampleFn||useApi())$("btnAI").hidden=false;
+  if(sampleFn||useApi()){$("chatFab").hidden=false;$("chatModel").textContent=sampleFn?"Claude (claude.ai)":"Nemotron · OpenRouter";}}
+// Vercel: /api/chat (OpenRouter). 스트리밍 텍스트를 모아 onText로 넘긴다.
+async function askApi(messages,{signal,context="",onText}={}){
+  let r;try{r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,context}),signal});}
+  catch(e){if(e.name==="AbortError")throw{code:"cancelled"};throw{code:"api",message:"챗봇 서버(/api/chat)에 연결하지 못했습니다."};}
+  if(!r.ok){let m=`챗봇 서버 오류 (${r.status})`;try{const j=await r.json();if(j.error)m=j.error;}catch(e){}throw{code:r.status===429?"rate_limited":"api",message:m};}
+  const md=r.headers.get("X-Model");if(md)$("chatModel").textContent=md+" · OpenRouter";
+  const rd=r.body.getReader(),dec=new TextDecoder();let text="";
+  try{for(;;){const{done,value}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});onText&&onText(text);}}
+  catch(e){if(e.name==="AbortError")throw{code:"cancelled",text};throw{code:"api",message:"응답이 중간에 끊겼습니다.",text};}
+  return text;}
+function parseJsonLoose(t){const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<a)throw{code:"api",message:"AI 답에서 JSON을 찾지 못했습니다."};return JSON.parse(t.slice(a,b+1));}
 $("btnAI").onclick=async()=>{
-  if(!sampleFn||!SEL)return;
+  if(!(sampleFn||useApi())||!SEL)return;
   const m=M[SEL],pk=PREV(),p=pk?M[pk]:null;
   const facts={마감월:mLabel(SEL),비교월:pk?mLabel(pk):null,기준:{일수기준:S.dayMode,기준일수:S.touchDays,터치율목표:S.touchTarget+"%",자동심사율목표:S.autoTarget+"%",반송률상한:S.returnMax+"%",처리건수미결:S.inclPending?"포함":"제외"},
     지표:metricList().map(x=>({지표:x.name,당월:x.kind==="rate"?pct(x.val):x.val,전월:x.prev==null?null:(x.kind==="rate"?pct(x.prev):x.prev),증감:x.dTxt||null,기준충족:x.ok})),
@@ -738,11 +777,11 @@ ${JSON.stringify(facts)}`;
   $("btnAI").disabled=true;$("btnStop").hidden=false;$("sumNote").textContent="AI가 주제별 문안을 작성하는 중입니다…";
   document.querySelectorAll(".cmt").forEach(el=>el.classList.add("busy"));
   try{
-    const out=await sampleFn.json(prompt,{signal:ctl.signal});
+    const out=sampleFn?await sampleFn.json(prompt,{signal:ctl.signal}):parseJsonLoose(await askApi([{role:"user",content:prompt+"\n\n코드블록 없이 JSON 객체만 출력하세요."}],{signal:ctl.signal}));
     let n=0;if(out&&typeof out==="object")keys.forEach(k=>{if(typeof out[k]==="string"&&out[k].trim()){setComment(k,out[k].trim());n++;}});
     $("sumNote").textContent=n?`AI 문안으로 ${n}개 주제를 바꿨습니다. 숫자는 위 지표와 대조한 뒤 사용하세요.`:"AI 답을 주제별로 나누지 못해 기준 문안을 유지합니다.";
   }catch(e){
-    const msg={not_granted:"AI 사용이 허용되지 않아 기준 문안을 유지합니다.",rate_limited:"요청이 많습니다. 잠시 뒤 다시 눌러 주세요.",cancelled:"중지했습니다. 기준 문안을 유지합니다."}[e.code]||"AI 문안을 만들지 못했습니다. 기준 문안을 유지합니다.";
+    const msg={api:(e.message||"AI 호출에 실패했습니다.")+" 기준 문안을 유지합니다.",not_granted:"AI 사용이 허용되지 않아 기준 문안을 유지합니다.",rate_limited:"요청이 많습니다. 잠시 뒤 다시 눌러 주세요.",cancelled:"중지했습니다. 기준 문안을 유지합니다."}[e.code]||"AI 문안을 만들지 못했습니다. 기준 문안을 유지합니다.";
     $("sumNote").textContent=msg;if(e.code==="not_granted")$("btnAI").hidden=true;
   }finally{$("btnAI").disabled=false;$("btnStop").hidden=true;document.querySelectorAll(".cmt").forEach(el=>el.classList.remove("busy"));}
 };
@@ -819,8 +858,8 @@ function buildWorkbook(){
   rvs.forEach(k=>{const s=rvStats(k,SEL);const v=m.byRv[k]||0,pv=p?(p.byRv[k]||0):null;
     rv.push([k].concat(MONTHS.map(mm=>({v:M[mm].byRv[k]||0,s:mm===SEL?{font:{bold:true}}:undefined})),[MONTHS.reduce((n,mm)=>n+(M[mm].byRv[k]||0),0),p?v-pv:"-",{v:p?chgTxt(v,pv):"-",s:p&&pv&&Math.abs((v-pv)/pv*100)>=S.momC?X.warn:undefined},R(rate(v,m.proc)),R(s.touch,s.n>=10?fl(s.touch,tt,">="):undefined),s.tOut,s.avgLag==null?"-":{v:+s.avgLag.toFixed(2),z:"0.00"}]));});
   rv.push([{v:"합계",s:X.tot}].concat(MONTHS.map(mm=>({v:M[mm].proc,s:X.tot})),[{v:MONTHS.reduce((n,mm)=>n+M[mm].proc,0),s:X.tot},{v:p?m.proc-p.proc:"-",s:X.tot},{v:p?chgTxt(m.proc,p.proc):"-",s:X.tot},R(1,X.tot),R(m.touch,X.tot),{v:m.tOut,s:X.tot},{v:m.avgLag==null?"-":+m.avgLag.toFixed(2),s:X.tot}]));
-  rv.push([]);rv.push(SEC(`${mLabel(SEL)} 지표별 상위 5`));rv.push(H(["지표","순위","대상","값","분자/분모","기준"]));
-  topLists().forEach(l=>l.items.forEach((x,i)=>rv.push([i?"":l.title,i+1,{v:x.who,s:i?undefined:{font:{bold:true}}},x.txt,x.sub||"-",i?"":l.basis])));
+  rv.push([]);rv.push(SEC(`${mLabel(SEL)} 지표별 1위 심사자`));rv.push(H(["지표","1위","값","건수","기준"]));
+  topLists().forEach(l=>rv.push([l.title,{v:l.winners.map(x=>x.who).join(", ")||"-",s:{font:{bold:true}}},l.winners[0]?.txt||"-",l.winners.map(x=>x.cnt).join(", ")||"-",l.basis]));
   XLSX.utils.book_append_sheet(wb,sheet(rv,[12].concat(MONTHS.map(()=>10),[9,16,9,13,9,9,11])),"심사자별");
   // 심사결과
   const st=[H(["구분",mLabel(SEL),"구성비",pk?mLabel(pk):"전월","전월 구성비","증감"])];
@@ -952,6 +991,61 @@ $("btnApply").onclick=()=>{const g=(id,def)=>{const v=parseFloat($(id).value);re
   try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
   if(ROWS.length)recompute(true);toast("산출 기준을 적용했습니다.");};
 $("btnReset").onclick=()=>{Object.assign(S,DEFAULTS);try{localStorage.removeItem(LS);}catch(e){}fillSettings();if(ROWS.length)recompute(true);toast("기본값으로 되돌렸습니다.");};
+
+/* ---------- chatbot ---------- */
+const CHAT_SYSTEM=`당신은 보험사 계약심사부의 '신계약 심사지표 산출기' 도우미입니다. 한국어로 짧고 정확하게 답합니다. 숫자는 아래 [현재 화면 데이터]에 있는 값만 쓰고, 없으면 "화면 데이터에 없음"이라고 말합니다. 간단한 계산을 했다면 계산했다고 밝힙니다. 보고서에 옮길 문장은 보고서체(~임, ~함)로 씁니다.`;
+const CHAT={hist:[],busy:false,ctl:null};
+function chatContext(){
+  if(!SEL)return"데이터가 아직 없습니다.";
+  const m=M[SEL],pk=PREV(),p=pk?M[pk]:null,L=[];
+  L.push(`마감월 ${mLabel(SEL)} · 비교월 ${pk?mLabel(pk):"없음"} · 파일 ${SOURCE}`);
+  L.push(`기준: 경과일수 ${S.dayMode} ${S.touchDays}일 이내(날짜 공란은 3일이내), 처리 건수 미결 ${S.inclPending?"포함":"제외"}, 목표 터치율 ${S.touchTarget}% 이상·자동심사율 ${S.autoTarget}% 이상·반송률 ${S.returnMax}% 이하`);
+  L.push("\n[지표] 지표 | 당월 | 전월 | 증감 | 기준 | 판정 | 산출");
+  metricList().forEach(x=>L.push(`${x.name} | ${x.kind==="rate"?pct(x.val):nf(x.val)} | ${x.prev==null?"-":x.kind==="rate"?pct(x.prev):nf(x.prev)} | ${x.dTxt||"-"} | ${x.targetTxt} | ${x.ok==null?"-":x.ok?"충족":x.cmp==="<="?"초과":"미달"} | ${x.fx}`));
+  L.push(`\n[심사결과 ${mLabel(SEL)}] 정상인수 ${m.normal}(표준 ${m.std}, 조건부 ${m.cond}), 반송 ${m.ret}, 청철 ${m.wd}, 미결 ${m.pend}`+(p?` / 전월 정상인수 ${p.normal}(표준 ${p.std}, 조건부 ${p.cond}), 반송 ${p.ret}, 청철 ${p.wd}, 미결 ${p.pend}`:""));
+  L.push(`\n[채널별 ${mLabel(SEL)}] 채널 | 처리 | 전월 처리 | 터치율 | 자동심사율`);
+  chList().forEach(c=>{const s2=chStats(c,SEL);L.push(`${c} | ${m.byCh[c]||0} | ${p?(p.byCh[c]||0):"-"} | ${pct(s2.touch)} | ${pct(s2.autoRate)}`);});
+  L.push(`\n[실제심사자별 ${mLabel(SEL)}] 심사자 | 처리 | 전월 처리 | 터치율(3일이내/전체) | 3일초과 | 평균경과일 | 인심사 | 정상인수율`);
+  rvList().forEach(k=>{const s2=rvStats(k,SEL);L.push(`${k} | ${m.byRv[k]||0} | ${p?(p.byRv[k]||0):"-"} | ${pct(s2.touch)}(${s2.tIn}/${s2.n}) | ${s2.tOut} | ${s2.avgLag==null?"-":s2.avgLag.toFixed(2)} | ${s2.manual} | ${pct(rate(s2.normal,s2.resTotal))}`);});
+  L.push(`\n[지표별 1위 ${mLabel(SEL)}] `+topLists().map(l=>`${l.title}: ${l.winners.map(x=>x.who).join("·")||"-"} ${l.winners[0]?.txt||""} ${l.winners[0]?.cnt||""} (${l.basis})`).join(" / "));
+  const W=winMonths();L.push(`\n[심사자별 월별 처리 건수] 심사자 | ${W.map(mLabel).join(" | ")}`);
+  rvList().forEach(k=>L.push(`${k} | ${W.map(mm=>M[mm].byRv[k]||0).join(" | ")}`));
+  L.push(`\n[월별 요약] 마감월 | 총심사 | 터치율 | 자동심사율 | 처리 | 정상 | 반송 | 청철 | 미결`);
+  MONTHS.forEach(mm=>{const a=M[mm];L.push(`${mLabel(mm)} | ${a.n} | ${pct(a.touch)} | ${pct(a.autoRate)} | ${a.proc} | ${a.normal} | ${a.ret} | ${a.wd} | ${a.pend}`);});
+  const per={};ROWS.forEach(r=>r.codes.forEach(c=>per[c]=(per[c]||0)+1));
+  L.push(`\n[데이터 점검] 전체 ${ROWS.length}행, 오류로 제외 ${ROWS.filter(r=>!r.include).length}행, 경고 ${ISSUES.filter(i=>i.id[0]==="W").length}건. `+RULES.map(([id,sev,d])=>`${id}(${sev}) ${d}: ${per[id]||0}건`).join("; "));
+  L.push(`\n[지표 정의]\n`+DEFS().slice(0,8).map(([a,b])=>`${a}: ${b.replace(/<[^>]+>/g,"")}`).join("\n"));
+  return L.join("\n");}
+function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/^#{1,4}\s*(.+)$/gm,"<b>$1</b>").replace(/\n/g,"<br>");}
+function chatRender(){
+  $("chatLog").innerHTML=CHAT.hist.length?CHAT.hist.map(h=>`<div class="msg ${h.role==="user"?"u":"a"}${h.err?" err":""}${h.wait?" wait":""}">${h.role==="user"?esc(h.content).replace(/\n/g,"<br>"):mdLite(h.content)}</div>`).join("")
+    :`<div class="msg a">현재 화면의 ${SEL?mLabel(SEL)+" ":""}지표, 심사자별 현황, 데이터 점검 결과를 바탕으로 답합니다. 아래 예시를 누르거나 직접 물어보세요.</div>`;
+  $("chatLog").scrollTop=$("chatLog").scrollHeight;
+  const sug=SEL?[`${mLabel(SEL)} 지표를 3줄로 요약해줘`,"전월 대비 가장 크게 변한 지표는?","터치율 목표에 못 미친 심사자와 확인할 점은?","W3 경고는 무슨 뜻이야?"]:[];
+  $("chatSug").innerHTML=CHAT.hist.length?"":sug.map(q=>`<button type="button">${esc(q)}</button>`).join("");
+  $("chatSug").querySelectorAll("button").forEach(b=>b.onclick=()=>chatSend(b.textContent));
+  $("chatSend").textContent=CHAT.busy?"중지":"보내기";}
+async function chatSend(q){
+  q=String(q||"").trim();if(!q||CHAT.busy)return;
+  CHAT.hist.push({role:"user",content:q});const ans={role:"assistant",content:"답변을 작성하는 중입니다…",wait:true};CHAT.hist.push(ans);
+  CHAT.busy=true;CHAT.ctl=new AbortController();chatRender();
+  const msgs=CHAT.hist.filter(h=>h!==ans&&!h.err).map(h=>({role:h.role,content:h.content})).slice(-16);
+  const onText=t=>{ans.wait=false;ans.content=t;chatRender();};
+  try{
+    let text;
+    if(sampleFn){const input=[{role:"user",content:CHAT_SYSTEM+"\n\n[현재 화면 데이터]\n"+chatContext()+"\n\n위 데이터를 확인했으면 '확인'이라고만 답하세요."},{role:"assistant",content:"확인"},...msgs];
+      text=(await sampleFn(input,{signal:CHAT.ctl.signal,cache:false,onText:({text})=>onText(text)})).text;}
+    else text=await askApi(msgs,{signal:CHAT.ctl.signal,context:chatContext(),onText});
+    ans.wait=false;ans.content=text||"(빈 답변) 다시 질문해 주세요.";
+  }catch(e){ans.wait=false;
+    if(e.code==="cancelled"){ans.content=(e.text||"")+"\n(중지함)";}
+    else{ans.err=true;ans.content=(useApi()&&e.message)||{not_granted:"AI 사용이 허용되지 않았습니다.",rate_limited:"요청이 많습니다. 잠시 뒤 다시 시도해 주세요."}[e.code]||e.message||"답변을 받지 못했습니다.";}
+  }finally{CHAT.busy=false;CHAT.ctl=null;chatRender();}}
+$("chatFab").onclick=()=>{$("chatPanel").hidden=false;$("chatFab").hidden=true;$("chatFab").setAttribute("aria-expanded","true");chatRender();$("chatText").focus();};
+$("chatClose").onclick=()=>{$("chatPanel").hidden=true;$("chatFab").hidden=false;$("chatFab").setAttribute("aria-expanded","false");};
+$("chatClear").onclick=()=>{if(CHAT.busy)CHAT.ctl?.abort();CHAT.hist=[];chatRender();};
+$("chatForm").onsubmit=e=>{e.preventDefault();if(CHAT.busy){CHAT.ctl?.abort();return;}const t=$("chatText").value;$("chatText").value="";chatSend(t);};
+$("chatText").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("chatForm").requestSubmit();}});
 
 /* boot */
 fillSettings();buildHolidays();renderDefs();
